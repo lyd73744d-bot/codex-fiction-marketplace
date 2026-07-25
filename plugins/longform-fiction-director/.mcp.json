@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "longform-fiction-director": {
+      "command": "node",
+      "args": [
+        "./server/mcp-server.js"
+      ]
+    }
+  }
+}

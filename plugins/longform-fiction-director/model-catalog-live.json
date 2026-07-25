@@ -1,0 +1,157 @@
+{
+  "version": "4.1.0-fusion.28",
+  "fullVersion": "4.1.0-fusion.28+codex.20260726034256",
+  "gateway": "https://api.nanshanyougui.xyz",
+  "updatedAt": "2026-07-25T19:42:56.666718+00:00",
+  "preferredModel": "claude-opus-5",
+  "models": [
+    {
+      "id": "claude-opus-5",
+      "credits": 20,
+      "available": true,
+      "status": "live",
+      "flagship": true
+    },
+    {
+      "id": "claude-sonnet-5",
+      "credits": 10,
+      "available": true,
+      "status": "live",
+      "flagship": true
+    },
+    {
+      "id": "claude-opus-4-6",
+      "credits": 20,
+      "available": true,
+      "status": "live",
+      "flagship": true
+    },
+    {
+      "id": "claude-opus-4-6-thinking",
+      "credits": 20,
+      "available": true,
+      "status": "live",
+      "flagship": true
+    },
+    {
+      "id": "claude-opus-4-7",
+      "credits": 20,
+      "available": true,
+      "status": "live",
+      "flagship": true
+    },
+    {
+      "id": "claude-opus-4-8",
+      "credits": 20,
+      "available": true,
+      "status": "live",
+      "flagship": true
+    },
+    {
+      "id": "gemini-3.1-pro-preview",
+      "credits": 12,
+      "available": true,
+      "status": "live",
+      "flagship": false
+    },
+    {
+      "id": "gemini-3.5-flash",
+      "credits": 8,
+      "available": true,
+      "status": "live",
+      "flagship": false
+    },
+    {
+      "id": "glm-5.2",
+      "credits": 8,
+      "available": true,
+      "status": "live",
+      "flagship": false
+    },
+    {
+      "id": "gpt-5.6-terra",
+      "credits": 12,
+      "available": true,
+      "status": "live",
+      "flagship": true
+    },
+    {
+      "id": "gpt-5.6-luna",
+      "credits": 5,
+      "available": true,
+      "status": "live",
+      "flagship": false
+    },
+    {
+      "id": "gpt-5-5",
+      "credits": 12,
+      "available": true,
+      "status": "live",
+      "flagship": false
+    },
+    {
+      "id": "gpt-5",
+      "credits": 12,
+      "available": true,
+      "status": "live",
+      "flagship": false
+    },
+    {
+      "id": "gpt-5-3",
+      "credits": 10,
+      "available": true,
+      "status": "live",
+      "flagship": false
+    },
+    {
+      "id": "gpt-5-mini",
+      "credits": 5,
+      "available": true,
+      "status": "live",
+      "flagship": false
+    },
+    {
+      "id": "seed-2.1-pro",
+      "credits": 20,
+      "available": true,
+      "status": "live",
+      "flagship": false
+    },
+    {
+      "id": "seed-2.1-turbo",
+      "credits": 10,
+      "available": true,
+      "status": "live",
+      "flagship": false
+    },
+    {
+      "id": "kimi-k2.6",
+      "credits": 20,
+      "available": true,
+      "status": "live",
+      "flagship": false
+    },
+    {
+      "id": "qwen3.7-max",
+      "credits": 5,
+      "available": true,
+      "status": "live",
+      "flagship": false
+    },
+    {
+      "id": "gpt-image-2",
+      "credits": 50,
+      "available": true,
+      "status": "live",
+      "flagship": true
+    }
+  ],
+  "notes": {
+    "must_show": [
+      "claude-opus-5",
+      "claude-sonnet-5"
+    ],
+    "opus5_route": "ssycai via Windows reverse-tunnel relay",
+    "sonnet5_route": "ssycai relay + byteclaude fallback"
+  }
+}

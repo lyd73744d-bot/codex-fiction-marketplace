@@ -1,0 +1,26 @@
+{
+  "name": "longform-fiction-director",
+  "version": "4.1.0-fusion.28",
+  "private": true,
+  "type": "commonjs",
+  "files": [
+    ".codex-plugin",
+    ".mcp.json",
+    "package.json",
+    "package-lock.json",
+    "bin",
+    "assets",
+    "skills",
+    "server",
+    "web"
+  ],
+  "scripts": {
+    "test": "node --test test/*.test.js",
+    "verify:package": "node scripts/verify-package-content.js"
+  },
+  "dependencies": {
+    "parse5": "7.3.0",
+    "proper-lockfile": "4.1.2"
+  },
+  "description": "Chinese longform fiction Codex plugin with live Claude Opus 5 / Sonnet 5."
+}

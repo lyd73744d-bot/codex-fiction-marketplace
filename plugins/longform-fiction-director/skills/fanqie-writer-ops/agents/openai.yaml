@@ -1,0 +1,4 @@
+﻿interface:
+  display_name: "番茄作家后台"
+  short_description: "上传章节并读取书评评论"
+  default_prompt: "按日更流程上传番茄章节，并读取书评/段评给出可执行改稿点。"

@@ -1,0 +1,4196 @@
+{
+  "schemaVersion": 1,
+  "sourceRepository": "InkOS",
+  "sourcePackage": "@actalk/inkos-core",
+  "sourceVersion": "1.7.1",
+  "sourceCommit": "a713a2e87ccc595221571d24ab193d8a79ea4df7",
+  "generatedOn": "2026-07-21",
+  "scope": "Named prompt builders, prompt/template constants, and builtin prompt-pack items under packages/core/src; tests, generated output, provider plumbing, parsers, and environment/config values are excluded.",
+  "prompts": [
+    {
+      "id": "inkos.agent.agent-system-prompt.build-agent-system-prompt",
+      "category": "agent",
+      "workflow": "chat",
+      "stage": "agent.system.compose",
+      "role": "system",
+      "source": "InkOS",
+      "sourceKind": "builder",
+      "sourceFile": "packages/core/src/agent/agent-system-prompt.ts",
+      "sourceSymbol": "buildAgentSystemPrompt",
+      "locale": "multilingual",
+      "version": "1.7.1+a713a2e87ccc",
+      "sourceArtifact": "sources/inkos-prompt-sources.json",
+      "sourceArtifactKey": "inkos.agent.agent-system-prompt.build-agent-system-prompt",
+      "sha256": "e4d3cd0c7c023ddc222e132f3e3c9534440ec3e59ee50ac16b2636bee34428d6",
+      "variablesSchema": {
+        "type": "object",
+        "properties": {
+          "bookId": {
+            "type": "string"
+          },
+          "language": {
+            "type": "string"
+          },
+          "sessionKind": {
+            "type": "string"
+          },
+          "options": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "bookId",
+          "language"
+        ]
+      },
+      "outputSchema": {
+        "type": "string",
+        "description": "Model text output governed by the cited InkOS prompt contract."
+      },
+      "validatorId": null,
+      "retryPolicy": {
+        "maxAttempts": 1
+      },
+      "status": "extracted",
+      "sourceArtifactSha256": "e4d3cd0c7c023ddc222e132f3e3c9534440ec3e59ee50ac16b2636bee34428d6"
+    },
+    {
+      "id": "inkos.agent.agent-system-prompt.build-book-create-prompt",
+      "category": "agent",
+      "workflow": "book-create",
+      "stage": "brainstorm.finalize",
+      "role": "instruction",
+      "source": "InkOS",
+      "sourceKind": "builder",
+      "sourceFile": "packages/core/src/agent/agent-system-prompt.ts",
+      "sourceSymbol": "buildBookCreatePrompt",
+      "locale": "multilingual",
+      "version": "1.7.1+a713a2e87ccc",
+      "sourceArtifact": "sources/inkos-prompt-sources.json",
+      "sourceArtifactKey": "inkos.agent.agent-system-prompt.build-book-create-prompt",
+      "sha256": "5440e8e1b7b9031f7c95c94dbca0514107f25801120b97d5ac5e3ef98dd5c747",
+      "variablesSchema": {
+        "type": "object",
+        "properties": {
+          "isZh": {
+            "type": "boolean"
+          },
+          "confirmed": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "isZh",
+          "confirmed"
+        ]
+      },
+      "outputSchema": {
+        "type": "string",
+        "description": "Model text output governed by the cited InkOS prompt contract."
+      },
+      "validatorId": null,
+      "retryPolicy": {
+        "maxAttempts": 1
+      },
+      "status": "extracted",
+      "sourceArtifactSha256": "5440e8e1b7b9031f7c95c94dbca0514107f25801120b97d5ac5e3ef98dd5c747"
+    },
+    {
+      "id": "inkos.agent.agent-system-prompt.build-book-prompt",
+      "category": "agent",
+      "workflow": "longform",
+      "stage": "agent.book",
+      "role": "instruction",
+      "source": "InkOS",
+      "sourceKind": "builder",
+      "sourceFile": "packages/core/src/agent/agent-system-prompt.ts",
+      "sourceSymbol": "buildBookPrompt",
+      "locale": "multilingual",
+      "version": "1.7.1+a713a2e87ccc",
+      "sourceArtifact": "sources/inkos-prompt-sources.json",
+      "sourceArtifactKey": "inkos.agent.agent-system-prompt.build-book-prompt",
+      "sha256": "3b2990f53e13a5e02b9e3d39cacc27109da747222153cd340589995bf67b7ad2",
+      "variablesSchema": {
+        "type": "object",
+        "properties": {
+          "bookId": {
+            "type": "string"
+          },
+          "isZh": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "bookId",
+          "isZh"
+        ]
+      },
+      "outputSchema": {
+        "type": "string",
+        "description": "Model text output governed by the cited InkOS prompt contract."
+      },
+      "validatorId": null,
+      "retryPolicy": {
+        "maxAttempts": 1
+      },
+      "status": "extracted",
+      "sourceArtifactSha256": "3b2990f53e13a5e02b9e3d39cacc27109da747222153cd340589995bf67b7ad2"
+    },
+    {
+      "id": "inkos.agent.agent-system-prompt.build-chat-prompt",
+      "category": "agent",
+      "workflow": "chat",
+      "stage": "brainstorm.chat",
+      "role": "instruction",
+      "source": "InkOS",
+      "sourceKind": "builder",
+      "sourceFile": "packages/core/src/agent/agent-system-prompt.ts",
+      "sourceSymbol": "buildChatPrompt",
+      "locale": "multilingual",
+      "version": "1.7.1+a713a2e87ccc",
+      "sourceArtifact": "sources/inkos-prompt-sources.json",
+      "sourceArtifactKey": "inkos.agent.agent-system-prompt.build-chat-prompt",
+      "sha256": "9369faf9457bbddc0ec6471070431f615afce2fb9feec8b548faa622d4f007fe",
+      "variablesSchema": {
+        "type": "object",
+        "properties": {
+          "isZh": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "isZh"
+        ]
+      },
+      "outputSchema": {
+        "type": "string",
+        "description": "Model text output governed by the cited InkOS prompt contract."
+      },
+      "validatorId": null,
+      "retryPolicy": {
+        "maxAttempts": 1
+      },
+      "status": "extracted",
+      "sourceArtifactSha256": "9369faf9457bbddc0ec6471070431f615afce2fb9feec8b548faa622d4f007fe"
+    },
+    {
+      "id": "inkos.agent.agent-system-prompt.build-edit-prompt",
+      "category": "agent",
+      "workflow": "edit",
+      "stage": "agent.edit",
+      "role": "instruction",
+      "source": "InkOS",
+      "sourceKind": "builder",
+      "sourceFile": "packages/core/src/agent/agent-system-prompt.ts",
+      "sourceSymbol": "buildEditPrompt",
+      "locale": "multilingual",
+      "version": "1.7.1+a713a2e87ccc",
+      "sourceArtifact": "sources/inkos-prompt-sources.json",
+      "sourceArtifactKey": "inkos.agent.agent-system-prompt.build-edit-prompt",
+      "sha256": "1b3d5a8903050230db0a004c14bb32c4a6e9dd6f4e31d764ea0321ff04828e57",
+      "variablesSchema": {
+        "type": "object",
+        "properties": {
+          "bookId": {
+            "type": "string"
+          },
+          "isZh": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "bookId",
+          "isZh"
+        ]
+      },
+      "outputSchema": {
+        "type": "string",
+        "description": "Model text output governed by the cited InkOS prompt contract."
+      },
+      "validatorId": null,
+      "retryPolicy": {
+        "maxAttempts": 1
+      },
+      "status": "extracted",
+      "sourceArtifactSha256": "1b3d5a8903050230db0a004c14bb32c4a6e9dd6f4e31d764ea0321ff04828e57"
+    },
+    {
+      "id": "inkos.agent.agent-system-prompt.build-interactive-film-prompt",
+      "category": "agent",
+      "workflow": "interactive-film",
+      "stage": "agent.interactive-film",
+      "role": "instruction",
+      "source": "InkOS",
+      "sourceKind": "builder",
+      "sourceFile": "packages/core/src/agent/agent-system-prompt.ts",
+      "sourceSymbol": "buildInteractiveFilmPrompt",
+      "locale": "multilingual",
+      "version": "1.7.1+a713a2e87ccc",
+      "sourceArtifact": "sources/inkos-prompt-sources.json",
+      "sourceArtifactKey": "inkos.agent.agent-system-prompt.build-interactive-film-prompt",
+      "sha256": "f4efb3c2c31dd4ccff1f12a770e7db705ee482b150712faee8192664a8c0346c",
+      "variablesSchema": {
+        "type": "object",
+        "properties": {
+          "isZh": {
+            "type": "boolean"
+          },
+          "confirmed": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "isZh",
+          "confirmed"
+        ]
+      },
+      "outputSchema": {
+        "type": [
+          "object",
+          "string"
+        ],
+        "description": "Structured model output; exact parser contract remains in the cited InkOS source symbol."
+      },
+      "validatorId": null,
+      "retryPolicy": {
+        "maxAttempts": 1
+      },
+      "status": "extracted",
+      "sourceArtifactSha256": "f4efb3c2c31dd4ccff1f12a770e7db705ee482b150712faee8192664a8c0346c"
+    },
+    {
+      "id": "inkos.agent.agent-system-prompt.build-play-prompt",
+      "category": "agent",
+      "workflow": "play",
+      "stage": "agent.play",
+      "role": "instruction",
+      "source": "InkOS",
+      "sourceKind": "builder",
+      "sourceFile": "packages/core/src/agent/agent-system-prompt.ts",
+      "sourceSymbol": "buildPlayPrompt",
+      "locale": "multilingual",
+      "version": "1.7.1+a713a2e87ccc",
+      "sourceArtifact": "sources/inkos-prompt-sources.json",
+      "sourceArtifactKey": "inkos.agent.agent-system-prompt.build-play-prompt",
+      "sha256": "11f430884a6cd4951fa9e82a3fb4624e3e2cace6a61ad2315b78147e3f190f0d",
+      "variablesSchema": {
+        "type": "object",
+        "properties": {
+          "isZh": {
+            "type": "boolean"
+          },
+          "confirmedStart": {
+            "type": "boolean"
+          },
+          "playWorldExists": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "isZh",
+          "confirmedStart",
+          "playWorldExists"
+        ]
+      },
+      "outputSchema": {
+        "type": "string",
+        "description": "Model text output governed by the cited InkOS prompt contract."
+      },
+      "validatorId": null,
+      "retryPolicy": {
+        "maxAttempts": 1
+      },
+      "status": "extracted",
+      "sourceArtifactSha256": "11f430884a6cd4951fa9e82a3fb4624e3e2cace6a61ad2315b78147e3f190f0d"
+    },
+    {
+      "id": "inkos.agent.agent-system-prompt.build-script-prompt",
+      "category": "agent",
+      "workflow": "script",
+      "stage": "agent.script",
+      "role": "instruction",
+      "source": "InkOS",
+      "sourceKind": "builder",
+      "sourceFile": "packages/core/src/agent/agent-system-prompt.ts",
+      "sourceSymbol": "buildScriptPrompt",
+      "locale": "multilingual",
+      "version": "1.7.1+a713a2e87ccc",
+      "sourceArtifact": "sources/inkos-prompt-sources.json",
+      "sourceArtifactKey": "inkos.agent.agent-system-prompt.build-script-prompt",
+      "sha256": "c666107371219ca7842c13cfbabc72cb61a6309188a0b0afa621e66b0fecff92",
+      "variablesSchema": {
+        "type": "object",
+        "properties": {
+          "isZh": {
+            "type": "boolean"
+          },
+          "confirmed": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "isZh",
+          "confirmed"
+        ]
+      },
+      "outputSchema": {
+        "type": "string",
+        "description": "Model text output governed by the cited InkOS prompt contract."
+      },
+      "validatorId": null,
+      "retryPolicy": {
+        "maxAttempts": 1
+      },
+      "status": "extracted",
+      "sourceArtifactSha256": "c666107371219ca7842c13cfbabc72cb61a6309188a0b0afa621e66b0fecff92"
+    },
+    {
+      "id": "inkos.agent.agent-system-prompt.build-short-prompt",
+      "category": "agent",
+      "workflow": "short-fiction",
+      "stage": "agent.short",
+      "role": "instruction",
+      "source": "InkOS",
+      "sourceKind": "builder",
+      "sourceFile": "packages/core/src/agent/agent-system-prompt.ts",
+      "sourceSymbol": "buildShortPrompt",
+      "locale": "multilingual",
+      "version": "1.7.1+a713a2e87ccc",
+      "sourceArtifact": "sources/inkos-prompt-sources.json",
+      "sourceArtifactKey": "inkos.agent.agent-system-prompt.build-short-prompt",
+      "sha256": "a854f5e6745def64e8df027d5c92f415da35ad290c0e08b5610f6ea727351724",
+      "variablesSchema": {
+        "type": "object",
+        "properties": {
+          "isZh": {
+            "type": "boolean"
+          },
+          "confirmedIntent": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "isZh"
+        ]
+      },
+      "outputSchema": {
+        "type": "string",
+        "description": "Model text output governed by the cited InkOS prompt contract."
+      },
+      "validatorId": null,
+      "retryPolicy": {
+        "maxAttempts": 1
+      },
+      "status": "extracted",
+      "sourceArtifactSha256": "a854f5e6745def64e8df027d5c92f415da35ad290c0e08b5610f6ea727351724"
+    },
+    {
+      "id": "inkos.agent.agent-system-prompt.build-storyboard-prompt",
+      "category": "agent",
+      "workflow": "storyboard",
+      "stage": "agent.storyboard",
+      "role": "instruction",
+      "source": "InkOS",
+      "sourceKind": "builder",
+      "sourceFile": "packages/core/src/agent/agent-system-prompt.ts",
+      "sourceSymbol": "buildStoryboardPrompt",
+      "locale": "multilingual",
+      "version": "1.7.1+a713a2e87ccc",
+      "sourceArtifact": "sources/inkos-prompt-sources.json",
+      "sourceArtifactKey": "inkos.agent.agent-system-prompt.build-storyboard-prompt",
+      "sha256": "200d558481226b69aec6dbefc9aa496fe1bfddbbc238b9adf8f6d35c947a8a10",
+      "variablesSchema": {
+        "type": "object",
+        "properties": {
+          "isZh": {
+            "type": "boolean"
+          },
+          "confirmed": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "isZh",
+          "confirmed"
+        ]
+      },
+      "outputSchema": {
+        "type": "string",
+        "description": "Model text output governed by the cited InkOS prompt contract."
+      },
+      "validatorId": null,
+      "retryPolicy": {
+        "maxAttempts": 1
+      },
+      "status": "extracted",
+      "sourceArtifactSha256": "200d558481226b69aec6dbefc9aa496fe1bfddbbc238b9adf8f6d35c947a8a10"
+    },
+    {
+      "id": "inkos.agent.film-authoring-tools.node-system-prompt",
+      "category": "writing",
+      "workflow": "interactive-film",
+      "stage": "interactive-film.node-system-prompt",
+      "role": "system",
+      "source": "InkOS",
+      "sourceKind": "builder",
+      "sourceFile": "packages/core/src/agent/film-authoring-tools.ts",
+      "sourceSymbol": "nodeSystemPrompt",
+      "locale": "en",
+      "version": "1.7.1+a713a2e87ccc",
+      "sourceArtifact": "sources/inkos-prompt-sources.json",
+      "sourceArtifactKey": "inkos.agent.film-authoring-tools.node-system-prompt",
+      "sha256": "8c911e64d26de73a17ed61356b9f3fba0fb0b3f29615301e2416357729670e73",
+      "variablesSchema": {
+        "type": "object",
+        "properties": {
+          "language": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "language"
+        ]
+      },
+      "outputSchema": {
+        "type": [
+          "object",
+          "string"
+        ],
+        "description": "Structured model output; exact parser contract remains in the cited InkOS source symbol."
+      },
+      "validatorId": null,
+      "retryPolicy": {
+        "maxAttempts": 1
+      },
+      "status": "extracted",
+      "sourceArtifactSha256": "8c911e64d26de73a17ed61356b9f3fba0fb0b3f29615301e2416357729670e73"
+    },
+    {
+      "id": "inkos.agents.architect.architect-agent.build-chinese-foundation-prompt",
+      "category": "foundation",
+      "workflow": "longform",
+      "stage": "foundation.build",
+      "role": "instruction",
+      "source": "InkOS",
+      "sourceKind": "builder",
+      "sourceFile": "packages/core/src/agents/architect.ts",
+      "sourceSymbol": "ArchitectAgent.buildChineseFoundationPrompt",
+      "locale": "zh-CN",
+      "version": "1.7.1+a713a2e87ccc",
+      "sourceArtifact": "sources/inkos-prompt-sources.json",
+      "sourceArtifactKey": "inkos.agents.architect.architect-agent.build-chinese-foundation-prompt",
+      "sha256": "dc486fd83c5c31aac2c1009a3789bca3517f78532119a277b306b104220d7c29",
+      "variablesSchema": {
+        "type": "object",
+        "properties": {
+          "book": {
+            "type": "string"
+          },
+          "gp": {
+            "type": "string"
+          },
+          "genreBody": {
+            "type": "string"
+          },
+          "contextBlock": {
+            "type": "string"
+          },
+          "reviewFeedbackBlock": {
+            "type": "string"
+          },
+          "numericalBlock": {
+            "type": "string"
+          },
+          "powerBlock": {
+            "type": "string"
+          },
+          "eraBlock": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "book",
+          "gp",
+          "genreBody",
+          "contextBlock",
+          "reviewFeedbackBlock",
+          "numericalBlock",
+          "powerBlock",
+          "eraBlock"
+        ]
+      },
+      "outputSchema": {
+        "type": "string",
+        "description": "Model text output governed by the cited InkOS prompt contract."
+      },
+      "validatorId": null,
+      "retryPolicy": {
+        "maxAttempts": 1
+      },
+      "status": "extracted",
+      "sourceArtifactSha256": "dc486fd83c5c31aac2c1009a3789bca3517f78532119a277b306b104220d7c29"
+    },
+    {
+      "id": "inkos.agents.architect.architect-agent.build-english-foundation-prompt",
+      "category": "foundation",
+      "workflow": "longform",
+      "stage": "foundation.build",
+      "role": "instruction",
+      "source": "InkOS",
+      "sourceKind": "builder",
+      "sourceFile": "packages/core/src/agents/architect.ts",
+      "sourceSymbol": "ArchitectAgent.buildEnglishFoundationPrompt",
+      "locale": "en",
+      "version": "1.7.1+a713a2e87ccc",
+      "sourceArtifact": "sources/inkos-prompt-sources.json",
+      "sourceArtifactKey": "inkos.agents.architect.architect-agent.build-english-foundation-prompt",
+      "sha256": "2c1be0c5775a0d01a1905bfc14ba8ae0bd0f923f9757a1d864009616e47e076b",
+      "variablesSchema": {
+        "type": "object",
+        "properties": {
+          "book": {
+            "type": "string"
+          },
+          "gp": {
+            "type": "string"
+          },
+          "genreBody": {
+            "type": "string"
+          },
+          "contextBlock": {
+            "type": "string"
+          },
+          "reviewFeedbackBlock": {
+            "type": "string"
+          },
+          "numericalBlock": {
+            "type": "string"
+          },
+          "powerBlock": {
+            "type": "string"
+          },
+          "eraBlock": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "book",
+          "gp",
+          "genreBody",
+          "contextBlock",
+          "reviewFeedbackBlock",
+          "numericalBlock",
+          "powerBlock",
+          "eraBlock"
+        ]
+      },
+      "outputSchema": {
+        "type": "string",
+        "description": "Model text output governed by the cited InkOS prompt contract."
+      },
+      "validatorId": null,
+      "retryPolicy": {
+        "maxAttempts": 1
+      },
+      "status": "extracted",
+      "sourceArtifactSha256": "2c1be0c5775a0d01a1905bfc14ba8ae0bd0f923f9757a1d864009616e47e076b"
+    },
+    {
+      "id": "inkos.agents.architect.architect-agent.build-revise-prompt",
+      "category": "foundation",
+      "workflow": "longform",
+      "stage": "foundation.repair",
+      "role": "instruction",
+      "source": "InkOS",
+      "sourceKind": "builder",
+      "sourceFile": "packages/core/src/agents/architect.ts",
+      "sourceSymbol": "ArchitectAgent.buildRevisePrompt",
+      "locale": "zh-CN",
+      "version": "1.7.1+a713a2e87ccc",
+      "sourceArtifact": "sources/inkos-prompt-sources.json",
+      "sourceArtifactKey": "inkos.agents.architect.architect-agent.build-revise-prompt",
+      "sha256": "431b0c7bb7dd384c27136eab207a282b0263e187595ec564ec0b4ecfe9461a5d",
+      "variablesSchema": {
+        "type": "object",
+        "properties": {
+          "storyBible": {
+            "type": "string"
+          },
+          "volumeOutline": {
+            "type": "string"
+          },
+          "bookRules": {
+            "type": "string"
+          },
+          "characterMatrix": {
+            "type": "string"
+          },
+          "userFeedback": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "storyBible",
+          "volumeOutline",
+          "bookRules",
+          "characterMatrix",
+          "userFeedback"
+        ]
+      },
+      "outputSchema": {
+        "type": "string",
+        "description": "Model text output governed by the cited InkOS prompt contract."
+      },
+      "validatorId": null,
+      "retryPolicy": {
+        "maxAttempts": 1
+      },
+      "status": "extracted",
+      "sourceArtifactSha256": "431b0c7bb7dd384c27136eab207a282b0263e187595ec564ec0b4ecfe9461a5d"
+    },
+    {
+      "id": "inkos.agents.chapter-analyzer.chapter-analyzer-agent.build-system-prompt",
+      "category": "analysis",
+      "workflow": "longform",
+      "stage": "facts.observe",
+      "role": "system",
+      "source": "InkOS",
+      "sourceKind": "builder",
+      "sourceFile": "packages/core/src/agents/chapter-analyzer.ts",
+      "sourceSymbol": "ChapterAnalyzerAgent.buildSystemPrompt",
+      "locale": "multilingual",
+      "version": "1.7.1+a713a2e87ccc",
+      "sourceArtifact": "sources/inkos-prompt-sources.json",
+      "sourceArtifactKey": "inkos.agents.chapter-analyzer.chapter-analyzer-agent.build-system-prompt",
+      "sha256": "282333ab7d95d3537c7720997eb1d4b1d1de8e651d33239c14afe2d3a9159a3c",
+      "variablesSchema": {
+        "type": "object",
+        "properties": {
+          "book": {
+            "type": "string"
+          },
+          "genreProfile": {
+            "type": "string"
+          },
+          "genreBody": {
+            "type": "string"
+          },
+          "bookRulesBody": {
+            "type": "string"
+          },
+          "language": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "book",
+          "genreProfile",
+          "genreBody",
+          "bookRulesBody",
+          "language"
+        ]
+      },
+      "outputSchema": {
+        "type": [
+          "object",
+          "string"
+        ],
+        "description": "Structured model output; exact parser contract remains in the cited InkOS source symbol."
+      },
+      "validatorId": null,
+      "retryPolicy": {
+        "maxAttempts": 1
+      },
+      "status": "extracted",
+      "sourceArtifactSha256": "282333ab7d95d3537c7720997eb1d4b1d1de8e651d33239c14afe2d3a9159a3c"
+    },
+    {
+      "id": "inkos.agents.chapter-analyzer.chapter-analyzer-agent.build-user-prompt",
+      "category": "analysis",
+      "workflow": "longform",
+      "stage": "facts.observe",
+      "role": "user",
+      "source": "InkOS",
+      "sourceKind": "builder",
+      "sourceFile": "packages/core/src/agents/chapter-analyzer.ts",
+      "sourceSymbol": "ChapterAnalyzerAgent.buildUserPrompt",
+      "locale": "multilingual",
+      "version": "1.7.1+a713a2e87ccc",
+      "sourceArtifact": "sources/inkos-prompt-sources.json",
+      "sourceArtifactKey": "inkos.agents.chapter-analyzer.chapter-analyzer-agent.build-user-prompt",
+      "sha256": "13d9a2e0ef8ea4528bca30262056bdd671846f7fa1a55299c367825f7ef9e870",
+      "variablesSchema": {
+        "type": "object",
+        "properties": {
+          "language": {
+            "type": "string"
+          },
+          "chapterNumber": {
+            "type": "number"
+          },
+          "chapterContent": {
+            "type": "string"
+          },
+          "chapterTitle": {
+            "type": "string"
+          },
+          "currentState": {
+            "type": "string"
+          },
+          "ledger": {
+            "type": "string"
+          },
+          "hooks": {
+            "type": "string"
+          },
+          "chapterSummaries": {
+            "type": "string"
+          },
+          "subplotBoard": {
+            "type": "string"
+          },
+          "emotionalArcs": {
+            "type": "string"
+          },
+          "characterMatrix": {
+            "type": "string"
+          },
+          "hooksBlock": {
+            "type": "string"
+          },
+          "summariesBlock": {
+            "type": "string"
+          },
+          "volumeSummariesBlock": {
+            "type": "string"
+          },
+          "subplotBlock": {
+            "type": "string"
+          },
+          "emotionalBlock": {
+            "type": "string"
+          },
+          "matrixBlock": {
+            "type": "string"
+          },
+          "bibleBlock": {
+            "type": "string"
+          },
+          "outlineOrControlBlock": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "language",
+          "chapterNumber",
+          "chapterContent",
+          "currentState",
+          "ledger",
+          "hooks",
+          "chapterSummaries",
+          "subplotBoard",
+          "emotionalArcs",
+          "characterMatrix",
+          "hooksBlock",
+          "summariesBlock",
+          "volumeSummariesBlock",
+          "subplotBlock",
+          "emotionalBlock",
+          "matrixBlock",
+          "bibleBlock",
+          "outlineOrControlBlock"
+        ]
+      },
+      "outputSchema": {
+        "type": [
+          "object",
+          "string"
+        ],
+        "description": "Structured model output; exact parser contract remains in the cited InkOS source symbol."
+      },
+      "validatorId": null,
+      "retryPolicy": {
+        "maxAttempts": 1
+      },
+      "status": "extracted",
+      "sourceArtifactSha256": "13d9a2e0ef8ea4528bca30262056bdd671846f7fa1a55299c367825f7ef9e870"
+    },
+    {
+      "id": "inkos.agents.en-prompt-sections.build-english-anti-airules",
+      "category": "writing",
+      "workflow": "longform",
+      "stage": "chapter.draft",
+      "role": "guidance",
+      "source": "InkOS",
+      "sourceKind": "builder",
+      "sourceFile": "packages/core/src/agents/en-prompt-sections.ts",
+      "sourceSymbol": "buildEnglishAntiAIRules",
+      "locale": "en",
+      "version": "1.7.1+a713a2e87ccc",
+      "sourceArtifact": "sources/inkos-prompt-sources.json",
+      "sourceArtifactKey": "inkos.agents.en-prompt-sections.build-english-anti-airules",
+      "sha256": "74cada8323c7b3eb5c548004aaa99bda7413bc740f993b8ac41c2cd1a06ebc0a",
+      "variablesSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "string",
+        "description": "Model text output governed by the cited InkOS prompt contract."
+      },
+      "validatorId": null,
+      "retryPolicy": {
+        "maxAttempts": 1
+      },
+      "status": "extracted",
+      "sourceArtifactSha256": "74cada8323c7b3eb5c548004aaa99bda7413bc740f993b8ac41c2cd1a06ebc0a"
+    },
+    {
+      "id": "inkos.agents.en-prompt-sections.build-english-character-method",
+      "category": "writing",
+      "workflow": "longform",
+      "stage": "chapter.draft",
+      "role": "guidance",
+      "source": "InkOS",
+      "sourceKind": "builder",
+      "sourceFile": "packages/core/src/agents/en-prompt-sections.ts",
+      "sourceSymbol": "buildEnglishCharacterMethod",
+      "locale": "en",
+      "version": "1.7.1+a713a2e87ccc",
+      "sourceArtifact": "sources/inkos-prompt-sources.json",
+      "sourceArtifactKey": "inkos.agents.en-prompt-sections.build-english-character-method",
+      "sha256": "736ed2304021a7474aed812701d9e4c7ab6f6192cb7f6aaf503303b46214cd86",
+      "variablesSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "string",
+        "description": "Model text output governed by the cited InkOS prompt contract."
+      },
+      "validatorId": null,
+      "retryPolicy": {
+        "maxAttempts": 1
+      },
+      "status": "extracted",
+      "sourceArtifactSha256": "736ed2304021a7474aed812701d9e4c7ab6f6192cb7f6aaf503303b46214cd86"
+    },
+    {
+      "id": "inkos.agents.en-prompt-sections.build-english-core-rules",
+      "category": "writing",
+      "workflow": "longform",
+      "stage": "chapter.draft",
+      "role": "guidance",
+      "source": "InkOS",
+      "sourceKind": "builder",
+      "sourceFile": "packages/core/src/agents/en-prompt-sections.ts",
+      "sourceSymbol": "buildEnglishCoreRules",
+      "locale": "en",
+      "version": "1.7.1+a713a2e87ccc",
+      "sourceArtifact": "sources/inkos-prompt-sources.json",
+      "sourceArtifactKey": "inkos.agents.en-prompt-sections.build-english-core-rules",
+      "sha256": "f11f5a36d165954de3ec0f3a82317e94c9b21b6abde7144f6e321f1641cdced2",
+      "variablesSchema": {
+        "type": "object",
+        "properties": {
+          "_book": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "_book"
+        ]
+      },
+      "outputSchema": {
+        "type": "string",
+        "description": "Model text output governed by the cited InkOS prompt contract."
+      },
+      "validatorId": null,
+      "retryPolicy": {
+        "maxAttempts": 1
+      },
+      "status": "extracted",
+      "sourceArtifactSha256": "f11f5a36d165954de3ec0f3a82317e94c9b21b6abde7144f6e321f1641cdced2"
+    },
+    {
+      "id": "inkos.agents.en-prompt-sections.build-english-genre-intro",
+      "category": "writing",
+      "workflow": "longform",
+      "stage": "chapter.draft",
+      "role": "guidance",
+      "source": "InkOS",
+      "sourceKind": "builder",
+      "sourceFile": "packages/core/src/agents/en-prompt-sections.ts",
+      "sourceSymbol": "buildEnglishGenreIntro",
+      "locale": "en",
+      "version": "1.7.1+a713a2e87ccc",
+      "sourceArtifact": "sources/inkos-prompt-sources.json",
+      "sourceArtifactKey": "inkos.agents.en-prompt-sections.build-english-genre-intro",
+      "sha256": "398ed85ea550944f13253c33517ac9af85f39a192369df7de7693b9ccbad3e65",
+      "variablesSchema": {
+        "type": "object",
+        "properties": {
+          "book": {
+            "type": "string"
+          },
+          "gp": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "book",
+          "gp"
+        ]
+      },
+      "outputSchema": {
+        "type": "string",
+        "description": "Model text output governed by the cited InkOS prompt contract."
+      },
+      "validatorId": null,
+      "retryPolicy": {
+        "maxAttempts": 1
+      },
+      "status": "extracted",
+      "sourceArtifactSha256": "398ed85ea550944f13253c33517ac9af85f39a192369df7de7693b9ccbad3e65"
+    },
+    {
+      "id": "inkos.agents.en-prompt-sections.build-english-pre-write-checklist",
+      "category": "writing",
+      "workflow": "longform",
+      "stage": "chapter.draft",
+      "role": "guidance",
+      "source": "InkOS",
+      "sourceKind": "builder",
+      "sourceFile": "packages/core/src/agents/en-prompt-sections.ts",
+      "sourceSymbol": "buildEnglishPreWriteChecklist",
+      "locale": "en",
+      "version": "1.7.1+a713a2e87ccc",
+      "sourceArtifact": "sources/inkos-prompt-sources.json",
+      "sourceArtifactKey": "inkos.agents.en-prompt-sections.build-english-pre-write-checklist",
+      "sha256": "f0a844e3c46e5b7649da924ab46921f6b95fe3635bb4a15dfae1b6274d932d19",
+      "variablesSchema": {
+        "type": "object",
+        "properties": {
+          "book": {
+            "type": "string"
+          },
+          "gp": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "book",
+          "gp"
+        ]
+      },
+      "outputSchema": {
+        "type": "string",
+        "description": "Model text output governed by the cited InkOS prompt contract."
+      },
+      "validatorId": null,
+      "retryPolicy": {
+        "maxAttempts": 1
+      },
+      "status": "extracted",
+      "sourceArtifactSha256": "f0a844e3c46e5b7649da924ab46921f6b95fe3635bb4a15dfae1b6274d932d19"
+    },
+    {
+      "id": "inkos.agents.fanfic-prompt-sections.build-character-voice-profiles",
+      "category": "writing",
+      "workflow": "fanfic",
+      "stage": "reference.canon",
+      "role": "guidance",
+      "source": "InkOS",
+      "sourceKind": "builder",
+      "sourceFile": "packages/core/src/agents/fanfic-prompt-sections.ts",
+      "sourceSymbol": "buildCharacterVoiceProfiles",
+      "locale": "zh-CN",
+      "version": "1.7.1+a713a2e87ccc",
+      "sourceArtifact": "sources/inkos-prompt-sources.json",
+      "sourceArtifactKey": "inkos.agents.fanfic-prompt-sections.build-character-voice-profiles",
+      "sha256": "3073a31033519391672aab6fa52b09670beed039feaa890a355eb3a624657205",
+      "variablesSchema": {
+        "type": "object",
+        "properties": {
+          "fanficCanon": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "fanficCanon"
+        ]
+      },
+      "outputSchema": {
+        "type": "string",
+        "description": "Model text output governed by the cited InkOS prompt contract."
+      },
+      "validatorId": null,
+      "retryPolicy": {
+        "maxAttempts": 1
+      },
+      "status": "extracted",
+      "sourceArtifactSha256": "3073a31033519391672aab6fa52b09670beed039feaa890a355eb3a624657205"
+    },
+    {
+      "id": "inkos.agents.fanfic-prompt-sections.build-fanfic-canon-section",
+      "category": "writing",
+      "workflow": "fanfic",
+      "stage": "reference.canon",
+      "role": "guidance",
+      "source": "InkOS",
+      "sourceKind": "builder",
+      "sourceFile": "packages/core/src/agents/fanfic-prompt-sections.ts",
+      "sourceSymbol": "buildFanficCanonSection",
+      "locale": "zh-CN",
+      "version": "1.7.1+a713a2e87ccc",
+      "sourceArtifact": "sources/inkos-prompt-sources.json",
+      "sourceArtifactKey": "inkos.agents.fanfic-prompt-sections.build-fanfic-canon-section",
+      "sha256": "6b6d18fd80941cda1e65cbe6367279d0b38727cb05964e1fa3282fefecb2d31a",
+      "variablesSchema": {
+        "type": "object",
+        "properties": {
+          "fanficCanon": {
+            "type": "string"
+          },
+          "mode": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "fanficCanon",
+          "mode"
+        ]
+      },
+      "outputSchema": {
+        "type": "string",
+        "description": "Model text output governed by the cited InkOS prompt contract."
+      },
+      "validatorId": null,
+      "retryPolicy": {
+        "maxAttempts": 1
+      },
+      "status": "extracted",
+      "sourceArtifactSha256": "6b6d18fd80941cda1e65cbe6367279d0b38727cb05964e1fa3282fefecb2d31a"
+    },
+    {
+      "id": "inkos.agents.fanfic-prompt-sections.build-fanfic-mode-instructions",
+      "category": "writing",
+      "workflow": "fanfic",
+      "stage": "reference.canon",
+      "role": "instruction",
+      "source": "InkOS",
+      "sourceKind": "builder",
+      "sourceFile": "packages/core/src/agents/fanfic-prompt-sections.ts",
+      "sourceSymbol": "buildFanficModeInstructions",
+      "locale": "zh-CN",
+      "version": "1.7.1+a713a2e87ccc",
+      "sourceArtifact": "sources/inkos-prompt-sources.json",
+      "sourceArtifactKey": "inkos.agents.fanfic-prompt-sections.build-fanfic-mode-instructions",
+      "sha256": "1f2d999e7a9a4568695ff814de7c15430620d2a4c4d42722684b138ff6b388b7",
+      "variablesSchema": {
+        "type": "object",
+        "properties": {
+          "mode": {
+            "type": "string"
+          },
+          "allowedDeviations": {
+            "type": "array"
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "mode",
+          "allowedDeviations"
+        ]
+      },
+      "outputSchema": {
+        "type": "string",
+        "description": "Model text output governed by the cited InkOS prompt contract."
+      },
+      "validatorId": null,
+      "retryPolicy": {
+        "maxAttempts": 1
+      },
+      "status": "extracted",
+      "sourceArtifactSha256": "1f2d999e7a9a4568695ff814de7c15430620d2a4c4d42722684b138ff6b388b7"
+    },
+    {
+      "id": "inkos.agents.foundation-reviewer.foundation-reviewer-agent.build-chinese-review-prompt",
+      "category": "foundation",
+      "workflow": "longform",
+      "stage": "foundation.review",
+      "role": "instruction",
+      "source": "InkOS",
+      "sourceKind": "builder",
+      "sourceFile": "packages/core/src/agents/foundation-reviewer.ts",
+      "sourceSymbol": "FoundationReviewerAgent.buildChineseReviewPrompt",
+      "locale": "zh-CN",
+      "version": "1.7.1+a713a2e87ccc",
+      "sourceArtifact": "sources/inkos-prompt-sources.json",
+      "sourceArtifactKey": "inkos.agents.foundation-reviewer.foundation-reviewer-agent.build-chinese-review-prompt",
+      "sha256": "2d7c8912c81f2ab00993018f28401c299b5a0d88d094d067e2d7d509e42e1f32",
+      "variablesSchema": {
+        "type": "object",
+        "properties": {
+          "dimensions": {
+            "type": "array"
+          },
+          "canonBlock": {
+            "type": "string"
+          },
+          "styleBlock": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "dimensions",
+          "canonBlock",
+          "styleBlock"
+        ]
+      },
+      "outputSchema": {
+        "type": [
+          "object",
+          "string"
+        ],
+        "description": "Structured model output; exact parser contract remains in the cited InkOS source symbol."
+      },
+      "validatorId": null,
+      "retryPolicy": {
+        "maxAttempts": 1
+      },
+      "status": "extracted",
+      "sourceArtifactSha256": "2d7c8912c81f2ab00993018f28401c299b5a0d88d094d067e2d7d509e42e1f32"
+    },
+    {
+      "id": "inkos.agents.foundation-reviewer.foundation-reviewer-agent.build-english-review-prompt",
+      "category": "foundation",
+      "workflow": "longform",
+      "stage": "foundation.review",
+      "role": "instruction",
+      "source": "InkOS",
+      "sourceKind": "builder",
+      "sourceFile": "packages/core/src/agents/foundation-reviewer.ts",
+      "sourceSymbol": "FoundationReviewerAgent.buildEnglishReviewPrompt",
+      "locale": "en",
+      "version": "1.7.1+a713a2e87ccc",
+      "sourceArtifact": "sources/inkos-prompt-sources.json",
+      "sourceArtifactKey": "inkos.agents.foundation-reviewer.foundation-reviewer-agent.build-english-review-prompt",
+      "sha256": "a2893731ac851f369b5ab9a1e1c74fc67ce04d5697fc41a92007b9a150586bf2",
+      "variablesSchema": {
+        "type": "object",
+        "properties": {
+          "dimensions": {
+            "type": "array"
+          },
+          "canonBlock": {
+            "type": "string"
+          },
+          "styleBlock": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "dimensions",
+          "canonBlock",
+          "styleBlock"
+        ]
+      },
+      "outputSchema": {
+        "type": [
+          "object",
+          "string"
+        ],
+        "description": "Structured model output; exact parser contract remains in the cited InkOS source symbol."
+      },
+      "validatorId": null,
+      "retryPolicy": {
+        "maxAttempts": 1
+      },
+      "status": "extracted",
+      "sourceArtifactSha256": "a2893731ac851f369b5ab9a1e1c74fc67ce04d5697fc41a92007b9a150586bf2"
+    },
+    {
+      "id": "inkos.agents.length-normalizer.length-normalizer-agent.build-system-prompt",
+      "category": "revision",
+      "workflow": "longform",
+      "stage": "prose.normalize",
+      "role": "system",
+      "source": "InkOS",
+      "sourceKind": "builder",
+      "sourceFile": "packages/core/src/agents/length-normalizer.ts",
+      "sourceSymbol": "LengthNormalizerAgent.buildSystemPrompt",
+      "locale": "zh-CN",
+      "version": "1.7.1+a713a2e87ccc",
+      "sourceArtifact": "sources/inkos-prompt-sources.json",
+      "sourceArtifactKey": "inkos.agents.length-normalizer.length-normalizer-agent.build-system-prompt",
+      "sha256": "cd13f7c2c9ae90f0c5aba128904567a40a4a5e164aeabee9673d257d6b66cc20",
+      "variablesSchema": {
+        "type": "object",
+        "properties": {
+          "mode": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "mode"
+        ]
+      },
+      "outputSchema": {
+        "type": "string",
+        "description": "Model text output governed by the cited InkOS prompt contract."
+      },
+      "validatorId": null,
+      "retryPolicy": {
+        "maxAttempts": 1
+      },
+      "status": "extracted",
+      "sourceArtifactSha256": "cd13f7c2c9ae90f0c5aba128904567a40a4a5e164aeabee9673d257d6b66cc20"
+    },
+    {
+      "id": "inkos.agents.length-normalizer.length-normalizer-agent.build-user-prompt",
+      "category": "revision",
+      "workflow": "longform",
+      "stage": "prose.normalize",
+      "role": "user",
+      "source": "InkOS",
+      "sourceKind": "builder",
+      "sourceFile": "packages/core/src/agents/length-normalizer.ts",
+      "sourceSymbol": "LengthNormalizerAgent.buildUserPrompt",
+      "locale": "zh-CN",
+      "version": "1.7.1+a713a2e87ccc",
+      "sourceArtifact": "sources/inkos-prompt-sources.json",
+      "sourceArtifactKey": "inkos.agents.length-normalizer.length-normalizer-agent.build-user-prompt",
+      "sha256": "e0b721a6dbb2e2c2c1600dec34ec170409d7d3bee6ab881c75f5a30aa2635e65",
+      "variablesSchema": {
+        "type": "object",
+        "properties": {
+          "input": {
+            "type": "string"
+          },
+          "originalCount": {
+            "type": "number"
+          },
+          "mode": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "input",
+          "originalCount",
+          "mode"
+        ]
+      },
+      "outputSchema": {
+        "type": "string",
+        "description": "Model text output governed by the cited InkOS prompt contract."
+      },
+      "validatorId": null,
+      "retryPolicy": {
+        "maxAttempts": 1
+      },
+      "status": "extracted",
+      "sourceArtifactSha256": "e0b721a6dbb2e2c2c1600dec34ec170409d7d3bee6ab881c75f5a30aa2635e65"
+    },
+    {
+      "id": "inkos.agents.observer-prompts.build-observer-system-prompt",
+      "category": "analysis",
+      "workflow": "longform",
+      "stage": "facts.observe",
+      "role": "system",
+      "source": "InkOS",
+      "sourceKind": "builder",
+      "sourceFile": "packages/core/src/agents/observer-prompts.ts",
+      "sourceSymbol": "buildObserverSystemPrompt",
+      "locale": "zh-CN",
+      "version": "1.7.1+a713a2e87ccc",
+      "sourceArtifact": "sources/inkos-prompt-sources.json",
+      "sourceArtifactKey": "inkos.agents.observer-prompts.build-observer-system-prompt",
+      "sha256": "b919454ec98191e1cca5aa210fae1c5306053fc1f8ee509728823a8fdceefa0f",
+      "variablesSchema": {
+        "type": "object",
+        "properties": {
+          "book": {
+            "type": "string"
+          },
+          "genreProfile": {
+            "type": "string"
+          },
+          "language": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "book",
+          "genreProfile"
+        ]
+      },
+      "outputSchema": {
+        "type": [
+          "object",
+          "string"
+        ],
+        "description": "Structured model output; exact parser contract remains in the cited InkOS source symbol."
+      },
+      "validatorId": null,
+      "retryPolicy": {
+        "maxAttempts": 1
+      },
+      "status": "extracted",
+      "sourceArtifactSha256": "b919454ec98191e1cca5aa210fae1c5306053fc1f8ee509728823a8fdceefa0f"
+    },
+    {
+      "id": "inkos.agents.observer-prompts.build-observer-user-prompt",
+      "category": "analysis",
+      "workflow": "longform",
+      "stage": "facts.observe",
+      "role": "user",
+      "source": "InkOS",
+      "sourceKind": "builder",
+      "sourceFile": "packages/core/src/agents/observer-prompts.ts",
+      "sourceSymbol": "buildObserverUserPrompt",
+      "locale": "zh-CN",
+      "version": "1.7.1+a713a2e87ccc",
+      "sourceArtifact": "sources/inkos-prompt-sources.json",
+      "sourceArtifactKey": "inkos.agents.observer-prompts.build-observer-user-prompt",
+      "sha256": "00ae677953457278f46f5c0f411e634c1fe07b3f2de3c3523b316458c28ca9ca",
+      "variablesSchema": {
+        "type": "object",
+        "properties": {
+          "chapterNumber": {
+            "type": "number"
+          },
+          "title": {
+            "type": "string"
+          },
+          "content": {
+            "type": "string"
+          },
+          "language": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "chapterNumber",
+          "title",
+          "content"
+        ]
+      },
+      "outputSchema": {
+        "type": [
+          "object",
+          "string"
+        ],
+        "description": "Structured model output; exact parser contract remains in the cited InkOS source symbol."
+      },
+      "validatorId": null,
+      "retryPolicy": {
+        "maxAttempts": 1
+      },
+      "status": "extracted",
+      "sourceArtifactSha256": "00ae677953457278f46f5c0f411e634c1fe07b3f2de3c3523b316458c28ca9ca"
+    },
+    {
+      "id": "inkos.agents.planner-prompts.build-golden-opening-guidance",
+      "category": "planning",
+      "workflow": "longform",
+      "stage": "chapter.plan",
+      "role": "guidance",
+      "source": "InkOS",
+      "sourceKind": "builder",
+      "sourceFile": "packages/core/src/agents/planner-prompts.ts",
+      "sourceSymbol": "buildGoldenOpeningGuidance",
+      "locale": "multilingual",
+      "version": "1.7.1+a713a2e87ccc",
+      "sourceArtifact": "sources/inkos-prompt-sources.json",
+      "sourceArtifactKey": "inkos.agents.planner-prompts.build-golden-opening-guidance",
+      "sha256": "4ae7fc7569c2cd1be7a06c2467cae94406805bcd111e0d19edb5d097db2ccc6d",
+      "variablesSchema": {
+        "type": "object",
+        "properties": {
+          "chapterNumber": {
+            "type": "number"
+          },
+          "language": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "chapterNumber"
+        ]
+      },
+      "outputSchema": {
+        "type": "string",
+        "description": "Model text output governed by the cited InkOS prompt contract."
+      },
+      "validatorId": null,
+      "retryPolicy": {
+        "maxAttempts": 1
+      },
+      "status": "extracted",
+      "sourceArtifactSha256": "4ae7fc7569c2cd1be7a06c2467cae94406805bcd111e0d19edb5d097db2ccc6d"
+    },
+    {
+      "id": "inkos.agents.planner-prompts.build-planner-user-message",
+      "category": "planning",
+      "workflow": "longform",
+      "stage": "chapter.plan",
+      "role": "user",
+      "sourceFile": "packages/core/src/agents/planner-prompts.ts",
+      "sourceSymbol": "buildPlannerUserMessage",
+      "source": "InkOS",
+      "sourceKind": "builder",
+      "locale": "multilingual",
+      "version": "1.7.1+a713a2e87ccc",
+      "sourceArtifact": "sources/inkos-prompt-sources.json",
+      "sourceArtifactKey": "inkos.agents.planner-prompts.build-planner-user-message",
+      "sha256": "9fa5a54e6d808ccce06519ba20a4443a08320cc60a2e8c1e29f3fe1f303c18db",
+      "variablesSchema": {
+        "type": "object",
+        "properties": {
+          "input": {
+            "type": "object"
+          }
+        },
+        "required": [
+          "input"
+        ],
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "string",
+        "description": "Model text output governed by the cited InkOS prompt contract."
+      },
+      "validatorId": null,
+      "retryPolicy": {
+        "maxAttempts": 1
+      },
+      "status": "extracted",
+      "sourceArtifactSha256": "9fa5a54e6d808ccce06519ba20a4443a08320cc60a2e8c1e29f3fe1f303c18db"
+    },
+    {
+      "id": "inkos.agents.planner-prompts.get-planner-memo-system-prompt",
+      "category": "planning",
+      "workflow": "longform",
+      "stage": "chapter.plan",
+      "role": "system",
+      "source": "InkOS",
+      "sourceKind": "builder",
+      "sourceFile": "packages/core/src/agents/planner-prompts.ts",
+      "sourceSymbol": "getPlannerMemoSystemPrompt",
+      "locale": "multilingual",
+      "version": "1.7.1+a713a2e87ccc",
+      "sourceArtifact": "sources/inkos-prompt-sources.json",
+      "sourceArtifactKey": "inkos.agents.planner-prompts.get-planner-memo-system-prompt",
+      "sha256": "fb5e3d82a4c9809fece7dc73770f875ac4022750b010dbb0630eee25e09cadcf",
+      "variablesSchema": {
+        "type": "object",
+        "properties": {
+          "language": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "string",
+        "description": "Model text output governed by the cited InkOS prompt contract."
+      },
+      "validatorId": null,
+      "retryPolicy": {
+        "maxAttempts": 1
+      },
+      "status": "extracted",
+      "sourceArtifactSha256": "fb5e3d82a4c9809fece7dc73770f875ac4022750b010dbb0630eee25e09cadcf"
+    },
+    {
+      "id": "inkos.agents.planner-prompts.get-planner-memo-user-template",
+      "category": "planning",
+      "workflow": "longform",
+      "stage": "chapter.plan",
+      "role": "user",
+      "source": "InkOS",
+      "sourceKind": "builder",
+      "sourceFile": "packages/core/src/agents/planner-prompts.ts",
+      "sourceSymbol": "getPlannerMemoUserTemplate",
+      "locale": "multilingual",
+      "version": "1.7.1+a713a2e87ccc",
+      "sourceArtifact": "sources/inkos-prompt-sources.json",
+      "sourceArtifactKey": "inkos.agents.planner-prompts.get-planner-memo-user-template",
+      "sha256": "e81cde3f1ae359aa15ef5c5c30f9a4978cbc8c20d70bb3f5a738043a5cf9e6ab",
+      "variablesSchema": {
+        "type": "object",
+        "properties": {
+          "language": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "string",
+        "description": "Model text output governed by the cited InkOS prompt contract."
+      },
+      "validatorId": null,
+      "retryPolicy": {
+        "maxAttempts": 1
+      },
+      "status": "extracted",
+      "sourceArtifactSha256": "e81cde3f1ae359aa15ef5c5c30f9a4978cbc8c20d70bb3f5a738043a5cf9e6ab"
+    },
+    {
+      "id": "inkos.agents.planner-prompts.planner-memo-system-prompt",
+      "category": "planning",
+      "workflow": "longform",
+      "stage": "chapter.plan",
+      "role": "system",
+      "source": "InkOS",
+      "sourceKind": "static",
+      "sourceFile": "packages/core/src/agents/planner-prompts.ts",
+      "sourceSymbol": "PLANNER_MEMO_SYSTEM_PROMPT",
+      "locale": "zh-CN",
+      "version": "1.7.1+a713a2e87ccc",
+      "template": "你是这本小说的创作总编，职责是为下一章产生一份 chapter_memo。你不写正文——你只规划这章要完成什么、兑现什么、不要做什么。下游写手（writer）会按你的 memo 扩写正文。\n\n你的工作原则（内化，不要在 memo 里引用条目号）：\n\n1. 3-5 章一个小目标周期：每 3-5 章必须有一个小目标达成或悬念升级，主线持续推进\n2. 主动塑造读者期待：作者刻意制造\"还没兑现但快要兑现\"的缺口，兑现时必须超过读者预期 70%\n3. 万物皆饵：日常/过渡章节的每一笔都要是未来剧情的伏笔或钩子\n4. 人设防崩：角色行为由\"过往经历 + 当前利益 + 性格底色\"共同驱动。禁止反派突然降智、主角突然圣母\n5. 1 主线 + 1 支线：支线必须为主线服务，不同时推 3 条以上支线\n6. 爽点密集化：每 3-5 章一个小爽点（小冲突→快解决→强反馈），全员智商在线\n7. 高潮前铺垫：大高潮前 3-5 章必须有线索埋设\n8. 高潮后影响：爆发章之后 1-2 章必须写出改变（主线推进、人设成长、关系变化）\n9. 人物立体化：核心标签 + 反差细节 = 活人\n10. 五感具体化：场景描写必须有具体可视化感官细节\n11. 钩子承接：每章章尾留钩\n12. 钩子账本必须结账：每章对活跃 hook 做明确动作（open/advance/resolve/defer），不允许\"新开一堆不回收\"\n13. 圆心法同场多视角：当本章有一个核心事件把两个以上主要角色聚到同一场景（家庭冲突、对质、意外、抉择时刻），必须把这个事件当成圆心，给每个在场关键角色安排**一段独立的内心反应**——他们看到的同一件事，各自怎么解读、怎么算计、怎么动摇。memo 里用 \"## 当前任务\" 或 \"## 日常/过渡承担什么任务\" 显式说明\"本章 X/Y/Z 各从自己角度过一次\"，不要只写一个视角\n14. 揭 1 埋 2 推荐：本章每 resolve 掉 1 个钩子，尽量在 open 段同时埋 2 个新钩子（上限仍是 ≤ 2 个/章），而且新钩子最好跟刚揭的钩子有因果关联，不要凭空冒出来。硬底线是\"揭 1 埋 1\"——resolve 了 N 个，open 至少 N 个，下游 validator 会卡\n15. 用户设定的内容比例必须落成场面：如果 brief、book_rules、current_focus 或本章用户指令写了\"权谋/感情各半\"\"事业线 70% + 恋爱线 30%\"这类比例，不要在 memo 里只复述比例。必须把每条线分配到本章可见场景、对话、行动或关系变化里；某条线本章暂不推进时，要写清楚为什么暂压、下一次何时补。\n\n## 输出格式（严格遵守）\n\n输出普通 Markdown，不要 YAML frontmatter，不要 JSON，不要代码块标记。\n\n结构如下：\n\n# 第 12 章 memo\n\n## 本章目标\n把七号门被动过手脚钉成现场实证\n\n## 关联线索\n- H03\n- S004\n\n## 当前任务\n<一句话：本章主角要完成的具体动作，不要抽象描述>\n\n## 读者此刻在等什么\n<两行：\n1) 读者现在期待什么（基于前几章的埋伏）\n2) 本章对这个期待做什么——制造更强缺口 / 部分兑现 / 完全兑现 / 暂不兑现但给暗示>\n\n## 该兑现的 / 暂不掀的\n- 该兑现：X → 兑现到什么程度\n- 暂不掀：Y → 先压住，留到第 N 章\n\n## 日常/过渡承担什么任务\n<如果本章是非高压章节，每段非冲突段落说明功能。格式：[段落位置] → [承担功能]\n如果本章是高压/冲突章节，写\"不适用 - 本章无日常过渡\">\n\n## 关键抉择过三连问\n- 主角本章最关键的一次选择：\n  - 为什么这么做？\n  - 符合当前利益吗？\n  - 符合他的人设吗？\n- 对手/配角本章最关键的一次选择：\n  - 为什么这么做？\n  - 符合当前利益吗？\n  - 符合他的人设吗？\n\n## 章尾必须发生的改变\n<1-3 条，从以下维度选：信息改变 / 关系改变 / 物理改变 / 权力改变>\n\n## 本章 hook 账\n**这是本章对活跃伏笔的账本，写手必须按这份账动作。格式如下（每个分类下用 - 列表）：**\n\nopen:\n- [new] 新钩子描述（<=30字）|| 理由：为什么是现在开，不在本章点破（上限 ≤ 2 个；推荐：本章每 resolve 1 个钩子，open 段埋 2 个新钩子，硬底线是 open ≥ resolve）\n\nadvance:\n- H007 \"胖虎借条\" → 林秋第一次想撕，被阻止（planted → pressured）\n- H012 \"雷架焦痕\" → 师兄偷看留下印子（pressured → near_payoff）\n\nresolve:\n- H003 \"杂役腰牌\" → 林秋主动摘下（clear）\n\ndefer:\n- H009 \"守拙诀来历\" → 本章不动，理由：时机不到，等到第 N 章\n\n**硬规则**：\n- 输入的 pending_hooks 里如果有任何 hook 状态已是 \"pressured\" 或 \"near_payoff\" 且距上次推进 ≥ 5 章，**必须**放到 advance 或 resolve，不允许 defer\n- advance/resolve 里写的 hook_id 必须真实存在于 pending_hooks 输入中（不要编造 ID）\n- 如果这章是纯高压/战斗章节没有伏笔处理空间，至少也要有 1 条 advance 或 defer 声明\n- 本章\"## 当前任务\"如果天然对应某个 hook 的兑现动作，必须在 resolve 里显式声明对应 hook_id\n\n## 不要做\n<2-4 条硬约束>\n\n## 输出要求\n\n- \"## 本章目标\" 不超过 50 字\n- \"## 关联线索\" 用 Markdown 列表写从输入 pending_hooks/subplot_board 中挑出的 id；没有就写\"无\"\n- 每个二级标题（##）必须出现，内容不能为空\n- 不要在 memo 里提方法论术语（\"情绪缺口\"、\"cyclePhase\"、\"蓄压\"等）——直接用这本书的人物、地点、事件说事\n- 不要产生正文片段或对话片段\n- 如果卷纲和上章摘要冲突，信上章摘要（剧情已实际发生）",
+      "sourceArtifact": "sources/inkos-prompt-sources.json",
+      "sourceArtifactKey": "inkos.agents.planner-prompts.planner-memo-system-prompt",
+      "sha256": "c9e4f6fd094065d8c3154230de1da03ade1ce3c1e5417dd8bb4e84f94ef499fe",
+      "variablesSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "string",
+        "description": "Model text output governed by the cited InkOS prompt contract."
+      },
+      "validatorId": null,
+      "retryPolicy": {
+        "maxAttempts": 1
+      },
+      "status": "extracted",
+      "sourceArtifactSha256": "37fe91747b8e617510e1d94316031eec1f1afe0b9a6e24674b6c96a4fd303e68"
+    },
+    {
+      "id": "inkos.agents.planner-prompts.planner-memo-system-prompt-en",
+      "category": "planning",
+      "workflow": "longform",
+      "stage": "chapter.plan",
+      "role": "system",
+      "source": "InkOS",
+      "sourceKind": "static",
+      "sourceFile": "packages/core/src/agents/planner-prompts.ts",
+      "sourceSymbol": "PLANNER_MEMO_SYSTEM_PROMPT_EN",
+      "locale": "en",
+      "version": "1.7.1+a713a2e87ccc",
+      "template": "You are this novel's editor-in-chief. Your job is to produce a chapter_memo for the next chapter. You do NOT write prose — you plan what this chapter must accomplish, what it must pay off, and what it must NOT do. The downstream writer expands your memo into prose.\n\nYour working principles (internalize them — do not cite by number in the memo):\n\n1. Small-goal cycle every 3-5 chapters: every 3-5 chapters there must be a small goal achieved or a suspense escalation; the mainline keeps moving.\n2. Actively shape reader expectation: the author deliberately creates \"not yet paid off but imminent\" gaps; the eventual payoff must exceed reader expectation by 70%.\n3. Everything is bait: in slow / transitional chapters every beat must be a future foreshadow or hook.\n4. No persona collapse: character behavior is driven by past experience + current interest + personality core. Never let antagonists suddenly turn dumb or the protagonist suddenly turn saintly.\n5. 1 mainline + 1 subplot: subplots must serve the mainline; never run 3+ subplots concurrently.\n6. Dense satisfaction beats: every 3-5 chapters needs a small payoff (small conflict → fast resolution → strong reader feedback); everyone stays sharp.\n7. Pre-climax setup: 3-5 chapters before any big climax must seed clear setups.\n8. Post-climax fallout: 1-2 chapters after a peak must show concrete change (mainline advance, persona growth, relationship shift).\n9. Three-dimensional characters: core tag + contrast detail = a living person.\n10. Five-sense concretization: scene description must include specific, visualizable sensory detail.\n11. Hook-passing: every chapter ends with a hook for the next.\n12. Hook ledger must balance: every chapter takes explicit action on active hooks (open/advance/resolve/defer). \"Open a pile of hooks and never resolve any\" is forbidden.\n13. Center-of-circle multi-POV: when the chapter has one core event that pulls two or more main characters into the same scene (family clash, confrontation, accident, decision moment), treat that event as the center and give each present key character **a distinct inner reaction** — same event, different interpretations, different calculations, different wavering. In \"## Current task\" or \"## What the slow / transitional beats carry\", explicitly say \"X/Y/Z each run through it from their own angle this chapter\"; do not collapse everything to a single POV.\n14. Reveal 1, bury 2 (recommended): for every hook you resolve this chapter, try to open 2 new hooks in the same memo (the ≤ 2 new hooks cap still applies), and the new hooks should be causally connected to the one you just resolved, not out of nowhere. The hard floor is \"reveal 1, bury 1\" — if you resolve N, you must open ≥ N; the downstream validator will reject otherwise.\n15. User-specified content proportions must become scenes: if the brief, book_rules, current_focus, or per-chapter user instruction says \"politics 50% / romance 50%\" or \"career line 70% + romance 30%\", do not merely repeat the ratio in the memo. Allocate each line to visible scenes, dialogue, action, or relationship movement. If a line is intentionally paused this chapter, state why and when the next visible beat should compensate.\n\n## Output format (strict)\n\nOutput plain Markdown. Do NOT output YAML frontmatter. Do NOT wrap markdown in a JSON object. Do NOT add code-block fences.\n\nStructure:\n\n# Chapter 12 memo\n\n## Chapter goal\nPin Door 7 tampering as live evidence\n\n## Thread refs\n- H03\n- S004\n\n## Current task\n<one sentence: the concrete action the protagonist must complete this chapter — no abstractions>\n\n## What the reader is waiting for right now\n<two lines:\n1) what the reader currently expects (based on prior chapters' setups)\n2) what this chapter does with that expectation — widen the gap / partial payoff / full payoff / hint without paying off>\n\n## To pay off / to keep buried\n- Pay off: X → to what degree\n- Keep buried: Y → suppress until chapter N\n\n## What the slow / transitional beats carry\n<if this is a non-pressure chapter, name the function of each non-conflict paragraph. Format: [position] → [function]\nif this is a pressure / conflict chapter, write \"n/a — pressure chapter, no transitional beats\">\n\n## Three-question check on the key choice\n- Protagonist's most important choice this chapter:\n  - Why this choice?\n  - Does it match current interest?\n  - Does it match their persona?\n- Antagonist / supporting cast's most important choice this chapter:\n  - Why this choice?\n  - Does it match current interest?\n  - Does it match their persona?\n\n## Required end-of-chapter change\n<1-3 items, choose from: information change / relationship change / physical change / power change>\n\n## Hook ledger for this chapter\n**The per-chapter accounting of active foreshadows. The writer must act on this ledger. Format (use \"-\" bullets under each subsection):**\n\nopen:\n- [new] new hook description (<=30 chars) || reason: why open it now, do not pay it off this chapter (cap ≤ 2; recommended: for each hook resolved this chapter, open 2 new hooks; hard floor is open ≥ resolve)\n\nadvance:\n- H007 \"Huzi's IOU\" → Lin Qiu tries to tear it, gets stopped (planted → pressured)\n- H012 \"thunder rack scar\" → a senior brother sneaks a look, leaves a mark (pressured → near_payoff)\n\nresolve:\n- H003 \"errand badge\" → Lin Qiu unpins it himself (clear)\n\ndefer:\n- H009 \"origin of Shou-Zhuo Jue\" → not touched this chapter, reason: timing not right, save until chapter N\n\n**Hard rules**:\n- If any hook in input pending_hooks is already \"pressured\" or \"near_payoff\" AND has not advanced in ≥ 5 chapters, it **must** go into advance or resolve — deferring is not allowed.\n- hook_ids in advance/resolve must exist in the input pending_hooks (do not fabricate IDs).\n- If this chapter is pure pressure / combat with no foreshadow room, emit at least 1 advance or defer entry.\n- If \"## Current task\" naturally corresponds to paying off a hook, it must appear under resolve with the hook_id.\n\n## Do not\n<2-4 hard prohibitions>\n\n## Output requirements\n\n- \"## Chapter goal\" is no more than 50 characters\n- \"## Thread refs\" is a Markdown bullet list of ids picked from the input pending_hooks / subplot_board; write \"none\" if empty\n- Every level-2 heading (##) must appear; none may be empty\n- Do NOT use methodology jargon (\"emotional gap\", \"cyclePhase\", \"pressure buildup\") in the memo — speak directly using this book's people, places, events\n- Do NOT produce prose or dialogue fragments\n- If the volume outline conflicts with the previous chapter summary, trust the summary (those events actually happened)",
+      "sourceArtifact": "sources/inkos-prompt-sources.json",
+      "sourceArtifactKey": "inkos.agents.planner-prompts.planner-memo-system-prompt-en",
+      "sha256": "769dd3ecd7438fff47860cb60873d2cc7ce0240468fc1306bd71634128c406d3",
+      "variablesSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "string",
+        "description": "Model text output governed by the cited InkOS prompt contract."
+      },
+      "validatorId": null,
+      "retryPolicy": {
+        "maxAttempts": 1
+      },
+      "status": "extracted",
+      "sourceArtifactSha256": "5592d02e6846b41f2dd64b79afeb1551cc4324d084674a4e1cfd96f473bbed8e"
+    },
+    {
+      "id": "inkos.agents.planner-prompts.planner-memo-user-template",
+      "category": "planning",
+      "workflow": "longform",
+      "stage": "chapter.plan",
+      "role": "user",
+      "source": "InkOS",
+      "sourceKind": "static",
+      "sourceFile": "packages/core/src/agents/planner-prompts.ts",
+      "sourceSymbol": "PLANNER_MEMO_USER_TEMPLATE",
+      "locale": "zh-CN",
+      "version": "1.7.1+a713a2e87ccc",
+      "template": "# 第 {{chapterNumber}} 章 memo 请求\n\n{{brief_block}}\n{{chapter_context_block}}\n\n## 上一章最后一屏（原文节选）\n{{previous_chapter_ending_excerpt}}\n\n## 最近 3 章摘要\n{{recent_summaries}}\n\n## 当前 arc 正在推进什么\n{{current_arc_prose}}\n\n## 主角当前状态\n{{protagonist_matrix_row}}\n\n## 本章主要对手/阻力方\n{{opponent_rows}}\n\n## 本章主要协作者\n{{collaborator_rows}}\n\n## 可能被牵动的 thread（伏笔 + 支线）\n{{relevant_threads}}\n\n## 必须回收的陈旧 hook（本章必须 advance / resolve / 显式 defer）\n{{recyclable_hooks}}\n\n## 本章卷外约束\n- 是否黄金三章：{{isGoldenOpening}}\n- 硬约束（摘取本章可能触碰的条目）：\n{{book_rules_relevant}}\n\n请为第 {{chapterNumber}} 章产生 memo。严格按上面的普通 Markdown 小节格式输出。",
+      "sourceArtifact": "sources/inkos-prompt-sources.json",
+      "sourceArtifactKey": "inkos.agents.planner-prompts.planner-memo-user-template",
+      "sha256": "bbdadf641274ca70b91634357253019a9f483a10b0265274e6b84e4aabb55c24",
+      "variablesSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "string",
+        "description": "Model text output governed by the cited InkOS prompt contract."
+      },
+      "validatorId": null,
+      "retryPolicy": {
+        "maxAttempts": 1
+      },
+      "status": "extracted",
+      "sourceArtifactSha256": "b93ebc83e70385d2173fb546516d959d2420d475ddc0cd0af2041b745c464ab5"
+    },
+    {
+      "id": "inkos.agents.planner-prompts.planner-memo-user-template-en",
+      "category": "planning",
+      "workflow": "longform",
+      "stage": "chapter.plan",
+      "role": "user",
+      "source": "InkOS",
+      "sourceKind": "static",
+      "sourceFile": "packages/core/src/agents/planner-prompts.ts",
+      "sourceSymbol": "PLANNER_MEMO_USER_TEMPLATE_EN",
+      "locale": "en",
+      "version": "1.7.1+a713a2e87ccc",
+      "template": "# Chapter {{chapterNumber}} memo request\n\n{{brief_block}}\n{{chapter_context_block}}\n\n## Last screen of previous chapter (excerpt)\n{{previous_chapter_ending_excerpt}}\n\n## Last 3 chapter summaries\n{{recent_summaries}}\n\n## What the current arc is pushing\n{{current_arc_prose}}\n\n## Protagonist current state\n{{protagonist_matrix_row}}\n\n## Main antagonist / opposing forces this chapter\n{{opponent_rows}}\n\n## Main collaborators this chapter\n{{collaborator_rows}}\n\n## Threads that may be touched (foreshadows + subplots)\n{{relevant_threads}}\n\n## Stale hooks — MUST be advanced / resolved / explicitly deferred this chapter\n{{recyclable_hooks}}\n\n## Out-of-volume constraints for this chapter\n- Golden opening chapter: {{isGoldenOpening}}\n- Hard rules (excerpt of items this chapter may touch):\n{{book_rules_relevant}}\n\nProduce the memo for chapter {{chapterNumber}}. Strictly emit the plain Markdown section format above.",
+      "sourceArtifact": "sources/inkos-prompt-sources.json",
+      "sourceArtifactKey": "inkos.agents.planner-prompts.planner-memo-user-template-en",
+      "sha256": "0ade8b44fd4d1526db8a2f1fe0d32059b9eb44e07479206172a360da52100b32",
+      "variablesSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "string",
+        "description": "Model text output governed by the cited InkOS prompt contract."
+      },
+      "validatorId": null,
+      "retryPolicy": {
+        "maxAttempts": 1
+      },
+      "status": "extracted",
+      "sourceArtifactSha256": "2edbbb03215aea8a9fa2bdbd59feac544e09dfeec0ed99a6a80363ca61f8f2ac"
+    },
+    {
+      "id": "inkos.agents.polisher.build-chinese-system-prompt",
+      "category": "revision",
+      "workflow": "longform",
+      "stage": "prose.polish",
+      "role": "system",
+      "source": "InkOS",
+      "sourceKind": "builder",
+      "sourceFile": "packages/core/src/agents/polisher.ts",
+      "sourceSymbol": "buildChineseSystemPrompt",
+      "locale": "zh-CN",
+      "version": "1.7.1+a713a2e87ccc",
+      "sourceArtifact": "sources/inkos-prompt-sources.json",
+      "sourceArtifactKey": "inkos.agents.polisher.build-chinese-system-prompt",
+      "sha256": "ea36b1fcc209e264c7b616428c58748be7dabb87af0b9a5035bd2304a1ea7beb",
+      "variablesSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "string",
+        "description": "Model text output governed by the cited InkOS prompt contract."
+      },
+      "validatorId": null,
+      "retryPolicy": {
+        "maxAttempts": 1
+      },
+      "status": "extracted",
+      "sourceArtifactSha256": "ea36b1fcc209e264c7b616428c58748be7dabb87af0b9a5035bd2304a1ea7beb"
+    },
+    {
+      "id": "inkos.agents.polisher.build-english-system-prompt",
+      "category": "revision",
+      "workflow": "longform",
+      "stage": "prose.polish",
+      "role": "system",
+      "source": "InkOS",
+      "sourceKind": "builder",
+      "sourceFile": "packages/core/src/agents/polisher.ts",
+      "sourceSymbol": "buildEnglishSystemPrompt",
+      "locale": "en",
+      "version": "1.7.1+a713a2e87ccc",
+      "sourceArtifact": "sources/inkos-prompt-sources.json",
+      "sourceArtifactKey": "inkos.agents.polisher.build-english-system-prompt",
+      "sha256": "2cd24a59d25a66d1de42331acb464f8958df5384b99eb1e5bfd442de9ab207b7",
+      "variablesSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "string",
+        "description": "Model text output governed by the cited InkOS prompt contract."
+      },
+      "validatorId": null,
+      "retryPolicy": {
+        "maxAttempts": 1
+      },
+      "status": "extracted",
+      "sourceArtifactSha256": "2cd24a59d25a66d1de42331acb464f8958df5384b99eb1e5bfd442de9ab207b7"
+    },
+    {
+      "id": "inkos.agents.reviser.reviser-agent.build-auto-system-prompt",
+      "category": "revision",
+      "workflow": "longform",
+      "stage": "chapter.revise",
+      "role": "system",
+      "source": "InkOS",
+      "sourceKind": "builder",
+      "sourceFile": "packages/core/src/agents/reviser.ts",
+      "sourceSymbol": "ReviserAgent.buildAutoSystemPrompt",
+      "locale": "zh-CN",
+      "version": "1.7.1+a713a2e87ccc",
+      "sourceArtifact": "sources/inkos-prompt-sources.json",
+      "sourceArtifactKey": "inkos.agents.reviser.reviser-agent.build-auto-system-prompt",
+      "sha256": "41ca48acf3ec371f732f87daac290c0976e9fb0f5f8e582608c2a8248baf4e23",
+      "variablesSchema": {
+        "type": "object",
+        "properties": {
+          "langPrefix": {
+            "type": "string"
+          },
+          "gp": {
+            "type": "string"
+          },
+          "protagonistBlock": {
+            "type": "string"
+          },
+          "numericalRule": {
+            "type": "string"
+          },
+          "lengthGuardrail": {
+            "type": "string"
+          },
+          "resolvedLanguage": {
+            "type": "string"
+          },
+          "lengthSpec": {
+            "type": "string"
+          },
+          "autoOutputMode": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "langPrefix",
+          "gp",
+          "protagonistBlock",
+          "numericalRule",
+          "lengthGuardrail",
+          "resolvedLanguage",
+          "autoOutputMode"
+        ]
+      },
+      "outputSchema": {
+        "type": "string",
+        "description": "Model text output governed by the cited InkOS prompt contract."
+      },
+      "validatorId": null,
+      "retryPolicy": {
+        "maxAttempts": 1
+      },
+      "status": "extracted",
+      "sourceArtifactSha256": "41ca48acf3ec371f732f87daac290c0976e9fb0f5f8e582608c2a8248baf4e23"
+    },
+    {
+      "id": "inkos.agents.reviser.reviser-agent.build-legacy-system-prompt",
+      "category": "revision",
+      "workflow": "longform",
+      "stage": "chapter.revise",
+      "role": "system",
+      "source": "InkOS",
+      "sourceKind": "builder",
+      "sourceFile": "packages/core/src/agents/reviser.ts",
+      "sourceSymbol": "ReviserAgent.buildLegacySystemPrompt",
+      "locale": "zh-CN",
+      "version": "1.7.1+a713a2e87ccc",
+      "sourceArtifact": "sources/inkos-prompt-sources.json",
+      "sourceArtifactKey": "inkos.agents.reviser.reviser-agent.build-legacy-system-prompt",
+      "sha256": "50b11bddc1a8035fc8339cf7cfc07cd065c4eb78f066cf95a550fdf5d39878b4",
+      "variablesSchema": {
+        "type": "object",
+        "properties": {
+          "langPrefix": {
+            "type": "string"
+          },
+          "gp": {
+            "type": "string"
+          },
+          "protagonistBlock": {
+            "type": "string"
+          },
+          "numericalRule": {
+            "type": "string"
+          },
+          "lengthGuardrail": {
+            "type": "string"
+          },
+          "mode": {
+            "type": "string"
+          },
+          "resolvedLanguage": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "langPrefix",
+          "gp",
+          "protagonistBlock",
+          "numericalRule",
+          "lengthGuardrail",
+          "mode",
+          "resolvedLanguage"
+        ]
+      },
+      "outputSchema": {
+        "type": "string",
+        "description": "Model text output governed by the cited InkOS prompt contract."
+      },
+      "validatorId": null,
+      "retryPolicy": {
+        "maxAttempts": 1
+      },
+      "status": "extracted",
+      "sourceArtifactSha256": "50b11bddc1a8035fc8339cf7cfc07cd065c4eb78f066cf95a550fdf5d39878b4"
+    },
+    {
+      "id": "inkos.agents.script-storyboard.build-interactive-film-creation-system-prompt",
+      "category": "writing",
+      "workflow": "storyboard",
+      "stage": "interactive-film.create",
+      "role": "system",
+      "source": "InkOS",
+      "sourceKind": "builder",
+      "sourceFile": "packages/core/src/agents/script-storyboard.ts",
+      "sourceSymbol": "buildInteractiveFilmCreationSystemPrompt",
+      "locale": "multilingual",
+      "version": "1.7.1+a713a2e87ccc",
+      "sourceArtifact": "sources/inkos-prompt-sources.json",
+      "sourceArtifactKey": "inkos.agents.script-storyboard.build-interactive-film-creation-system-prompt",
+      "sha256": "a59d1c9992398e9f95d0fe2e29bd368617720f17655ccc9d8a7afbae8b441f7b",
+      "variablesSchema": {
+        "type": "object",
+        "properties": {
+          "language": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": [
+          "object",
+          "string"
+        ],
+        "description": "Structured model output; exact parser contract remains in the cited InkOS source symbol."
+      },
+      "validatorId": null,
+      "retryPolicy": {
+        "maxAttempts": 1
+      },
+      "status": "extracted",
+      "sourceArtifactSha256": "a59d1c9992398e9f95d0fe2e29bd368617720f17655ccc9d8a7afbae8b441f7b"
+    },
+    {
+      "id": "inkos.agents.script-storyboard.build-interactive-film-creation-user-prompt",
+      "category": "writing",
+      "workflow": "storyboard",
+      "stage": "interactive-film.create",
+      "role": "user",
+      "source": "InkOS",
+      "sourceKind": "builder",
+      "sourceFile": "packages/core/src/agents/script-storyboard.ts",
+      "sourceSymbol": "buildInteractiveFilmCreationUserPrompt",
+      "locale": "multilingual",
+      "version": "1.7.1+a713a2e87ccc",
+      "sourceArtifact": "sources/inkos-prompt-sources.json",
+      "sourceArtifactKey": "inkos.agents.script-storyboard.build-interactive-film-creation-user-prompt",
+      "sha256": "87e7fe3829fff76d84d2a63082dd3ee5d0dfb3d05c181d25b5fcba552d188514",
+      "variablesSchema": {
+        "type": "object",
+        "properties": {
+          "input": {
+            "type": "string"
+          },
+          "language": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "input"
+        ]
+      },
+      "outputSchema": {
+        "type": [
+          "object",
+          "string"
+        ],
+        "description": "Structured model output; exact parser contract remains in the cited InkOS source symbol."
+      },
+      "validatorId": null,
+      "retryPolicy": {
+        "maxAttempts": 1
+      },
+      "status": "extracted",
+      "sourceArtifactSha256": "87e7fe3829fff76d84d2a63082dd3ee5d0dfb3d05c181d25b5fcba552d188514"
+    },
+    {
+      "id": "inkos.agents.script-storyboard.build-script-creation-system-prompt",
+      "category": "writing",
+      "workflow": "storyboard",
+      "stage": "script.create",
+      "role": "system",
+      "source": "InkOS",
+      "sourceKind": "builder",
+      "sourceFile": "packages/core/src/agents/script-storyboard.ts",
+      "sourceSymbol": "buildScriptCreationSystemPrompt",
+      "locale": "multilingual",
+      "version": "1.7.1+a713a2e87ccc",
+      "sourceArtifact": "sources/inkos-prompt-sources.json",
+      "sourceArtifactKey": "inkos.agents.script-storyboard.build-script-creation-system-prompt",
+      "sha256": "36d33f736693e60638c3862ef52ac2bbdb68223715730e8f133c56785e120def",
+      "variablesSchema": {
+        "type": "object",
+        "properties": {
+          "language": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "string",
+        "description": "Model text output governed by the cited InkOS prompt contract."
+      },
+      "validatorId": null,
+      "retryPolicy": {
+        "maxAttempts": 1
+      },
+      "status": "extracted",
+      "sourceArtifactSha256": "36d33f736693e60638c3862ef52ac2bbdb68223715730e8f133c56785e120def"
+    },
+    {
+      "id": "inkos.agents.script-storyboard.build-script-creation-user-prompt",
+      "category": "writing",
+      "workflow": "storyboard",
+      "stage": "script.create",
+      "role": "user",
+      "source": "InkOS",
+      "sourceKind": "builder",
+      "sourceFile": "packages/core/src/agents/script-storyboard.ts",
+      "sourceSymbol": "buildScriptCreationUserPrompt",
+      "locale": "multilingual",
+      "version": "1.7.1+a713a2e87ccc",
+      "sourceArtifact": "sources/inkos-prompt-sources.json",
+      "sourceArtifactKey": "inkos.agents.script-storyboard.build-script-creation-user-prompt",
+      "sha256": "8eb8a8af86180253b8958747701fb9968ad430c3e9d261056c500e57c62cb174",
+      "variablesSchema": {
+        "type": "object",
+        "properties": {
+          "input": {
+            "type": "string"
+          },
+          "language": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "input"
+        ]
+      },
+      "outputSchema": {
+        "type": "string",
+        "description": "Model text output governed by the cited InkOS prompt contract."
+      },
+      "validatorId": null,
+      "retryPolicy": {
+        "maxAttempts": 1
+      },
+      "status": "extracted",
+      "sourceArtifactSha256": "8eb8a8af86180253b8958747701fb9968ad430c3e9d261056c500e57c62cb174"
+    },
+    {
+      "id": "inkos.agents.script-storyboard.build-storyboard-creation-system-prompt",
+      "category": "writing",
+      "workflow": "storyboard",
+      "stage": "storyboard.create",
+      "role": "system",
+      "source": "InkOS",
+      "sourceKind": "builder",
+      "sourceFile": "packages/core/src/agents/script-storyboard.ts",
+      "sourceSymbol": "buildStoryboardCreationSystemPrompt",
+      "locale": "multilingual",
+      "version": "1.7.1+a713a2e87ccc",
+      "sourceArtifact": "sources/inkos-prompt-sources.json",
+      "sourceArtifactKey": "inkos.agents.script-storyboard.build-storyboard-creation-system-prompt",
+      "sha256": "f034c8148f06b675a16530e2bee8d93811cceea621272e83c6f5651c3eeb440e",
+      "variablesSchema": {
+        "type": "object",
+        "properties": {
+          "language": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "string",
+        "description": "Model text output governed by the cited InkOS prompt contract."
+      },
+      "validatorId": null,
+      "retryPolicy": {
+        "maxAttempts": 1
+      },
+      "status": "extracted",
+      "sourceArtifactSha256": "f034c8148f06b675a16530e2bee8d93811cceea621272e83c6f5651c3eeb440e"
+    },
+    {
+      "id": "inkos.agents.script-storyboard.build-storyboard-creation-user-prompt",
+      "category": "writing",
+      "workflow": "storyboard",
+      "stage": "storyboard.create",
+      "role": "user",
+      "source": "InkOS",
+      "sourceKind": "builder",
+      "sourceFile": "packages/core/src/agents/script-storyboard.ts",
+      "sourceSymbol": "buildStoryboardCreationUserPrompt",
+      "locale": "multilingual",
+      "version": "1.7.1+a713a2e87ccc",
+      "sourceArtifact": "sources/inkos-prompt-sources.json",
+      "sourceArtifactKey": "inkos.agents.script-storyboard.build-storyboard-creation-user-prompt",
+      "sha256": "dbb988d526299163f1fd12091630f69b3dea04fb010a0940c2b9acd90d8ba62e",
+      "variablesSchema": {
+        "type": "object",
+        "properties": {
+          "input": {
+            "type": "string"
+          },
+          "language": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "input"
+        ]
+      },
+      "outputSchema": {
+        "type": "string",
+        "description": "Model text output governed by the cited InkOS prompt contract."
+      },
+      "validatorId": null,
+      "retryPolicy": {
+        "maxAttempts": 1
+      },
+      "status": "extracted",
+      "sourceArtifactSha256": "dbb988d526299163f1fd12091630f69b3dea04fb010a0940c2b9acd90d8ba62e"
+    },
+    {
+      "id": "inkos.agents.settler-prompts.build-settler-system-prompt",
+      "category": "state",
+      "workflow": "longform",
+      "stage": "state.settle",
+      "role": "system",
+      "source": "InkOS",
+      "sourceKind": "builder",
+      "sourceFile": "packages/core/src/agents/settler-prompts.ts",
+      "sourceSymbol": "buildSettlerSystemPrompt",
+      "locale": "zh-CN",
+      "version": "1.7.1+a713a2e87ccc",
+      "sourceArtifact": "sources/inkos-prompt-sources.json",
+      "sourceArtifactKey": "inkos.agents.settler-prompts.build-settler-system-prompt",
+      "sha256": "44f44ff633a43f58a7de42b6b3a18bc7d8b89c8ea47a7ec66b93b2446451d4c4",
+      "variablesSchema": {
+        "type": "object",
+        "properties": {
+          "book": {
+            "type": "string"
+          },
+          "genreProfile": {
+            "type": "string"
+          },
+          "bookRules": {
+            "type": "string"
+          },
+          "language": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "book",
+          "genreProfile",
+          "bookRules"
+        ]
+      },
+      "outputSchema": {
+        "type": [
+          "object",
+          "string"
+        ],
+        "description": "Structured model output; exact parser contract remains in the cited InkOS source symbol."
+      },
+      "validatorId": null,
+      "retryPolicy": {
+        "maxAttempts": 1
+      },
+      "status": "extracted",
+      "sourceArtifactSha256": "44f44ff633a43f58a7de42b6b3a18bc7d8b89c8ea47a7ec66b93b2446451d4c4"
+    },
+    {
+      "id": "inkos.agents.settler-prompts.build-settler-user-prompt",
+      "category": "state",
+      "workflow": "longform",
+      "stage": "state.settle",
+      "role": "user",
+      "source": "InkOS",
+      "sourceKind": "builder",
+      "sourceFile": "packages/core/src/agents/settler-prompts.ts",
+      "sourceSymbol": "buildSettlerUserPrompt",
+      "locale": "zh-CN",
+      "version": "1.7.1+a713a2e87ccc",
+      "sourceArtifact": "sources/inkos-prompt-sources.json",
+      "sourceArtifactKey": "inkos.agents.settler-prompts.build-settler-user-prompt",
+      "sha256": "be5a8fd0c2f6cd495b1994fd2efc7cf969d849d8aee9908b9a18b58f55c8784c",
+      "variablesSchema": {
+        "type": "object",
+        "properties": {
+          "chapterNumber": {
+            "type": "number"
+          },
+          "title": {
+            "type": "string"
+          },
+          "content": {
+            "type": "string"
+          },
+          "currentState": {
+            "type": "string"
+          },
+          "ledger": {
+            "type": "string"
+          },
+          "hooks": {
+            "type": "string"
+          },
+          "chapterSummaries": {
+            "type": "string"
+          },
+          "subplotBoard": {
+            "type": "string"
+          },
+          "emotionalArcs": {
+            "type": "string"
+          },
+          "characterMatrix": {
+            "type": "string"
+          },
+          "volumeOutline": {
+            "type": "string"
+          },
+          "observations": {
+            "type": "string"
+          },
+          "selectedEvidenceBlock": {
+            "type": "string"
+          },
+          "governedControlBlock": {
+            "type": "string"
+          },
+          "validationFeedback": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "chapterNumber",
+          "title",
+          "content",
+          "currentState",
+          "ledger",
+          "hooks",
+          "chapterSummaries",
+          "subplotBoard",
+          "emotionalArcs",
+          "characterMatrix",
+          "volumeOutline"
+        ]
+      },
+      "outputSchema": {
+        "type": [
+          "object",
+          "string"
+        ],
+        "description": "Structured model output; exact parser contract remains in the cited InkOS source symbol."
+      },
+      "validatorId": null,
+      "retryPolicy": {
+        "maxAttempts": 1
+      },
+      "status": "extracted",
+      "sourceArtifactSha256": "be5a8fd0c2f6cd495b1994fd2efc7cf969d849d8aee9908b9a18b58f55c8784c"
+    },
+    {
+      "id": "inkos.agents.writer-prompts.build-golden-opening-discipline",
+      "category": "writing",
+      "workflow": "longform",
+      "stage": "chapter.draft",
+      "role": "guidance",
+      "source": "InkOS",
+      "sourceKind": "builder",
+      "sourceFile": "packages/core/src/agents/writer-prompts.ts",
+      "sourceSymbol": "buildGoldenOpeningDiscipline",
+      "locale": "multilingual",
+      "version": "1.7.1+a713a2e87ccc",
+      "sourceArtifact": "sources/inkos-prompt-sources.json",
+      "sourceArtifactKey": "inkos.agents.writer-prompts.build-golden-opening-discipline",
+      "sha256": "01b3acd143db7aa56c3842f59fe2263f1005292cf4d8551e08d5e05fae85f145",
+      "variablesSchema": {
+        "type": "object",
+        "properties": {
+          "chapterNumber": {
+            "type": "number"
+          },
+          "language": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "chapterNumber",
+          "language"
+        ]
+      },
+      "outputSchema": {
+        "type": "string",
+        "description": "Model text output governed by the cited InkOS prompt contract."
+      },
+      "validatorId": null,
+      "retryPolicy": {
+        "maxAttempts": 1
+      },
+      "status": "extracted",
+      "sourceArtifactSha256": "01b3acd143db7aa56c3842f59fe2263f1005292cf4d8551e08d5e05fae85f145"
+    },
+    {
+      "id": "inkos.agents.writer-prompts.build-writer-system-prompt",
+      "category": "writing",
+      "workflow": "longform",
+      "stage": "chapter.draft",
+      "role": "system",
+      "source": "InkOS",
+      "sourceKind": "builder",
+      "sourceFile": "packages/core/src/agents/writer-prompts.ts",
+      "sourceSymbol": "buildWriterSystemPrompt",
+      "locale": "en",
+      "version": "1.7.1+a713a2e87ccc",
+      "sourceArtifact": "sources/inkos-prompt-sources.json",
+      "sourceArtifactKey": "inkos.agents.writer-prompts.build-writer-system-prompt",
+      "sha256": "f5570a9037dd9f7bb7f07e23ccb070261a7cb319b8f010131acea9a113ffeb7f",
+      "variablesSchema": {
+        "type": "object",
+        "properties": {
+          "book": {
+            "type": "string"
+          },
+          "genreProfile": {
+            "type": "string"
+          },
+          "bookRules": {
+            "type": "string"
+          },
+          "bookRulesBody": {
+            "type": "string"
+          },
+          "genreBody": {
+            "type": "string"
+          },
+          "styleGuide": {
+            "type": "string"
+          },
+          "styleFingerprint": {
+            "type": "string"
+          },
+          "chapterNumber": {
+            "type": "number"
+          },
+          "mode": {
+            "type": "string"
+          },
+          "fanficContext": {
+            "type": "string"
+          },
+          "languageOverride": {
+            "type": "string"
+          },
+          "inputProfile": {
+            "type": "string"
+          },
+          "lengthSpec": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "book",
+          "genreProfile",
+          "bookRules",
+          "bookRulesBody",
+          "genreBody",
+          "styleGuide"
+        ]
+      },
+      "outputSchema": {
+        "type": "string",
+        "description": "Model text output governed by the cited InkOS prompt contract."
+      },
+      "validatorId": null,
+      "retryPolicy": {
+        "maxAttempts": 1
+      },
+      "status": "extracted",
+      "sourceArtifactSha256": "f5570a9037dd9f7bb7f07e23ccb070261a7cb319b8f010131acea9a113ffeb7f"
+    },
+    {
+      "id": "inkos.agents.writer.writer-agent.build-governed-user-prompt",
+      "category": "writing",
+      "workflow": "longform",
+      "stage": "chapter.draft",
+      "role": "user",
+      "source": "InkOS",
+      "sourceKind": "builder",
+      "sourceFile": "packages/core/src/agents/writer.ts",
+      "sourceSymbol": "WriterAgent.buildGovernedUserPrompt",
+      "locale": "zh-CN",
+      "version": "1.7.1+a713a2e87ccc",
+      "sourceArtifact": "sources/inkos-prompt-sources.json",
+      "sourceArtifactKey": "inkos.agents.writer.writer-agent.build-governed-user-prompt",
+      "sha256": "1237e5db7a106f98607dad1129057bc1cd141f29412dcae1f73f4cabf6fa9da1",
+      "variablesSchema": {
+        "type": "object",
+        "properties": {
+          "chapterNumber": {
+            "type": "number"
+          },
+          "chapterMemo": {
+            "type": "string"
+          },
+          "chapterIntentData": {
+            "type": "string"
+          },
+          "contextPackage": {
+            "type": "string"
+          },
+          "ruleStack": {
+            "type": "string"
+          },
+          "externalContext": {
+            "type": "string"
+          },
+          "lengthSpec": {
+            "type": "string"
+          },
+          "language": {
+            "type": "string"
+          },
+          "varianceBrief": {
+            "type": "string"
+          },
+          "selectedEvidenceBlock": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "chapterNumber",
+          "chapterMemo",
+          "contextPackage",
+          "ruleStack",
+          "lengthSpec"
+        ]
+      },
+      "outputSchema": {
+        "type": "string",
+        "description": "Model text output governed by the cited InkOS prompt contract."
+      },
+      "validatorId": null,
+      "retryPolicy": {
+        "maxAttempts": 1
+      },
+      "status": "extracted",
+      "sourceArtifactSha256": "1237e5db7a106f98607dad1129057bc1cd141f29412dcae1f73f4cabf6fa9da1"
+    },
+    {
+      "id": "inkos.agents.writer.writer-agent.build-user-prompt",
+      "category": "writing",
+      "workflow": "longform",
+      "stage": "chapter.draft",
+      "role": "user",
+      "source": "InkOS",
+      "sourceKind": "builder",
+      "sourceFile": "packages/core/src/agents/writer.ts",
+      "sourceSymbol": "WriterAgent.buildUserPrompt",
+      "locale": "zh-CN",
+      "version": "1.7.1+a713a2e87ccc",
+      "sourceArtifact": "sources/inkos-prompt-sources.json",
+      "sourceArtifactKey": "inkos.agents.writer.writer-agent.build-user-prompt",
+      "sha256": "b6e7e37f9bd435e5536a474d3789c9c93b655e99ed7060aba26e0863d021ff86",
+      "variablesSchema": {
+        "type": "object",
+        "properties": {
+          "chapterNumber": {
+            "type": "number"
+          },
+          "storyBible": {
+            "type": "string"
+          },
+          "currentState": {
+            "type": "string"
+          },
+          "ledger": {
+            "type": "string"
+          },
+          "hooks": {
+            "type": "string"
+          },
+          "recentChapters": {
+            "type": "string"
+          },
+          "lengthSpec": {
+            "type": "string"
+          },
+          "externalContext": {
+            "type": "string"
+          },
+          "chapterSummaries": {
+            "type": "string"
+          },
+          "subplotBoard": {
+            "type": "string"
+          },
+          "emotionalArcs": {
+            "type": "string"
+          },
+          "characterMatrix": {
+            "type": "string"
+          },
+          "dialogueFingerprints": {
+            "type": "string"
+          },
+          "relevantSummaries": {
+            "type": "string"
+          },
+          "parentCanon": {
+            "type": "string"
+          },
+          "language": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "chapterNumber",
+          "storyBible",
+          "currentState",
+          "ledger",
+          "hooks",
+          "recentChapters",
+          "lengthSpec",
+          "chapterSummaries",
+          "subplotBoard",
+          "emotionalArcs",
+          "characterMatrix"
+        ]
+      },
+      "outputSchema": {
+        "type": "string",
+        "description": "Model text output governed by the cited InkOS prompt contract."
+      },
+      "validatorId": null,
+      "retryPolicy": {
+        "maxAttempts": 1
+      },
+      "status": "extracted",
+      "sourceArtifactSha256": "b6e7e37f9bd435e5536a474d3789c9c93b655e99ed7060aba26e0863d021ff86"
+    },
+    {
+      "id": "inkos.forecast.prompts.build-forecast-repair-prompt",
+      "category": "revision",
+      "workflow": "forecast",
+      "stage": "forecast.repair",
+      "role": "instruction",
+      "source": "InkOS",
+      "sourceKind": "builder",
+      "sourceFile": "packages/core/src/forecast/prompts.ts",
+      "sourceSymbol": "buildForecastRepairPrompt",
+      "locale": "multilingual",
+      "version": "1.7.1+a713a2e87ccc",
+      "sourceArtifact": "sources/inkos-prompt-sources.json",
+      "sourceArtifactKey": "inkos.forecast.prompts.build-forecast-repair-prompt",
+      "sha256": "8c8cd8d9071da2c6c771e49269fece2c8b114e174233b0d51975012520d32860",
+      "variablesSchema": {
+        "type": "object",
+        "properties": {
+          "validationError": {
+            "type": "string"
+          },
+          "language": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "validationError",
+          "language"
+        ]
+      },
+      "outputSchema": {
+        "type": [
+          "object",
+          "string"
+        ],
+        "description": "Structured model output; exact parser contract remains in the cited InkOS source symbol."
+      },
+      "validatorId": null,
+      "retryPolicy": {
+        "maxAttempts": 1
+      },
+      "status": "extracted",
+      "sourceArtifactSha256": "8c8cd8d9071da2c6c771e49269fece2c8b114e174233b0d51975012520d32860"
+    },
+    {
+      "id": "inkos.forecast.prompts.build-forecast-system-prompt",
+      "category": "writing",
+      "workflow": "forecast",
+      "stage": "forecast.generate",
+      "role": "system",
+      "source": "InkOS",
+      "sourceKind": "builder",
+      "sourceFile": "packages/core/src/forecast/prompts.ts",
+      "sourceSymbol": "buildForecastSystemPrompt",
+      "locale": "multilingual",
+      "version": "1.7.1+a713a2e87ccc",
+      "sourceArtifact": "sources/inkos-prompt-sources.json",
+      "sourceArtifactKey": "inkos.forecast.prompts.build-forecast-system-prompt",
+      "sha256": "bb3d7b84e1a225c8fb1c0cbfd79f432bbb7c80c095df55ac5f97942186ce92ea",
+      "variablesSchema": {
+        "type": "object",
+        "properties": {
+          "language": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "language"
+        ]
+      },
+      "outputSchema": {
+        "type": [
+          "object",
+          "string"
+        ],
+        "description": "Structured model output; exact parser contract remains in the cited InkOS source symbol."
+      },
+      "validatorId": null,
+      "retryPolicy": {
+        "maxAttempts": 1
+      },
+      "status": "extracted",
+      "sourceArtifactSha256": "bb3d7b84e1a225c8fb1c0cbfd79f432bbb7c80c095df55ac5f97942186ce92ea"
+    },
+    {
+      "id": "inkos.forecast.prompts.build-forecast-user-prompt",
+      "category": "writing",
+      "workflow": "forecast",
+      "stage": "forecast.generate",
+      "role": "user",
+      "source": "InkOS",
+      "sourceKind": "builder",
+      "sourceFile": "packages/core/src/forecast/prompts.ts",
+      "sourceSymbol": "buildForecastUserPrompt",
+      "locale": "multilingual",
+      "version": "1.7.1+a713a2e87ccc",
+      "sourceArtifact": "sources/inkos-prompt-sources.json",
+      "sourceArtifactKey": "inkos.forecast.prompts.build-forecast-user-prompt",
+      "sha256": "95175c4f8a415d82347695ac38f7ab64c76a7477453babbb28f8c820edc9d3d3",
+      "variablesSchema": {
+        "type": "object",
+        "properties": {
+          "input": {
+            "type": "string"
+          },
+          "language": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "input",
+          "language"
+        ]
+      },
+      "outputSchema": {
+        "type": [
+          "object",
+          "string"
+        ],
+        "description": "Structured model output; exact parser contract remains in the cited InkOS source symbol."
+      },
+      "validatorId": null,
+      "retryPolicy": {
+        "maxAttempts": 1
+      },
+      "status": "extracted",
+      "sourceArtifactSha256": "95175c4f8a415d82347695ac38f7ab64c76a7477453babbb28f8c820edc9d3d3"
+    },
+    {
+      "id": "inkos.interactive-film.generate.system-prompt-en",
+      "category": "writing",
+      "workflow": "interactive-film",
+      "stage": "interactive-film.create",
+      "role": "system",
+      "source": "InkOS",
+      "sourceKind": "static",
+      "sourceFile": "packages/core/src/interactive-film/generate.ts",
+      "sourceSymbol": "SYSTEM_PROMPT_EN",
+      "locale": "en",
+      "version": "1.7.1+a713a2e87ccc",
+      "template": "You are an interactive film scriptwriter. From the user's story premise, generate a small but complete playable branching graph.\nOutput strictly JSON, with this structure:\n{\"schemaVersion\":1,\"projectId\":\"\",\"title\":\"\",\"variables\":[{\"name\":\"\",\"type\":\"flag|counter|relationship|item\",\"default\":0,\"desc\":\"\"}],\"nodes\":[{\"id\":\"\",\"title\":\"\",\"type\":\"start|normal|branch|ending\",\"sceneDesc\":\"\",\"dialogue\":[{\"speaker\":\"\",\"text\":\"\",\"emotion\":\"\"}],\"choices\":[{\"id\":\"\",\"text\":\"\",\"targetNodeId\":\"\",\"condition\":{\"var\":\"\",\"op\":\">=\",\"value\":0},\"effects\":[{\"var\":\"\",\"op\":\"add\",\"value\":1}]}]}],\"endings\":[{\"id\":\"\",\"nodeId\":\"\",\"title\":\"\",\"type\":\"good|bad|neutral|secret\",\"description\":\"\"}]}\nRequirements: exactly 1 node with type=start; at least 2 branch nodes; at least 2 clearly differentiated endings; every path must reach some ending; condition/effects may be omitted; output nothing besides the JSON.",
+      "sourceArtifact": "sources/inkos-prompt-sources.json",
+      "sourceArtifactKey": "inkos.interactive-film.generate.system-prompt-en",
+      "sha256": "b9d0c07d8d983c7305af503cb33a891b10cc3e96e81b6fce9d6bcc568fdb902a",
+      "variablesSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": [
+          "object",
+          "string"
+        ],
+        "description": "Structured model output; exact parser contract remains in the cited InkOS source symbol."
+      },
+      "validatorId": null,
+      "retryPolicy": {
+        "maxAttempts": 1
+      },
+      "status": "extracted",
+      "sourceArtifactSha256": "2269b06a56933697a56cc4cfe3e80516054af3788cc5b368e91bc5bffae4f1c8"
+    },
+    {
+      "id": "inkos.interactive-film.generate.system-prompt-zh",
+      "category": "writing",
+      "workflow": "interactive-film",
+      "stage": "interactive-film.create",
+      "role": "system",
+      "source": "InkOS",
+      "sourceKind": "static",
+      "sourceFile": "packages/core/src/interactive-film/generate.ts",
+      "sourceSymbol": "SYSTEM_PROMPT_ZH",
+      "locale": "zh-CN",
+      "version": "1.7.1+a713a2e87ccc",
+      "template": "你是互动影游编剧。根据用户的故事前提，生成一个小而完整的可玩分支图。\n严格只输出 JSON，结构如下：\n{\"schemaVersion\":1,\"projectId\":\"\",\"title\":\"\",\"variables\":[{\"name\":\"\",\"type\":\"flag|counter|relationship|item\",\"default\":0,\"desc\":\"\"}],\"nodes\":[{\"id\":\"\",\"title\":\"\",\"type\":\"start|normal|branch|ending\",\"sceneDesc\":\"\",\"dialogue\":[{\"speaker\":\"\",\"text\":\"\",\"emotion\":\"\"}],\"choices\":[{\"id\":\"\",\"text\":\"\",\"targetNodeId\":\"\",\"condition\":{\"var\":\"\",\"op\":\">=\",\"value\":0},\"effects\":[{\"var\":\"\",\"op\":\"add\",\"value\":1}]}]}],\"endings\":[{\"id\":\"\",\"nodeId\":\"\",\"title\":\"\",\"type\":\"good|bad|neutral|secret\",\"description\":\"\"}]}\n要求：恰好 1 个 type=start 节点；至少 2 个 branch 节点；至少 2 个差异化 ending；每条路径都能到达某个 ending；condition/effects 可省略；不要输出 JSON 以外的任何文字。",
+      "sourceArtifact": "sources/inkos-prompt-sources.json",
+      "sourceArtifactKey": "inkos.interactive-film.generate.system-prompt-zh",
+      "sha256": "d2ea82cf1bb565e41f99117509bda37b7a3e400ee1365d5764565e39af460f79",
+      "variablesSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": [
+          "object",
+          "string"
+        ],
+        "description": "Structured model output; exact parser contract remains in the cited InkOS source symbol."
+      },
+      "validatorId": null,
+      "retryPolicy": {
+        "maxAttempts": 1
+      },
+      "status": "extracted",
+      "sourceArtifactSha256": "900ac24bd0e05dec403759f21f814438eac970b51f1e32813993fe8318ef1d5e"
+    },
+    {
+      "id": "inkos.pipeline.short-fiction-runner.build-cover-image-prompt",
+      "category": "writing",
+      "workflow": "short-fiction",
+      "stage": "short-fiction.package",
+      "role": "instruction",
+      "source": "InkOS",
+      "sourceKind": "builder",
+      "sourceFile": "packages/core/src/pipeline/short-fiction-runner.ts",
+      "sourceSymbol": "buildCoverImagePrompt",
+      "locale": "multilingual",
+      "version": "1.7.1+a713a2e87ccc",
+      "sourceArtifact": "sources/inkos-prompt-sources.json",
+      "sourceArtifactKey": "inkos.pipeline.short-fiction-runner.build-cover-image-prompt",
+      "sha256": "ff64d2eacdbee292ce421a1c882fab84436884c673ccf21b565f9bd0b688296f",
+      "variablesSchema": {
+        "type": "object",
+        "properties": {
+          "salesPackage": {
+            "type": "string"
+          },
+          "mode": {
+            "type": "string"
+          },
+          "language": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "salesPackage",
+          "mode"
+        ]
+      },
+      "outputSchema": {
+        "type": "string",
+        "description": "Model text output governed by the cited InkOS prompt contract."
+      },
+      "validatorId": null,
+      "retryPolicy": {
+        "maxAttempts": 1
+      },
+      "status": "extracted",
+      "sourceArtifactSha256": "ff64d2eacdbee292ce421a1c882fab84436884c673ccf21b565f9bd0b688296f"
+    },
+    {
+      "id": "inkos.play.play-agents.build-action-interpreter-system-prompt",
+      "category": "writing",
+      "workflow": "play",
+      "stage": "play.interpret",
+      "role": "system",
+      "source": "InkOS",
+      "sourceKind": "builder",
+      "sourceFile": "packages/core/src/play/play-agents.ts",
+      "sourceSymbol": "buildActionInterpreterSystemPrompt",
+      "locale": "multilingual",
+      "version": "1.7.1+a713a2e87ccc",
+      "sourceArtifact": "sources/inkos-prompt-sources.json",
+      "sourceArtifactKey": "inkos.play.play-agents.build-action-interpreter-system-prompt",
+      "sha256": "8a455ff43c05768546d48444425593de07b5289a7f7d30a5cda77ecf827f8cc9",
+      "variablesSchema": {
+        "type": "object",
+        "properties": {
+          "language": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "language"
+        ]
+      },
+      "outputSchema": {
+        "type": [
+          "object",
+          "string"
+        ],
+        "description": "Structured model output; exact parser contract remains in the cited InkOS source symbol."
+      },
+      "validatorId": null,
+      "retryPolicy": {
+        "maxAttempts": 1
+      },
+      "status": "extracted",
+      "sourceArtifactSha256": "8a455ff43c05768546d48444425593de07b5289a7f7d30a5cda77ecf827f8cc9"
+    },
+    {
+      "id": "inkos.play.play-agents.build-action-interpreter-user-prompt",
+      "category": "writing",
+      "workflow": "play",
+      "stage": "play.interpret",
+      "role": "user",
+      "source": "InkOS",
+      "sourceKind": "builder",
+      "sourceFile": "packages/core/src/play/play-agents.ts",
+      "sourceSymbol": "buildActionInterpreterUserPrompt",
+      "locale": "multilingual",
+      "version": "1.7.1+a713a2e87ccc",
+      "sourceArtifact": "sources/inkos-prompt-sources.json",
+      "sourceArtifactKey": "inkos.play.play-agents.build-action-interpreter-user-prompt",
+      "sha256": "e2b1773cecc4ad5f88df89581e425a8a24755b44012d4f71b7392015298ed707",
+      "variablesSchema": {
+        "type": "object",
+        "properties": {
+          "input": {
+            "type": "string"
+          },
+          "language": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "input",
+          "language"
+        ]
+      },
+      "outputSchema": {
+        "type": [
+          "object",
+          "string"
+        ],
+        "description": "Structured model output; exact parser contract remains in the cited InkOS source symbol."
+      },
+      "validatorId": null,
+      "retryPolicy": {
+        "maxAttempts": 1
+      },
+      "status": "extracted",
+      "sourceArtifactSha256": "e2b1773cecc4ad5f88df89581e425a8a24755b44012d4f71b7392015298ed707"
+    },
+    {
+      "id": "inkos.play.play-agents.build-scene-reconciler-system-prompt",
+      "category": "state",
+      "workflow": "play",
+      "stage": "play.reconcile",
+      "role": "system",
+      "source": "InkOS",
+      "sourceKind": "builder",
+      "sourceFile": "packages/core/src/play/play-agents.ts",
+      "sourceSymbol": "buildSceneReconcilerSystemPrompt",
+      "locale": "multilingual",
+      "version": "1.7.1+a713a2e87ccc",
+      "sourceArtifact": "sources/inkos-prompt-sources.json",
+      "sourceArtifactKey": "inkos.play.play-agents.build-scene-reconciler-system-prompt",
+      "sha256": "2506952ece3a70c77541aab9cd1c554315a2563a274994421eec41ec9766bf09",
+      "variablesSchema": {
+        "type": "object",
+        "properties": {
+          "language": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "language"
+        ]
+      },
+      "outputSchema": {
+        "type": [
+          "object",
+          "string"
+        ],
+        "description": "Structured model output; exact parser contract remains in the cited InkOS source symbol."
+      },
+      "validatorId": null,
+      "retryPolicy": {
+        "maxAttempts": 1
+      },
+      "status": "extracted",
+      "sourceArtifactSha256": "2506952ece3a70c77541aab9cd1c554315a2563a274994421eec41ec9766bf09"
+    },
+    {
+      "id": "inkos.play.play-agents.build-scene-reconciler-user-prompt",
+      "category": "state",
+      "workflow": "play",
+      "stage": "play.reconcile",
+      "role": "user",
+      "source": "InkOS",
+      "sourceKind": "builder",
+      "sourceFile": "packages/core/src/play/play-agents.ts",
+      "sourceSymbol": "buildSceneReconcilerUserPrompt",
+      "locale": "multilingual",
+      "version": "1.7.1+a713a2e87ccc",
+      "sourceArtifact": "sources/inkos-prompt-sources.json",
+      "sourceArtifactKey": "inkos.play.play-agents.build-scene-reconciler-user-prompt",
+      "sha256": "9dce487eb096d8d4c9411d8947b258bda15f23fb9bc7fafd24b6e8e817e72619",
+      "variablesSchema": {
+        "type": "object",
+        "properties": {
+          "input": {
+            "type": "string"
+          },
+          "language": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "input",
+          "language"
+        ]
+      },
+      "outputSchema": {
+        "type": [
+          "object",
+          "string"
+        ],
+        "description": "Structured model output; exact parser contract remains in the cited InkOS source symbol."
+      },
+      "validatorId": null,
+      "retryPolicy": {
+        "maxAttempts": 1
+      },
+      "status": "extracted",
+      "sourceArtifactSha256": "9dce487eb096d8d4c9411d8947b258bda15f23fb9bc7fafd24b6e8e817e72619"
+    },
+    {
+      "id": "inkos.play.play-agents.build-scene-renderer-system-prompt",
+      "category": "writing",
+      "workflow": "play",
+      "stage": "play.render",
+      "role": "system",
+      "source": "InkOS",
+      "sourceKind": "builder",
+      "sourceFile": "packages/core/src/play/play-agents.ts",
+      "sourceSymbol": "buildSceneRendererSystemPrompt",
+      "locale": "multilingual",
+      "version": "1.7.1+a713a2e87ccc",
+      "sourceArtifact": "sources/inkos-prompt-sources.json",
+      "sourceArtifactKey": "inkos.play.play-agents.build-scene-renderer-system-prompt",
+      "sha256": "6561826f433256d519911142a45be01c5e63768e2e4ec38c9a7ca78da275d08e",
+      "variablesSchema": {
+        "type": "object",
+        "properties": {
+          "mode": {
+            "type": "string"
+          },
+          "language": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "string",
+        "description": "Model text output governed by the cited InkOS prompt contract."
+      },
+      "validatorId": null,
+      "retryPolicy": {
+        "maxAttempts": 1
+      },
+      "status": "extracted",
+      "sourceArtifactSha256": "6561826f433256d519911142a45be01c5e63768e2e4ec38c9a7ca78da275d08e"
+    },
+    {
+      "id": "inkos.play.play-agents.build-scene-renderer-user-prompt",
+      "category": "writing",
+      "workflow": "play",
+      "stage": "play.render",
+      "role": "user",
+      "source": "InkOS",
+      "sourceKind": "builder",
+      "sourceFile": "packages/core/src/play/play-agents.ts",
+      "sourceSymbol": "buildSceneRendererUserPrompt",
+      "locale": "multilingual",
+      "version": "1.7.1+a713a2e87ccc",
+      "sourceArtifact": "sources/inkos-prompt-sources.json",
+      "sourceArtifactKey": "inkos.play.play-agents.build-scene-renderer-user-prompt",
+      "sha256": "064cccbeb77a5cc189e9e61a65c538264c94876724713d22480facbe93a18eff",
+      "variablesSchema": {
+        "type": "object",
+        "properties": {
+          "input": {
+            "type": "string"
+          },
+          "language": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "input",
+          "language"
+        ]
+      },
+      "outputSchema": {
+        "type": "string",
+        "description": "Model text output governed by the cited InkOS prompt contract."
+      },
+      "validatorId": null,
+      "retryPolicy": {
+        "maxAttempts": 1
+      },
+      "status": "extracted",
+      "sourceArtifactSha256": "064cccbeb77a5cc189e9e61a65c538264c94876724713d22480facbe93a18eff"
+    },
+    {
+      "id": "inkos.play.play-agents.build-world-mutator-system-prompt",
+      "category": "state",
+      "workflow": "play",
+      "stage": "play.mutate",
+      "role": "system",
+      "source": "InkOS",
+      "sourceKind": "builder",
+      "sourceFile": "packages/core/src/play/play-agents.ts",
+      "sourceSymbol": "buildWorldMutatorSystemPrompt",
+      "locale": "multilingual",
+      "version": "1.7.1+a713a2e87ccc",
+      "sourceArtifact": "sources/inkos-prompt-sources.json",
+      "sourceArtifactKey": "inkos.play.play-agents.build-world-mutator-system-prompt",
+      "sha256": "8d83b4bc6b17dbfa2a3cea82d7079171c04f1269b8c6bcc6e4a3eb6949c5103b",
+      "variablesSchema": {
+        "type": "object",
+        "properties": {
+          "language": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "language"
+        ]
+      },
+      "outputSchema": {
+        "type": [
+          "object",
+          "string"
+        ],
+        "description": "Structured model output; exact parser contract remains in the cited InkOS source symbol."
+      },
+      "validatorId": null,
+      "retryPolicy": {
+        "maxAttempts": 1
+      },
+      "status": "extracted",
+      "sourceArtifactSha256": "8d83b4bc6b17dbfa2a3cea82d7079171c04f1269b8c6bcc6e4a3eb6949c5103b"
+    },
+    {
+      "id": "inkos.play.play-agents.build-world-mutator-user-prompt",
+      "category": "state",
+      "workflow": "play",
+      "stage": "play.mutate",
+      "role": "user",
+      "source": "InkOS",
+      "sourceKind": "builder",
+      "sourceFile": "packages/core/src/play/play-agents.ts",
+      "sourceSymbol": "buildWorldMutatorUserPrompt",
+      "locale": "multilingual",
+      "version": "1.7.1+a713a2e87ccc",
+      "sourceArtifact": "sources/inkos-prompt-sources.json",
+      "sourceArtifactKey": "inkos.play.play-agents.build-world-mutator-user-prompt",
+      "sha256": "f810cb5826bb60de237cc36a26796d7201cb4ac891bdd904cfc7282fb2ac8ee8",
+      "variablesSchema": {
+        "type": "object",
+        "properties": {
+          "input": {
+            "type": "string"
+          },
+          "language": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "input",
+          "language"
+        ]
+      },
+      "outputSchema": {
+        "type": [
+          "object",
+          "string"
+        ],
+        "description": "Structured model output; exact parser contract remains in the cited InkOS source symbol."
+      },
+      "validatorId": null,
+      "retryPolicy": {
+        "maxAttempts": 1
+      },
+      "status": "extracted",
+      "sourceArtifactSha256": "f810cb5826bb60de237cc36a26796d7201cb4ac891bdd904cfc7282fb2ac8ee8"
+    },
+    {
+      "id": "inkos.play.play-image.build-play-entity-image-prompt",
+      "category": "image",
+      "workflow": "play",
+      "stage": "play.image",
+      "role": "instruction",
+      "source": "InkOS",
+      "sourceKind": "builder",
+      "sourceFile": "packages/core/src/play/play-image.ts",
+      "sourceSymbol": "buildPlayEntityImagePrompt",
+      "locale": "zh-CN",
+      "version": "1.7.1+a713a2e87ccc",
+      "sourceArtifact": "sources/inkos-prompt-sources.json",
+      "sourceArtifactKey": "inkos.play.play-image.build-play-entity-image-prompt",
+      "sha256": "5ae1bc0697a02ac8825576e7b9d51f26cdb3ea29b4ebc016c516f16a16c13d41",
+      "variablesSchema": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "summary": {
+            "type": "string"
+          },
+          "worldPremise": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "type",
+          "label"
+        ]
+      },
+      "outputSchema": {
+        "type": "string",
+        "description": "Model text output governed by the cited InkOS prompt contract."
+      },
+      "validatorId": null,
+      "retryPolicy": {
+        "maxAttempts": 1
+      },
+      "status": "extracted",
+      "sourceArtifactSha256": "5ae1bc0697a02ac8825576e7b9d51f26cdb3ea29b4ebc016c516f16a16c13d41"
+    },
+    {
+      "id": "inkos.play.play-image.build-play-scene-image-prompt",
+      "category": "image",
+      "workflow": "play",
+      "stage": "play.image",
+      "role": "instruction",
+      "source": "InkOS",
+      "sourceKind": "builder",
+      "sourceFile": "packages/core/src/play/play-image.ts",
+      "sourceSymbol": "buildPlaySceneImagePrompt",
+      "locale": "zh-CN",
+      "version": "1.7.1+a713a2e87ccc",
+      "sourceArtifact": "sources/inkos-prompt-sources.json",
+      "sourceArtifactKey": "inkos.play.play-image.build-play-scene-image-prompt",
+      "sha256": "50b886672b8d841a4089a247e3a8bea2ed9dd7b3f4126a378c80d0b7a4a4c0e8",
+      "variablesSchema": {
+        "type": "object",
+        "properties": {
+          "sceneText": {
+            "type": "string"
+          },
+          "worldPremise": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "sceneText"
+        ]
+      },
+      "outputSchema": {
+        "type": "string",
+        "description": "Model text output governed by the cited InkOS prompt contract."
+      },
+      "validatorId": null,
+      "retryPolicy": {
+        "maxAttempts": 1
+      },
+      "status": "extracted",
+      "sourceArtifactSha256": "50b886672b8d841a4089a247e3a8bea2ed9dd7b3f4126a378c80d0b7a4a4c0e8"
+    },
+    {
+      "id": "inkos.prompt-pack.interactive-film.image-plan",
+      "category": "prompt-pack",
+      "workflow": "interactive-film",
+      "stage": "prompt-pack.interactive-film.image-plan",
+      "role": "guidance",
+      "source": "InkOS",
+      "sourceKind": "prompt-pack-item",
+      "sourceFile": "packages/core/src/skills/builtin-prompts.ts",
+      "sourceSymbol": "RAW_BUILTIN_PROMPTS:interactive-film.image-plan",
+      "locale": "en",
+      "version": "1.7.1+a713a2e87ccc",
+      "template": "Create image plans for interactive-film nodes and assets.\nUse sceneKey/location continuity when available, but do not require full-screen game UI or video conversion.",
+      "sourceArtifact": "sources/inkos-prompt-sources.json",
+      "sourceArtifactKey": "inkos.prompt-pack.interactive-film.image-plan",
+      "sha256": "9e0ed1f7b2b1ac86af46aa25b2ff4d5595e477a7ac161e13cb900a076d0eb086",
+      "variablesSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "string",
+        "description": "Prompt-pack guidance appended to a workflow prompt."
+      },
+      "validatorId": null,
+      "retryPolicy": {
+        "maxAttempts": 1
+      },
+      "status": "extracted",
+      "sourceArtifactSha256": "4c10c06a628a4d5ccd577fee156c29d0b06943cbce5256d887e403a8d328c9ed"
+    },
+    {
+      "id": "inkos.prompt-pack.interactive-film.script",
+      "category": "prompt-pack",
+      "workflow": "interactive-film",
+      "stage": "prompt-pack.interactive-film.script",
+      "role": "guidance",
+      "source": "InkOS",
+      "sourceKind": "prompt-pack-item",
+      "sourceFile": "packages/core/src/skills/builtin-prompts.ts",
+      "sourceSymbol": "RAW_BUILTIN_PROMPTS:interactive-film.script",
+      "locale": "en",
+      "version": "1.7.1+a713a2e87ccc",
+      "template": "You are an interactive-film script writer.\nConvert the confirmed premise/source into playable scenes, dialogue, choices, variables, and endings.\nLeave creative space to the user; ask or preserve format constraints instead of inventing production rules.",
+      "sourceArtifact": "sources/inkos-prompt-sources.json",
+      "sourceArtifactKey": "inkos.prompt-pack.interactive-film.script",
+      "sha256": "ac25d09d1d2fb877030e390c6c0ef6d6ffe931437852274d459bf4f319b4a699",
+      "variablesSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "string",
+        "description": "Prompt-pack guidance appended to a workflow prompt."
+      },
+      "validatorId": null,
+      "retryPolicy": {
+        "maxAttempts": 1
+      },
+      "status": "extracted",
+      "sourceArtifactSha256": "9b590c8439c76d99a1a5748cca4e1c06fc3f8525b46b306c99c7ee24ad7467ef"
+    },
+    {
+      "id": "inkos.prompt-pack.interactive-film.story-graph",
+      "category": "prompt-pack",
+      "workflow": "interactive-film",
+      "stage": "prompt-pack.interactive-film.story-graph",
+      "role": "guidance",
+      "source": "InkOS",
+      "sourceKind": "prompt-pack-item",
+      "sourceFile": "packages/core/src/skills/builtin-prompts.ts",
+      "sourceSymbol": "RAW_BUILTIN_PROMPTS:interactive-film.story-graph",
+      "locale": "en",
+      "version": "1.7.1+a713a2e87ccc",
+      "template": "You are an interactive-film story graph designer.\nCreate a playable graph: nodes, choices, variables/flags, and multiple endings.\nEvery branch must remain reachable and every path should resolve to an ending.",
+      "sourceArtifact": "sources/inkos-prompt-sources.json",
+      "sourceArtifactKey": "inkos.prompt-pack.interactive-film.story-graph",
+      "sha256": "0787142309dcd382ca99982c3a1d9a7d464a5a7c036ce55a2ee5d36ac8b204a0",
+      "variablesSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "string",
+        "description": "Prompt-pack guidance appended to a workflow prompt."
+      },
+      "validatorId": null,
+      "retryPolicy": {
+        "maxAttempts": 1
+      },
+      "status": "extracted",
+      "sourceArtifactSha256": "36b81033e349d8edbbd8841936eba976cf0ffe3ee3fca0ac4cb4f34b7b7ea0b9"
+    },
+    {
+      "id": "inkos.prompt-pack.interactive-film.storyboard",
+      "category": "prompt-pack",
+      "workflow": "interactive-film",
+      "stage": "prompt-pack.interactive-film.storyboard",
+      "role": "guidance",
+      "source": "InkOS",
+      "sourceKind": "prompt-pack-item",
+      "sourceFile": "packages/core/src/skills/builtin-prompts.ts",
+      "sourceSymbol": "RAW_BUILTIN_PROMPTS:interactive-film.storyboard",
+      "locale": "en",
+      "version": "1.7.1+a713a2e87ccc",
+      "template": "You are an interactive-film storyboard designer.\nTurn script beats into shot-level visual plans with clear action, composition, and image prompts.\nDo not require video output; produce still-image/storyboard assets unless the user asks otherwise.",
+      "sourceArtifact": "sources/inkos-prompt-sources.json",
+      "sourceArtifactKey": "inkos.prompt-pack.interactive-film.storyboard",
+      "sha256": "8bd50e1efc807ca8dfdf1bd3c47ae9e6dfb3c70be46d37738ab48fddc2d1b359",
+      "variablesSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "string",
+        "description": "Prompt-pack guidance appended to a workflow prompt."
+      },
+      "validatorId": null,
+      "retryPolicy": {
+        "maxAttempts": 1
+      },
+      "status": "extracted",
+      "sourceArtifactSha256": "cbc2001ba734547d9e34e66aa324502df0340505fab6487085f950138afb135d"
+    },
+    {
+      "id": "inkos.prompt-pack.longform.auditor",
+      "category": "prompt-pack",
+      "workflow": "longform",
+      "stage": "prompt-pack.longform.auditor",
+      "role": "guidance",
+      "source": "InkOS",
+      "sourceKind": "prompt-pack-item",
+      "sourceFile": "packages/core/src/skills/builtin-prompts.ts",
+      "sourceSymbol": "RAW_BUILTIN_PROMPTS:longform.auditor",
+      "locale": "en",
+      "version": "1.7.1+a713a2e87ccc",
+      "template": "You are InkOS's continuity and quality auditor.\nCheck whether the chapter follows protected intent, hard facts, active hooks, proportions, and craft requirements.\nReport unresolved issues plainly; do not mark a failed chapter as fixed.",
+      "sourceArtifact": "sources/inkos-prompt-sources.json",
+      "sourceArtifactKey": "inkos.prompt-pack.longform.auditor",
+      "sha256": "60bfc269746e4cb762bdaca0a8dbfd597617abfc106081825232b7debe7de101",
+      "variablesSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "string",
+        "description": "Prompt-pack guidance appended to a workflow prompt."
+      },
+      "validatorId": null,
+      "retryPolicy": {
+        "maxAttempts": 1
+      },
+      "status": "extracted",
+      "sourceArtifactSha256": "2dd3d7d8f95b6178bfa152f9cad7488030426b284f9977f026622361129301f8"
+    },
+    {
+      "id": "inkos.prompt-pack.longform.reviser",
+      "category": "prompt-pack",
+      "workflow": "longform",
+      "stage": "prompt-pack.longform.reviser",
+      "role": "guidance",
+      "source": "InkOS",
+      "sourceKind": "prompt-pack-item",
+      "sourceFile": "packages/core/src/skills/builtin-prompts.ts",
+      "sourceSymbol": "RAW_BUILTIN_PROMPTS:longform.reviser",
+      "locale": "en",
+      "version": "1.7.1+a713a2e87ccc",
+      "template": "You are InkOS's long-form reviser.\nFix the chapter according to audit issues while preserving established facts and the chapter goal.\nIf a repair requires changing higher-level state, surface that need instead of silently rewriting canon.",
+      "sourceArtifact": "sources/inkos-prompt-sources.json",
+      "sourceArtifactKey": "inkos.prompt-pack.longform.reviser",
+      "sha256": "e6a773c1a11b8a4799eb4c234a7bdfd0d45841af7da12c8c2e214adcff390661",
+      "variablesSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "string",
+        "description": "Prompt-pack guidance appended to a workflow prompt."
+      },
+      "validatorId": null,
+      "retryPolicy": {
+        "maxAttempts": 1
+      },
+      "status": "extracted",
+      "sourceArtifactSha256": "bf515608f56f656890a45333c00e55d8ae352ca2d7fbdad662b54a7338e92d99"
+    },
+    {
+      "id": "inkos.prompt-pack.longform.writer",
+      "category": "prompt-pack",
+      "workflow": "longform",
+      "stage": "prompt-pack.longform.writer",
+      "role": "guidance",
+      "source": "InkOS",
+      "sourceKind": "prompt-pack-item",
+      "sourceFile": "packages/core/src/skills/builtin-prompts.ts",
+      "sourceSymbol": "RAW_BUILTIN_PROMPTS:longform.writer",
+      "locale": "en",
+      "version": "1.7.1+a713a2e87ccc",
+      "template": "You are InkOS's long-form chapter writer.\nWrite prose from the governed chapter intent and selected context package.\nProtected context is binding. Compressible context is supporting memory.\nDo not override author intent, current focus, hard facts, or active hook evidence with genre defaults.",
+      "sourceArtifact": "sources/inkos-prompt-sources.json",
+      "sourceArtifactKey": "inkos.prompt-pack.longform.writer",
+      "sha256": "13525b516ca921aa4488f7ff163a0e4cfea932ae3288974416877ed775e43434",
+      "variablesSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "string",
+        "description": "Prompt-pack guidance appended to a workflow prompt."
+      },
+      "validatorId": null,
+      "retryPolicy": {
+        "maxAttempts": 1
+      },
+      "status": "extracted",
+      "sourceArtifactSha256": "00b62e89d409209c9fe5a83b357e6df0e06d4ee5c39be0acf4321116d8354f4f"
+    },
+    {
+      "id": "inkos.prompt-pack.play.image",
+      "category": "prompt-pack",
+      "workflow": "play",
+      "stage": "prompt-pack.play.image",
+      "role": "guidance",
+      "source": "InkOS",
+      "sourceKind": "prompt-pack-item",
+      "sourceFile": "packages/core/src/skills/builtin-prompts.ts",
+      "sourceSymbol": "RAW_BUILTIN_PROMPTS:play.image",
+      "locale": "en",
+      "version": "1.7.1+a713a2e87ccc",
+      "template": "Create image prompts from the current play scene and visual contract.\nFollow user-defined visual semantics. Do not add watermarks, UI frames, text overlays, or default rarity borders unless requested.",
+      "sourceArtifact": "sources/inkos-prompt-sources.json",
+      "sourceArtifactKey": "inkos.prompt-pack.play.image",
+      "sha256": "14ef659911c450bb75c2144ca0eefd7c3e1d98f87e9ca38d9a4c98d3216ac3ff",
+      "variablesSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "string",
+        "description": "Prompt-pack guidance appended to a workflow prompt."
+      },
+      "validatorId": null,
+      "retryPolicy": {
+        "maxAttempts": 1
+      },
+      "status": "extracted",
+      "sourceArtifactSha256": "291ba3b85a6bd80776460e33bcc79c17ab199c3af88c3fba6485504765a0fc27"
+    },
+    {
+      "id": "inkos.prompt-pack.play.mutator",
+      "category": "prompt-pack",
+      "workflow": "play",
+      "stage": "prompt-pack.play.mutator",
+      "role": "guidance",
+      "source": "InkOS",
+      "sourceKind": "prompt-pack-item",
+      "sourceFile": "packages/core/src/skills/builtin-prompts.ts",
+      "sourceSymbol": "RAW_BUILTIN_PROMPTS:play.mutator",
+      "locale": "en",
+      "version": "1.7.1+a713a2e87ccc",
+      "template": "You are InkOS Play's world mutation engine.\nTurn the player action into state changes: scene, entities, relationships, evidence, inventory, time, and consequences.\nRespect the world contract and preserve actor_player as the player entity id.",
+      "sourceArtifact": "sources/inkos-prompt-sources.json",
+      "sourceArtifactKey": "inkos.prompt-pack.play.mutator",
+      "sha256": "7945270b5689549aabd7c294b3d48d699d6d6563f25ffc18662ce49016f86186",
+      "variablesSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "string",
+        "description": "Prompt-pack guidance appended to a workflow prompt."
+      },
+      "validatorId": null,
+      "retryPolicy": {
+        "maxAttempts": 1
+      },
+      "status": "extracted",
+      "sourceArtifactSha256": "6ca32a2d5d33291063cdb3cc7234be1f422fcd5944ea99a6f439f58c5ce0c441"
+    },
+    {
+      "id": "inkos.prompt-pack.play.reconciler",
+      "category": "prompt-pack",
+      "workflow": "play",
+      "stage": "prompt-pack.play.reconciler",
+      "role": "guidance",
+      "source": "InkOS",
+      "sourceKind": "prompt-pack-item",
+      "sourceFile": "packages/core/src/skills/builtin-prompts.ts",
+      "sourceSymbol": "RAW_BUILTIN_PROMPTS:play.reconciler",
+      "locale": "en",
+      "version": "1.7.1+a713a2e87ccc",
+      "template": "You reconcile rendered scene prose back into the graph state.\nExtract newly mentioned concrete entities, evidence, relationships, and locations so state does not drift from narration.",
+      "sourceArtifact": "sources/inkos-prompt-sources.json",
+      "sourceArtifactKey": "inkos.prompt-pack.play.reconciler",
+      "sha256": "0bc6a271b7a53c89b78122065b0d377eb13a09858fc572dc9744c270045156d8",
+      "variablesSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "string",
+        "description": "Prompt-pack guidance appended to a workflow prompt."
+      },
+      "validatorId": null,
+      "retryPolicy": {
+        "maxAttempts": 1
+      },
+      "status": "extracted",
+      "sourceArtifactSha256": "f1f760a80f9ecfdf44404480ea6d362fee5e1e39c6819019b938cbc68b81d6a8"
+    },
+    {
+      "id": "inkos.prompt-pack.play.renderer",
+      "category": "prompt-pack",
+      "workflow": "play",
+      "stage": "prompt-pack.play.renderer",
+      "role": "guidance",
+      "source": "InkOS",
+      "sourceKind": "prompt-pack-item",
+      "sourceFile": "packages/core/src/skills/builtin-prompts.ts",
+      "sourceSymbol": "RAW_BUILTIN_PROMPTS:play.renderer",
+      "locale": "en",
+      "version": "1.7.1+a713a2e87ccc",
+      "template": "You are InkOS Play's scene renderer.\nRender the applied world mutation as vivid interactive prose.\nDo not invent concrete objects, evidence, or characters that are absent from applied state unless the reconciler can record them.",
+      "sourceArtifact": "sources/inkos-prompt-sources.json",
+      "sourceArtifactKey": "inkos.prompt-pack.play.renderer",
+      "sha256": "990ed2627175e551be266cbda500d6b4be21d7731659272c873c087d3aff65e2",
+      "variablesSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "string",
+        "description": "Prompt-pack guidance appended to a workflow prompt."
+      },
+      "validatorId": null,
+      "retryPolicy": {
+        "maxAttempts": 1
+      },
+      "status": "extracted",
+      "sourceArtifactSha256": "ad5d2a4d89a6d09bce90005fb34a9e5cf4296c79c94a2474ffb1b420017b5ef5"
+    },
+    {
+      "id": "inkos.prompt-pack.play.start",
+      "category": "prompt-pack",
+      "workflow": "play",
+      "stage": "prompt-pack.play.start",
+      "role": "guidance",
+      "source": "InkOS",
+      "sourceKind": "prompt-pack-item",
+      "sourceFile": "packages/core/src/skills/builtin-prompts.ts",
+      "sourceSymbol": "RAW_BUILTIN_PROMPTS:play.start",
+      "locale": "en",
+      "version": "1.7.1+a713a2e87ccc",
+      "template": "You are InkOS Play's world-start guide.\nHelp confirm the playable premise, world contract, player persona, time semantics, and visual contract before starting.\nDo not force RPG levels or fixed stats unless the user asks for them.",
+      "sourceArtifact": "sources/inkos-prompt-sources.json",
+      "sourceArtifactKey": "inkos.prompt-pack.play.start",
+      "sha256": "9285fdf87afd811c236d4256d9715c934efd21245cd728f41377ec4b027b274c",
+      "variablesSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "string",
+        "description": "Prompt-pack guidance appended to a workflow prompt."
+      },
+      "validatorId": null,
+      "retryPolicy": {
+        "maxAttempts": 1
+      },
+      "status": "extracted",
+      "sourceArtifactSha256": "7bec137d3606e4b9218abb4403d04f5a2394d084683ccf68dae4cd70e5fc1502"
+    },
+    {
+      "id": "inkos.prompts.short-fiction.build-short-fiction-craft-prompt",
+      "category": "writing",
+      "workflow": "short-fiction",
+      "stage": "short-fiction.package",
+      "role": "instruction",
+      "source": "InkOS",
+      "sourceKind": "builder",
+      "sourceFile": "packages/core/src/prompts/short-fiction.ts",
+      "sourceSymbol": "buildShortFictionCraftPrompt",
+      "locale": "multilingual",
+      "version": "1.7.1+a713a2e87ccc",
+      "sourceArtifact": "sources/inkos-prompt-sources.json",
+      "sourceArtifactKey": "inkos.prompts.short-fiction.build-short-fiction-craft-prompt",
+      "sha256": "266b275ae956ba7a77a7d9bbb3f0a2c603bff252be4488a2aef48a15dc23ef27",
+      "variablesSchema": {
+        "type": "object",
+        "properties": {
+          "language": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "string",
+        "description": "Model text output governed by the cited InkOS prompt contract."
+      },
+      "validatorId": null,
+      "retryPolicy": {
+        "maxAttempts": 1
+      },
+      "status": "extracted",
+      "sourceArtifactSha256": "266b275ae956ba7a77a7d9bbb3f0a2c603bff252be4488a2aef48a15dc23ef27"
+    },
+    {
+      "id": "inkos.prompts.short-fiction.build-short-fiction-draft-continuation-user-prompt",
+      "category": "writing",
+      "workflow": "short-fiction",
+      "stage": "short-fiction.draft-continue",
+      "role": "user",
+      "source": "InkOS",
+      "sourceKind": "builder",
+      "sourceFile": "packages/core/src/prompts/short-fiction.ts",
+      "sourceSymbol": "buildShortFictionDraftContinuationUserPrompt",
+      "locale": "multilingual",
+      "version": "1.7.1+a713a2e87ccc",
+      "sourceArtifact": "sources/inkos-prompt-sources.json",
+      "sourceArtifactKey": "inkos.prompts.short-fiction.build-short-fiction-draft-continuation-user-prompt",
+      "sha256": "a35273b54d0d06af173896f5ceaa77e9401d8e6cb1d609fc06a5ca0a590957fa",
+      "variablesSchema": {
+        "type": "object",
+        "properties": {
+          "input": {
+            "type": "string"
+          },
+          "language": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "input"
+        ]
+      },
+      "outputSchema": {
+        "type": "string",
+        "description": "Model text output governed by the cited InkOS prompt contract."
+      },
+      "validatorId": null,
+      "retryPolicy": {
+        "maxAttempts": 1
+      },
+      "status": "extracted",
+      "sourceArtifactSha256": "a35273b54d0d06af173896f5ceaa77e9401d8e6cb1d609fc06a5ca0a590957fa"
+    },
+    {
+      "id": "inkos.prompts.short-fiction.build-short-fiction-draft-review-system-prompt",
+      "category": "analysis",
+      "workflow": "short-fiction",
+      "stage": "short-fiction.draft-review",
+      "role": "system",
+      "source": "InkOS",
+      "sourceKind": "builder",
+      "sourceFile": "packages/core/src/prompts/short-fiction.ts",
+      "sourceSymbol": "buildShortFictionDraftReviewSystemPrompt",
+      "locale": "multilingual",
+      "version": "1.7.1+a713a2e87ccc",
+      "sourceArtifact": "sources/inkos-prompt-sources.json",
+      "sourceArtifactKey": "inkos.prompts.short-fiction.build-short-fiction-draft-review-system-prompt",
+      "sha256": "13f2ed8a39f4c60df61ce6ead7f1bf19ce2d9de6fe950efe28a05869fa9fc9f2",
+      "variablesSchema": {
+        "type": "object",
+        "properties": {
+          "language": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": [
+          "object",
+          "string"
+        ],
+        "description": "Structured model output; exact parser contract remains in the cited InkOS source symbol."
+      },
+      "validatorId": null,
+      "retryPolicy": {
+        "maxAttempts": 1
+      },
+      "status": "extracted",
+      "sourceArtifactSha256": "13f2ed8a39f4c60df61ce6ead7f1bf19ce2d9de6fe950efe28a05869fa9fc9f2"
+    },
+    {
+      "id": "inkos.prompts.short-fiction.build-short-fiction-draft-review-user-prompt",
+      "category": "analysis",
+      "workflow": "short-fiction",
+      "stage": "short-fiction.draft-review",
+      "role": "user",
+      "source": "InkOS",
+      "sourceKind": "builder",
+      "sourceFile": "packages/core/src/prompts/short-fiction.ts",
+      "sourceSymbol": "buildShortFictionDraftReviewUserPrompt",
+      "locale": "multilingual",
+      "version": "1.7.1+a713a2e87ccc",
+      "sourceArtifact": "sources/inkos-prompt-sources.json",
+      "sourceArtifactKey": "inkos.prompts.short-fiction.build-short-fiction-draft-review-user-prompt",
+      "sha256": "b778b53d39bfd1ad5c78995138fe6a3b91a247bc9c865780836f5148f2118c89",
+      "variablesSchema": {
+        "type": "object",
+        "properties": {
+          "input": {
+            "type": "string"
+          },
+          "language": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "input"
+        ]
+      },
+      "outputSchema": {
+        "type": [
+          "object",
+          "string"
+        ],
+        "description": "Structured model output; exact parser contract remains in the cited InkOS source symbol."
+      },
+      "validatorId": null,
+      "retryPolicy": {
+        "maxAttempts": 1
+      },
+      "status": "extracted",
+      "sourceArtifactSha256": "b778b53d39bfd1ad5c78995138fe6a3b91a247bc9c865780836f5148f2118c89"
+    },
+    {
+      "id": "inkos.prompts.short-fiction.build-short-fiction-draft-revision-followup",
+      "category": "revision",
+      "workflow": "short-fiction",
+      "stage": "short-fiction.draft-revise",
+      "role": "user",
+      "sourceFile": "packages/core/src/prompts/short-fiction.ts",
+      "sourceSymbol": "buildShortFictionDraftRevisionFollowup",
+      "source": "InkOS",
+      "sourceKind": "builder",
+      "locale": "multilingual",
+      "version": "1.7.1+a713a2e87ccc",
+      "sourceArtifact": "sources/inkos-prompt-sources.json",
+      "sourceArtifactKey": "inkos.prompts.short-fiction.build-short-fiction-draft-revision-followup",
+      "sha256": "b6d5651111fbb46eb007878b5878edc96d8401d1d76e493b1bda5e21dfbd960c",
+      "variablesSchema": {
+        "type": "object",
+        "properties": {
+          "input": {
+            "type": "object"
+          },
+          "language": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "input"
+        ],
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "string",
+        "description": "Model text output governed by the cited InkOS prompt contract."
+      },
+      "validatorId": null,
+      "retryPolicy": {
+        "maxAttempts": 1
+      },
+      "status": "extracted",
+      "sourceArtifactSha256": "b6d5651111fbb46eb007878b5878edc96d8401d1d76e493b1bda5e21dfbd960c"
+    },
+    {
+      "id": "inkos.prompts.short-fiction.build-short-fiction-outline-review-system-prompt",
+      "category": "planning",
+      "workflow": "short-fiction",
+      "stage": "short-fiction.outline-review",
+      "role": "system",
+      "source": "InkOS",
+      "sourceKind": "builder",
+      "sourceFile": "packages/core/src/prompts/short-fiction.ts",
+      "sourceSymbol": "buildShortFictionOutlineReviewSystemPrompt",
+      "locale": "multilingual",
+      "version": "1.7.1+a713a2e87ccc",
+      "sourceArtifact": "sources/inkos-prompt-sources.json",
+      "sourceArtifactKey": "inkos.prompts.short-fiction.build-short-fiction-outline-review-system-prompt",
+      "sha256": "20962fa38645ea4a360a6faa20242c3146a2df536a83f670a68bbe02ad7db3e2",
+      "variablesSchema": {
+        "type": "object",
+        "properties": {
+          "language": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": [
+          "object",
+          "string"
+        ],
+        "description": "Structured model output; exact parser contract remains in the cited InkOS source symbol."
+      },
+      "validatorId": null,
+      "retryPolicy": {
+        "maxAttempts": 1
+      },
+      "status": "extracted",
+      "sourceArtifactSha256": "20962fa38645ea4a360a6faa20242c3146a2df536a83f670a68bbe02ad7db3e2"
+    },
+    {
+      "id": "inkos.prompts.short-fiction.build-short-fiction-outline-review-user-prompt",
+      "category": "planning",
+      "workflow": "short-fiction",
+      "stage": "short-fiction.outline-review",
+      "role": "user",
+      "source": "InkOS",
+      "sourceKind": "builder",
+      "sourceFile": "packages/core/src/prompts/short-fiction.ts",
+      "sourceSymbol": "buildShortFictionOutlineReviewUserPrompt",
+      "locale": "multilingual",
+      "version": "1.7.1+a713a2e87ccc",
+      "sourceArtifact": "sources/inkos-prompt-sources.json",
+      "sourceArtifactKey": "inkos.prompts.short-fiction.build-short-fiction-outline-review-user-prompt",
+      "sha256": "810c1e4b3056ebf6d539cc145469b9c54628fd2d58640a73778ecd25ab741f88",
+      "variablesSchema": {
+        "type": "object",
+        "properties": {
+          "input": {
+            "type": "string"
+          },
+          "language": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "input"
+        ]
+      },
+      "outputSchema": {
+        "type": [
+          "object",
+          "string"
+        ],
+        "description": "Structured model output; exact parser contract remains in the cited InkOS source symbol."
+      },
+      "validatorId": null,
+      "retryPolicy": {
+        "maxAttempts": 1
+      },
+      "status": "extracted",
+      "sourceArtifactSha256": "810c1e4b3056ebf6d539cc145469b9c54628fd2d58640a73778ecd25ab741f88"
+    },
+    {
+      "id": "inkos.prompts.short-fiction.build-short-fiction-outline-revision-followup",
+      "category": "revision",
+      "workflow": "short-fiction",
+      "stage": "short-fiction.outline-revise",
+      "role": "user",
+      "sourceFile": "packages/core/src/prompts/short-fiction.ts",
+      "sourceSymbol": "buildShortFictionOutlineRevisionFollowup",
+      "source": "InkOS",
+      "sourceKind": "builder",
+      "locale": "multilingual",
+      "version": "1.7.1+a713a2e87ccc",
+      "sourceArtifact": "sources/inkos-prompt-sources.json",
+      "sourceArtifactKey": "inkos.prompts.short-fiction.build-short-fiction-outline-revision-followup",
+      "sha256": "af7f3711ca7af3db18f9b38adf8feb2b62501d49984e81431031052405f1a018",
+      "variablesSchema": {
+        "type": "object",
+        "properties": {
+          "input": {
+            "type": "object"
+          },
+          "language": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "input"
+        ],
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "string",
+        "description": "Model text output governed by the cited InkOS prompt contract."
+      },
+      "validatorId": null,
+      "retryPolicy": {
+        "maxAttempts": 1
+      },
+      "status": "extracted",
+      "sourceArtifactSha256": "af7f3711ca7af3db18f9b38adf8feb2b62501d49984e81431031052405f1a018"
+    },
+    {
+      "id": "inkos.prompts.short-fiction.build-short-fiction-outline-system-prompt",
+      "category": "planning",
+      "workflow": "short-fiction",
+      "stage": "short-fiction.outline",
+      "role": "system",
+      "source": "InkOS",
+      "sourceKind": "builder",
+      "sourceFile": "packages/core/src/prompts/short-fiction.ts",
+      "sourceSymbol": "buildShortFictionOutlineSystemPrompt",
+      "locale": "multilingual",
+      "version": "1.7.1+a713a2e87ccc",
+      "sourceArtifact": "sources/inkos-prompt-sources.json",
+      "sourceArtifactKey": "inkos.prompts.short-fiction.build-short-fiction-outline-system-prompt",
+      "sha256": "eb57fd9c9e3629abd436b8361e0c920c317651e5b18d177540fa8bc3ac1f0b88",
+      "variablesSchema": {
+        "type": "object",
+        "properties": {
+          "language": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "string",
+        "description": "Model text output governed by the cited InkOS prompt contract."
+      },
+      "validatorId": null,
+      "retryPolicy": {
+        "maxAttempts": 1
+      },
+      "status": "extracted",
+      "sourceArtifactSha256": "eb57fd9c9e3629abd436b8361e0c920c317651e5b18d177540fa8bc3ac1f0b88"
+    },
+    {
+      "id": "inkos.prompts.short-fiction.build-short-fiction-outline-user-prompt",
+      "category": "planning",
+      "workflow": "short-fiction",
+      "stage": "short-fiction.outline",
+      "role": "user",
+      "source": "InkOS",
+      "sourceKind": "builder",
+      "sourceFile": "packages/core/src/prompts/short-fiction.ts",
+      "sourceSymbol": "buildShortFictionOutlineUserPrompt",
+      "locale": "multilingual",
+      "version": "1.7.1+a713a2e87ccc",
+      "sourceArtifact": "sources/inkos-prompt-sources.json",
+      "sourceArtifactKey": "inkos.prompts.short-fiction.build-short-fiction-outline-user-prompt",
+      "sha256": "ab06e93ece1d36e311b26910042ca2e5ffd2c9b8e7f77d28270dc495a197e530",
+      "variablesSchema": {
+        "type": "object",
+        "properties": {
+          "input": {
+            "type": "string"
+          },
+          "language": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "input"
+        ]
+      },
+      "outputSchema": {
+        "type": "string",
+        "description": "Model text output governed by the cited InkOS prompt contract."
+      },
+      "validatorId": null,
+      "retryPolicy": {
+        "maxAttempts": 1
+      },
+      "status": "extracted",
+      "sourceArtifactSha256": "ab06e93ece1d36e311b26910042ca2e5ffd2c9b8e7f77d28270dc495a197e530"
+    },
+    {
+      "id": "inkos.prompts.short-fiction.build-short-fiction-package-system-prompt",
+      "category": "writing",
+      "workflow": "short-fiction",
+      "stage": "short-fiction.package",
+      "role": "system",
+      "source": "InkOS",
+      "sourceKind": "builder",
+      "sourceFile": "packages/core/src/prompts/short-fiction.ts",
+      "sourceSymbol": "buildShortFictionPackageSystemPrompt",
+      "locale": "multilingual",
+      "version": "1.7.1+a713a2e87ccc",
+      "sourceArtifact": "sources/inkos-prompt-sources.json",
+      "sourceArtifactKey": "inkos.prompts.short-fiction.build-short-fiction-package-system-prompt",
+      "sha256": "4fc7f96e61a9c9a5444405fc0f7f5e960c0793ea87c14a47c1898cca495aa0d1",
+      "variablesSchema": {
+        "type": "object",
+        "properties": {
+          "language": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "string",
+        "description": "Model text output governed by the cited InkOS prompt contract."
+      },
+      "validatorId": null,
+      "retryPolicy": {
+        "maxAttempts": 1
+      },
+      "status": "extracted",
+      "sourceArtifactSha256": "4fc7f96e61a9c9a5444405fc0f7f5e960c0793ea87c14a47c1898cca495aa0d1"
+    },
+    {
+      "id": "inkos.prompts.short-fiction.build-short-fiction-package-user-prompt",
+      "category": "writing",
+      "workflow": "short-fiction",
+      "stage": "short-fiction.package",
+      "role": "user",
+      "source": "InkOS",
+      "sourceKind": "builder",
+      "sourceFile": "packages/core/src/prompts/short-fiction.ts",
+      "sourceSymbol": "buildShortFictionPackageUserPrompt",
+      "locale": "multilingual",
+      "version": "1.7.1+a713a2e87ccc",
+      "sourceArtifact": "sources/inkos-prompt-sources.json",
+      "sourceArtifactKey": "inkos.prompts.short-fiction.build-short-fiction-package-user-prompt",
+      "sha256": "b1d5e202fad50d990790177768f5d2721a38eb4d2c19f0eb2074bfbc988d05cd",
+      "variablesSchema": {
+        "type": "object",
+        "properties": {
+          "input": {
+            "type": "string"
+          },
+          "language": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "input"
+        ]
+      },
+      "outputSchema": {
+        "type": "string",
+        "description": "Model text output governed by the cited InkOS prompt contract."
+      },
+      "validatorId": null,
+      "retryPolicy": {
+        "maxAttempts": 1
+      },
+      "status": "extracted",
+      "sourceArtifactSha256": "b1d5e202fad50d990790177768f5d2721a38eb4d2c19f0eb2074bfbc988d05cd"
+    },
+    {
+      "id": "inkos.prompts.short-fiction.build-short-fiction-writer-system-prompt",
+      "category": "writing",
+      "workflow": "short-fiction",
+      "stage": "short-fiction.draft",
+      "role": "system",
+      "source": "InkOS",
+      "sourceKind": "builder",
+      "sourceFile": "packages/core/src/prompts/short-fiction.ts",
+      "sourceSymbol": "buildShortFictionWriterSystemPrompt",
+      "locale": "multilingual",
+      "version": "1.7.1+a713a2e87ccc",
+      "sourceArtifact": "sources/inkos-prompt-sources.json",
+      "sourceArtifactKey": "inkos.prompts.short-fiction.build-short-fiction-writer-system-prompt",
+      "sha256": "de1763bbcf1ebaebdee8929b704f2a631c08e48785fdcaa5f840a1f21aec4140",
+      "variablesSchema": {
+        "type": "object",
+        "properties": {
+          "language": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "string",
+        "description": "Model text output governed by the cited InkOS prompt contract."
+      },
+      "validatorId": null,
+      "retryPolicy": {
+        "maxAttempts": 1
+      },
+      "status": "extracted",
+      "sourceArtifactSha256": "de1763bbcf1ebaebdee8929b704f2a631c08e48785fdcaa5f840a1f21aec4140"
+    },
+    {
+      "id": "inkos.prompts.short-fiction.build-short-fiction-writer-user-prompt",
+      "category": "writing",
+      "workflow": "short-fiction",
+      "stage": "short-fiction.draft",
+      "role": "user",
+      "source": "InkOS",
+      "sourceKind": "builder",
+      "sourceFile": "packages/core/src/prompts/short-fiction.ts",
+      "sourceSymbol": "buildShortFictionWriterUserPrompt",
+      "locale": "multilingual",
+      "version": "1.7.1+a713a2e87ccc",
+      "sourceArtifact": "sources/inkos-prompt-sources.json",
+      "sourceArtifactKey": "inkos.prompts.short-fiction.build-short-fiction-writer-user-prompt",
+      "sha256": "69ca7bac11f7f54b182a08eb65e3277719d8f0e149f6b8dabfd0ed80f8b4f805",
+      "variablesSchema": {
+        "type": "object",
+        "properties": {
+          "input": {
+            "type": "string"
+          },
+          "language": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "input"
+        ]
+      },
+      "outputSchema": {
+        "type": "string",
+        "description": "Model text output governed by the cited InkOS prompt contract."
+      },
+      "validatorId": null,
+      "retryPolicy": {
+        "maxAttempts": 1
+      },
+      "status": "extracted",
+      "sourceArtifactSha256": "69ca7bac11f7f54b182a08eb65e3277719d8f0e149f6b8dabfd0ed80f8b4f805"
+    },
+    {
+      "id": "inkos.utils.writing-methodology.build-writing-methodology-section",
+      "category": "writing",
+      "workflow": "longform",
+      "stage": "chapter.draft",
+      "role": "guidance",
+      "source": "InkOS",
+      "sourceKind": "builder",
+      "sourceFile": "packages/core/src/utils/writing-methodology.ts",
+      "sourceSymbol": "buildWritingMethodologySection",
+      "locale": "multilingual",
+      "version": "1.7.1+a713a2e87ccc",
+      "sourceArtifact": "sources/inkos-prompt-sources.json",
+      "sourceArtifactKey": "inkos.utils.writing-methodology.build-writing-methodology-section",
+      "sha256": "7073ae792073dad0bb4dde2c324bfd6f5a2d4e85156203caf26d178573e20d3a",
+      "variablesSchema": {
+        "type": "object",
+        "properties": {
+          "language": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "language"
+        ]
+      },
+      "outputSchema": {
+        "type": "string",
+        "description": "Model text output governed by the cited InkOS prompt contract."
+      },
+      "validatorId": null,
+      "retryPolicy": {
+        "maxAttempts": 1
+      },
+      "status": "extracted",
+      "sourceArtifactSha256": "7073ae792073dad0bb4dde2c324bfd6f5a2d4e85156203caf26d178573e20d3a"
+    }
+  ]
+}

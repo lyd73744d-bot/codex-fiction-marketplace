@@ -1,0 +1,20 @@
+{
+  "name": "zizhuji-fiction",
+  "interface": {
+    "displayName": "字字珠玑写作插件"
+  },
+  "plugins": [
+    {
+      "name": "longform-fiction-director",
+      "category": "Productivity",
+      "source": {
+        "source": "local",
+        "path": "./plugins/longform-fiction-director"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      }
+    }
+  ]
+}

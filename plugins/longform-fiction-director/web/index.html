@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>写小说真的太简单了</title>
+  <link rel="stylesheet" href="/workbench.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="/" aria-label="写小说真的太简单了">写小说真的太简单了</a>
+    <div class="topbar-actions">
+      <details class="account-menu"><summary>账户</summary><div data-role="account"></div></details>
+    </div>
+  </header>
+  <main class="workspace">
+    <aside class="project-rail">
+      <div class="rail-header"><span>我的小说</span><button type="button" class="icon-button" data-action="new-project" title="新建小说" aria-label="新建小说">+</button></div>
+      <nav data-role="projects" aria-label="小说项目"></nav>
+      <form data-role="project-form" hidden>
+        <input name="title" required maxlength="120" placeholder="小说名称">
+        <textarea name="direction" maxlength="1200" placeholder="一句话方向（可选）"></textarea>
+        <div class="form-actions"><button type="submit">创建</button><button type="button" data-action="cancel-project">取消</button></div>
+      </form>
+      <details class="rail-drawer" data-role="recharge"><summary>充值与兑换</summary><a data-role="payment-portal" hidden target="_blank" rel="noopener noreferrer">打开支付页</a><form data-role="recharge-form"><input name="code" autocomplete="off" placeholder="兑换码"><button type="submit">兑换</button></form></details>
+    </aside>
+
+    <section class="director-console" data-role="director-console">
+      <header class="project-bar">
+        <div><span class="overline">CODEX 写作工作台</span><h1 data-role="project-title">先新建一部小说</h1></div>
+        <button class="quiet-button" type="button" data-action="refresh" title="刷新项目状态">刷新</button>
+      </header>
+      <section class="prompt-surface">
+        <form data-role="composer-form">
+          <textarea data-role="composer" required placeholder="把脑洞、卡文处、下一章目标，直接交给 Codex。"></textarea>
+          <footer class="composer-footer">
+            <div class="task-picker">
+              <select data-role="task-kind" aria-label="本次任务"><option value="brainstorm">推演思路</option><option value="outline">整理结构</option><option value="chapter-brief">规划章节</option><option value="draft">写一段正文</option><option value="review">审读修改</option><option value="specialist">专项推演</option><option value="market-scan">研究市场</option></select>
+              <select data-role="specialist-capability" aria-label="专项能力" hidden></select>
+            </div>
+            <span data-role="composer-status" aria-live="polite"></span>
+            <button class="primary-button" type="submit">交给 Codex</button>
+          </footer>
+        </form>
+      </section>
+      <section class="context-strip" data-role="thinking-board">
+        <div class="section-label">正在写什么</div>
+        <div data-role="project-context"></div>
+      </section>
+      <section class="timeline">
+        <div class="section-header"><h2>写作轨迹</h2></div>
+        <ol data-role="task-timeline"></ol>
+      </section>
+    </section>
+
+    <aside class="collaboration-panel">
+      <section class="model-console" data-role="model-console">
+        <div class="section-header"><h2>本次协作</h2><span class="subtle">选择要调用的模型</span></div>
+        <div data-role="models"></div>
+        <form data-role="model-consult-form"><textarea name="prompt" required maxlength="20000" placeholder="单独向所选模型追问"></textarea><button type="submit">发起会诊</button></form>
+        <pre data-role="model-consult-result" hidden></pre>
+      </section>
+      <details class="project-drawer" data-role="research-workspace">
+        <summary><span>项目资料与长篇记忆</span><span>展开</span></summary>
+        <section><h2>项目资料</h2><div data-role="sources"></div><form data-role="import-form"><input name="sourcePath" placeholder="辅助文档文件夹"><button type="submit">导入</button></form></section>
+        <section data-role="source-tools"><h2>书源与拆解</h2><form data-role="download-form"><input name="title" placeholder="已获授权的书名"><input name="bookId" placeholder="书籍 ID（可选）"><input name="author" placeholder="作者（可选）"><input name="focus" placeholder="本次学习重点（可选）"><label><input name="authorized" type="checkbox"> 我确认拥有下载和分析授权</label><button type="submit">下载到书源库</button></form><form data-role="deconstruct-form"><select name="sourceRelativePath" data-role="source-picker" required aria-label="选择已登记书源"><option value="">选择已登记书源</option></select><label><input name="force" type="checkbox"> 重新拆解</label><button type="submit">拆书</button></form><form data-role="market-form"><input name="rankUrl" type="url" value="https://fanqienovel.com/rank" placeholder="公开榜单 URL"><button type="submit">研究公开榜单</button></form></section>
+        <section class="ledger-area"><h2>长篇台账</h2><div data-role="ledger"></div></section>
+      </details>
+      <section class="login" data-role="login"><h2>连接你的网关</h2><form data-role="login-form"><input name="username" required autocomplete="username" placeholder="用户名"><input name="password" required type="password" autocomplete="current-password" placeholder="密码"><button type="submit">登录</button></form><details><summary>注册账户</summary><form data-role="register-form"><input name="username" required minlength="3" maxlength="80" autocomplete="username" placeholder="用户名"><input name="password" required minlength="6" maxlength="256" type="password" autocomplete="new-password" placeholder="密码（至少 6 位）"><input name="inviteCode" maxlength="64" autocomplete="off" placeholder="邀请码（可选）"><button type="submit">注册并登录</button></form></details></section>
+    </aside>
+  </main>
+  <template id="task-template"><li><div><strong data-field="kind"></strong><span data-field="status"></span></div><p data-field="instruction"></p><div data-field="actions"></div></li></template>
+  <script src="/workbench.js"></script>
+</body>
+</html>

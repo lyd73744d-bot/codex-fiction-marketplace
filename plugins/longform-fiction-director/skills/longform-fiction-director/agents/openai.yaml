@@ -1,0 +1,4 @@
+interface:
+  display_name: "写小说真的太简单了"
+  short_description: "本地单线中文长篇：一步步绑定、脑洞、细纲、正文与质检"
+  default_prompt: "Use $longform-fiction-director. Read the current local writing step, show a short checklist, and advance only the next author-chosen step."

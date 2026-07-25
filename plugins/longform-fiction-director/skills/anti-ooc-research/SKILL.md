@@ -1,0 +1,47 @@
+---
+name: anti-ooc-research
+description: Force planned web research docs and character cards before risky real-world or historical writing.
+---
+
+# 防 OOC / 联网核验
+
+## 硬规则
+写真实人物、历史制度、地理器物、专业流程前：先计划检索 → 真联网 → 回填 → 人物卡 → 再正文。
+
+## 流程
+1. `fiction_plan_research` 生成检索词、风险点、清单（可自动建核验文档）
+2. 用内置浏览器按检索词打开可信来源
+3. `fiction_append_research_findings` 回填：来源/事实/禁写（会同步 `辅助文档/12_事实库_防OOC.md`）
+3b. 也可 `fiction_upsert_facts` 直接维护事实库
+4. 真实人物：`fiction_create_character_card`（kind=historical）
+5. `fiction_assess_pipeline` 确认 research_filled + fact_library
+6. 章后可用 `fiction_upsert_soft_chapter_ledger` / `fiction_check_continuity`
+
+## 禁止
+- 空核验文档开写
+- 用模型记忆冒充检索
+- 把不确定内容写成铁事实
+
+## 作者沟通
+- 先问：这段为什么必须写实？
+- 再问：哪些允许虚构？
+- 给 3-8 个检索词，不要丢一句“你自己搜搜”
+
+
+## 强制联网核验（责编必做）
+
+1. 大纲确认题材后，**先做联网搜索**，再写人物卡/正文。
+2. 真实历史人物：搜生卒、官职、关键事迹、常见误读；写入事实库与人物卡，并标注来源。
+3. 虚构人物：明确“虚构边界”，禁止借用真实史实张冠李戴。
+4. 新人物出场：先卡后写；无卡则先补卡。
+5. 工具顺序建议：
+   - `fiction_plan_research` / research plan
+   - Codex 内置浏览器真实搜索
+   - `fiction_fill_research` / 事实库同步
+   - 人物卡落盘后再进入细纲/正文
+6. 任何不确定的专名、地名、官制、器物，宁可先搜再写，也不要硬编。
+
+
+## 历史/真实题材硬门槛
+
+当脑洞或大纲出现历史/真实人物信号时，pipeline 会把联网回填+事实库+人物卡升为 **hard**：未完成前禁止生成正文候选。

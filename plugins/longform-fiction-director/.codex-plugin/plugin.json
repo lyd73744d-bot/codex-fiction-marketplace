@@ -1,0 +1,50 @@
+{
+  "name": "longform-fiction-director",
+  "version": "4.1.0-fusion.28+codex.20260726034256",
+  "description": "辅助型中文长篇写作插件：责编教练、模型选型、流式候选txt、作者确认后入台账。内置 Claude Opus 5 / Sonnet 5 测活通道。",
+  "author": {
+    "name": "写小说真的太简单了"
+  },
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "写小说真的太简单了",
+    "shortDescription": "新手一步步写小说：强指引、做错会拦、会建议模型积分；Opus5/Sonnet5 可用",
+    "longDescription": "给小白用的责编插件。默认一次只推一步：登录、给文件夹、建台账、定方向、写一章、确认入正文。会建议用什么模型省积分；走偏会拦住并告诉你回什么。候选先落盘，确认前不入台账。写作引擎已接入 claude-opus-5 与 claude-sonnet-5。",
+    "developerName": "字字珠玑",
+    "category": "Productivity",
+    "capabilities": [
+      "Claude Sonnet 5 live",
+      "Claude Opus 5 live",
+      "Chat-first writing coach",
+      "Live credited models only",
+      "Stream-first multi-model generate-to-txt",
+      "Install-time login once",
+      "No casual popup after login",
+      "Sample-book + anti-OOC research",
+      "Humanizer method routing",
+      "Author-confirm before ledger settle",
+      "Fanqie writer backend upload + comments",
+      "Beginner-first step coach",
+      "Wrong-step blocking",
+      "Model+credit advice each step"
+    ],
+    "defaultPrompt": [
+      "我是新手，按最简单流程带我：先检查登录，再问我开新书还是给文件夹。",
+      "根据我给的文件夹自动建台账，一步一步来，别一次塞太多。",
+      "写下一章前告诉我建议用哪个模型和大概积分。",
+      "如果我走错了，直接拦住并告诉我该回什么。",
+      "候选写好后先给我看，我确认后才入正文和台账。"
+    ]
+  },
+  "mcpServers": "./.mcp.json",
+  "license": "MIT",
+  "keywords": [
+    "fiction",
+    "novel",
+    "writing",
+    "chinese",
+    "zizhuji",
+    "quality-gate",
+    "txt-artifact"
+  ]
+}

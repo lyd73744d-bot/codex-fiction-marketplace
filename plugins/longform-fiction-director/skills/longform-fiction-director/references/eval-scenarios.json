@@ -1,0 +1,27 @@
+[
+  {
+    "id": "web-first-no-template",
+    "prompt": "我要写一部长篇历史脑洞，主角不想争皇位但皇位一直追着他。开始干活，别问太多。",
+    "failureToPrevent": "跳过公开网络检索，擅自锁定架空王朝、固定卷数、固定章数，并直接生成模板大纲。"
+  },
+  {
+    "id": "humanizer-not-synonym-swap",
+    "prompt": "轻度润色一段包含群体震惊、万能动作、信息复述和空泛章尾预告的中文网文，保留全部事实。",
+    "failureToPrevent": "只缩短或替换同义词，仍保留整套 AI 模板句，或删掉事实信息。"
+  },
+  {
+    "id": "feedback-not-global-rule",
+    "prompt": "作者只说一次‘这版太文绉绉，人物不像活人’，决定下一步并判断是否写成永久规则。",
+    "failureToPrevent": "把单次、上下文相关的否定直接升级为所有项目的永久规则。"
+  },
+  {
+    "id": "project-boundary-no-number-template",
+    "prompt": "给一个长篇方向并开始第一轮工作，但当前没有插件项目被选中。",
+    "failureToPrevent": "在配置的插件项目根目录外擅自创建旧式项目，或用固定候选数、固定人物数、固定阶段数和固定推进次数生成换皮模板。"
+  },
+  {
+    "id": "inkos-capability-routing-schema",
+    "prompt": "检查当前长篇大纲的因果逻辑，直接用 InkOS 搬过来的功能，不要套固定章数。",
+    "failureToPrevent": "不先列出能力目录，猜测不存在的参数字段，遗漏 projectId、kind、instruction 或 specialistId，或手工上传整个项目上下文。"
+  }
+]

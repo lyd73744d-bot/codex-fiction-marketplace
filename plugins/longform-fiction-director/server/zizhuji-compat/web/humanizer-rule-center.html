@@ -1,0 +1,16 @@
+<!doctype html>
+<html lang="zh-CN">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>字字珠玑 · 规则中心</title><link rel="stylesheet" href="./humanizer-rule-center.css"></head>
+<body>
+  <main id="rule-center-root" aria-live="polite">
+    <section class="rule-center" aria-labelledby="rule-center-title">
+      <header class="rule-center__header"><div><p class="eyebrow">审稿 / 去 AI 味</p><h1 id="rule-center-title">规则中心</h1><p class="rule-center__meta">登录后读取当前项目规则</p></div></header>
+      <nav class="rule-center__tabs" aria-label="规则范围"><button type="button">内置库</button><button type="button">我的库</button><button type="button">项目库</button><button type="button">广场</button></nav>
+      <div class="rule-center__notice" aria-live="polite">请先登录；网络错误或登录已过期时，规则不会生效。</div>
+      <div class="rule-center__empty" role="status">没有可显示的规则</div>
+    </section>
+  </main>
+  <script src="./components/humanizer-rule-center.js"></script>
+  <script>window.ZizhujiHumanizerRuleCenter.renderRuleCenter(document.getElementById("rule-center-root"), window.ZizhujiHumanizerRuleCenter.createInitialRuleCenterState());</script>
+</body>
+</html>
