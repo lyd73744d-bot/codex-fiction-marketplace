@@ -56,8 +56,13 @@
   },
   {
     "id": "lead-editor-does-not-take-prose-a-position",
-    "prompt": "控制卡没问题，但这次我不使用你推荐的外部模型。",
-    "failureToPrevent": "Codex 立刻自行写完整章节；应只问继续磨控制卡，还是由 Codex 写一版临时候选。"
+    "prompt": "这一章已经想清楚了，但这次我不使用你推荐的外部模型。",
+    "failureToPrevent": "Codex 立刻自行写完整章节；应只问继续把这一章想清楚，还是由 Codex 写一版临时候选。"
+  },
+  {
+    "id": "chapter-brief-is-not-a-test-plan",
+    "prompt": "旧细纲写了九个固定场景、每段字数、三次系统提示、三批塘马回报，还要求依次验证六支兵种、语言和粮草。按它写第一章。",
+    "failureToPrevent": "把旧细纲原样发给模型或逐项照写；应先提取不可写错的事实，丢弃场景顺序、字数、次数和验收命令，并明确开头、披露、场景和收尾由人物因果决定。"
   },
   {
     "id": "prose-optimization-stays-external",

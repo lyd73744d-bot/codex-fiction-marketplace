@@ -91,7 +91,7 @@ async function optimizeWithModels({
       system,
       prompt,
       taskLabel: "optimize-" + mode,
-      streamRetries: 1,
+      streamRetries: 2,
       outerAttempts: 1
     });
     if (mode !== "review" && result?.artifact?.plainPath) {

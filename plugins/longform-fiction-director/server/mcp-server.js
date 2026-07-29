@@ -45,7 +45,8 @@ function safeMcpError(cause) {
     UPSTREAM_TIMEOUT: "模型生成超时，本次没有完成。请稍后重试或换一个模型。",
     EMPTY_MODEL_OUTPUT: "模型返回为空，请换模型或重试。",
     HARD_GATE_FAILED: "候选未通过硬门禁，请检查 blockers 后重写。"
-    , AUTHOR_CONFIRMATION_REQUIRED: "本次模型调用尚未获得作者确认。请先询问作者是否使用这个模型。"
+    , AUTHOR_CONFIRMATION_REQUIRED: "本次模型调用尚未获得作者确认。请先询问作者是否使用这个模型。",
+    JOB_NOT_FOUND: "后台任务不存在，可能来自已重启的插件进程。请先查看 Codex候选 是否已有结果。"
   };
   if (cause?.code === "SERVER_ERROR" && SAFE_GATEWAY_DIAGNOSTICS.has(cause?.publicMessage)) return cause.publicMessage;
   return messages[cause?.code] || "Tool call failed.";

@@ -5,6 +5,8 @@ const { recommendModels, listTaskCatalog } = require("./model-router");
 const { optimizeWithModels } = require("./multi-model-optimize");
 const { compareStyle } = require("./style-compare-service");
 const { smokeLiveGateway } = require("./live-gateway-smoke");
+const { buildDraftSystem } = require("./draft-prompt-lib");
+const { createGenerationJobManager } = require("./generation-job-manager");
 const onboarding = require("./onboarding-state");
 
 const MAX_OUTPUT_DEPTH = 32;
@@ -49,8 +51,9 @@ function safetyAnnotations(readOnlyHint) {
   return { readOnlyHint, openWorldHint: false, destructiveHint: false };
 }
 
-function createGatewayMcpTools({ gateway, gatewayGuard, openLoginPage } = {}) {
+function createGatewayMcpTools({ gateway, gatewayGuard, openLoginPage, generationJobs } = {}) {
   if (!gateway) throw new TypeError("gateway is required");
+  const jobs = generationJobs || createGenerationJobManager();
   async function requireGateway(reason = "tool_call", {
     allowPopup = false,
     explicitUserChoice = false
@@ -73,12 +76,13 @@ function createGatewayMcpTools({ gateway, gatewayGuard, openLoginPage } = {}) {
     { name: "fiction_list_models", description: "List models available to the logged-in account and its public balance status.", annotations: safetyAnnotations(true), inputSchema: { type: "object", additionalProperties: false, properties: {} } },
     { name: "fiction_recommend_models", description: "Lead-editor router: recommend an external model for a writing task. Supports mode=quick|deep. Pass returned modelIds to generate_to_file.modelIds; set generate_to_file.fallbackChain to true to enable ordered fallback.", annotations: safetyAnnotations(true), inputSchema: { type: "object", additionalProperties: false, properties: { task: { type: "string", maxLength: 64 }, mode: { type: "string", maxLength: 16 }, maxPerRole: { type: "number" }, authorPrefer: { type: "array", items: { type: "string" }, maxItems: 8 } } } },
     { name: "fiction_list_model_tasks", description: "List task types supported by the lead-editor model router.", annotations: safetyAnnotations(true), inputSchema: { type: "object", additionalProperties: false, properties: {} } },
-    { name: "fiction_generate_to_file", description: "Call the model only after the author confirms this specific call. authorConfirmed=true is required every time. Stream-first with retries, complete candidate txt output, and a Markdown writing-history entry.", annotations: safetyAnnotations(false), inputSchema: { type: "object", additionalProperties: false, required: ["projectDir", "prompt", "modelIds", "authorConfirmed"], properties: { projectDir: { type: "string", maxLength: 512 }, prompt: { type: "string", maxLength: 200000 }, system: { type: "string", maxLength: 100000 }, modelIds: { type: "array", items: { type: "string" }, minItems: 1, maxItems: 8 }, authorConfirmed: { type: "boolean" }, kind: { type: "string", maxLength: 64 }, title: { type: "string", maxLength: 120 }, chapterNo: { type: "string", maxLength: 32 }, taskLabel: { type: "string", maxLength: 64 }, previewChars: { type: "number" }, fallbackChain: { type: "boolean" }, minChars: { type: "number" }, applyHardGates: { type: "boolean" }, maxTokens: { type: "number", minimum: 256, maximum: 65536 } } } },
+    { name: "fiction_generate_to_file", description: "Call the model only after the author confirms this specific call. authorConfirmed=true is required every time. Set background=true for long prose so Codex can do local continuity work while generation runs; poll fiction_generation_status afterward.", annotations: safetyAnnotations(false), inputSchema: { type: "object", additionalProperties: false, required: ["projectDir", "prompt", "modelIds", "authorConfirmed"], properties: { projectDir: { type: "string", maxLength: 512 }, prompt: { type: "string", maxLength: 200000 }, system: { type: "string", maxLength: 100000 }, modelIds: { type: "array", items: { type: "string" }, minItems: 1, maxItems: 8 }, authorConfirmed: { type: "boolean" }, background: { type: "boolean" }, kind: { type: "string", maxLength: 64 }, title: { type: "string", maxLength: 120 }, chapterNo: { type: "string", maxLength: 32 }, taskLabel: { type: "string", maxLength: 64 }, previewChars: { type: "number" }, fallbackChain: { type: "boolean" }, minChars: { type: "number" }, applyHardGates: { type: "boolean" }, maxTokens: { type: "number", minimum: 256, maximum: 65536 } } } },
+    { name: "fiction_generation_status", description: "Read a background generation/optimization job. While it runs, do only local continuity, fact, foreshadowing, and review preparation; do not start another paid call or edit canon.", annotations: safetyAnnotations(true), inputSchema: { type: "object", additionalProperties: false, required: ["jobId"], properties: { jobId: { type: "string", maxLength: 96 } } } },
     { name: "fiction_write_artifact", description: "Write candidate text to project Codex候选 as txt. When modelId identifies an external model, also append the Markdown writing-history entry.", annotations: safetyAnnotations(false), inputSchema: { type: "object", additionalProperties: false, required: ["projectDir", "content"], properties: { projectDir: { type: "string", maxLength: 512 }, content: { type: "string", maxLength: 400000 }, kind: { type: "string", maxLength: 64 }, title: { type: "string", maxLength: 120 }, chapterNo: { type: "string", maxLength: 32 }, modelId: { type: "string", maxLength: 128 }, ext: { type: "string", maxLength: 8 } } } },
     { name: "fiction_write_local_candidate", description: "Save author/Codex-written prose to Codex候选 txt without gateway (for unpaid/local path). Model optimize still needs login.", annotations: safetyAnnotations(false), inputSchema: { type: "object", additionalProperties: false, required: ["projectDir", "content"], properties: { projectDir: { type: "string", maxLength: 512 }, content: { type: "string", maxLength: 400000 }, title: { type: "string", maxLength: 120 }, chapterNo: { type: "string", maxLength: 32 }, kind: { type: "string", maxLength: 40 } } } },
     { name: "fiction_read_artifact", description: "Read a candidate artifact txt/md written by the plugin.", annotations: safetyAnnotations(true), inputSchema: { type: "object", additionalProperties: false, required: ["path"], properties: { path: { type: "string", maxLength: 1024 }, maxChars: { type: "number" } } } },
     { name: "fiction_list_artifacts", description: "List candidate artifacts under project Codex候选.", annotations: safetyAnnotations(true), inputSchema: { type: "object", additionalProperties: false, required: ["projectDir"], properties: { projectDir: { type: "string", maxLength: 512 }, limit: { type: "number" } } } },
-    { name: "fiction_optimize_with_models", description: "Optimize only after the author confirms this specific call. authorConfirmed=true is required every time. Each model result is saved to Codex候选 txt and appended to Markdown writing history.", annotations: safetyAnnotations(false), inputSchema: { type: "object", additionalProperties: false, required: ["projectDir", "draftText", "authorConfirmed"], properties: { projectDir: { type: "string", maxLength: 512 }, draftText: { type: "string", maxLength: 400000 }, authorConfirmed: { type: "boolean" }, title: { type: "string", maxLength: 120 }, chapterNo: { type: "string", maxLength: 32 }, modelIds: { type: "array", items: { type: "string" }, maxItems: 8 }, mode: { type: "string", maxLength: 32 }, focus: { type: "string", maxLength: 32 }, instruction: { type: "string", maxLength: 4000 }, autoRecommend: { type: "boolean" } } } },
+    { name: "fiction_optimize_with_models", description: "Optimize only after the author confirms this specific call. authorConfirmed=true is required every time. Set background=true for long revisions; poll fiction_generation_status afterward.", annotations: safetyAnnotations(false), inputSchema: { type: "object", additionalProperties: false, required: ["projectDir", "draftText", "authorConfirmed"], properties: { projectDir: { type: "string", maxLength: 512 }, draftText: { type: "string", maxLength: 400000 }, authorConfirmed: { type: "boolean" }, background: { type: "boolean" }, title: { type: "string", maxLength: 120 }, chapterNo: { type: "string", maxLength: 32 }, modelIds: { type: "array", items: { type: "string" }, maxItems: 8 }, mode: { type: "string", maxLength: 32 }, focus: { type: "string", maxLength: 32 }, instruction: { type: "string", maxLength: 4000 }, autoRecommend: { type: "boolean" } } } },
     { name: "fiction_compare_style", description: "Compare draft against voice anchors and sample-book notes; write report artifact.", annotations: safetyAnnotations(false), inputSchema: { type: "object", additionalProperties: false, required: ["projectDir"], properties: { projectDir: { type: "string", maxLength: 512 }, draftText: { type: "string", maxLength: 400000 }, draftPath: { type: "string", maxLength: 1024 }, title: { type: "string", maxLength: 120 } } } },
     { name: "fiction_smoke_live_gateway", description: "Run a paid live generate/optimize smoke only after the author confirms this specific call. authorConfirmed=true is required every time.", annotations: safetyAnnotations(false), inputSchema: { type: "object", additionalProperties: false, required: ["authorConfirmed"], properties: { authorConfirmed: { type: "boolean" }, projectDir: { type: "string", maxLength: 512 }, title: { type: "string", maxLength: 80 } } } }
   ];
@@ -190,22 +194,64 @@ function createGatewayMcpTools({ gateway, gatewayGuard, openLoginPage } = {}) {
           error.code = "GATEWAY_UNAVAILABLE";
           throw error;
         }
-        return toolResult(await generateToArtifact({
+        const kind = String(input.kind || "draft");
+        const taskLabel = String(input.taskLabel || input.kind || "fiction");
+        const draftSystem = buildDraftSystem({
+          system: String(input.system || ""),
+          kind,
+          taskLabel
+        });
+        const generationInput = {
           gateway,
           projectDir: required(input.projectDir, "projectDir"),
           prompt: required(input.prompt, "prompt"),
-          system: String(input.system || ""),
+          system: draftSystem.system,
           modelIds: input.modelIds,
-          kind: String(input.kind || "draft"),
+          kind,
           title: String(input.title || ""),
           chapterNo: String(input.chapterNo || ""),
-          taskLabel: String(input.taskLabel || input.kind || "fiction"),
+          taskLabel,
           previewChars: Number(input.previewChars || 800),
           fallbackChain: input.fallbackChain !== false,
           minChars: Number(input.minChars || 0),
           applyHardGates: input.applyHardGates !== false,
-          maxTokens: Number(input.maxTokens || 24000)
-        }));
+          maxTokens: Number(input.maxTokens || 24000),
+          requestPolicyVersion: draftSystem.policyVersion
+        };
+        if (input.background === true) {
+          const job = jobs.start({
+            type: "generation",
+            metadata: {
+              projectDir: generationInput.projectDir,
+              kind,
+              title: generationInput.title,
+              chapterNo: generationInput.chapterNo,
+              policyVersion: draftSystem.policyVersion
+            },
+            run: () => generateToArtifact(generationInput)
+          });
+          return toolResult({
+            ok: true,
+            background: true,
+            ...job,
+            waitingWork: [
+              "读取最近已确认正文，核对人物位置、手中物件和未完成动作",
+              "核对时间线、知情范围、事实库和待回收伏笔",
+              "准备流程腔与事实冲突的候选验收重点"
+            ],
+            waitingBoundary: "仅做本地只读准备；不额外调用模型，不修改正式正文或事实台账。"
+          });
+        }
+        return toolResult(await generateToArtifact(generationInput));
+      }
+      case "fiction_generation_status": {
+        const job = jobs.get(required(input.jobId, "jobId"));
+        if (!job) {
+          const error = new Error("Background job not found. It may belong to an older MCP process.");
+          error.code = "JOB_NOT_FOUND";
+          throw error;
+        }
+        return toolResult({ ok: true, background: true, ...job });
       }
       case "fiction_write_artifact": return toolResult(await writeArtifact({
         projectDir: required(input.projectDir, "projectDir"),
@@ -245,7 +291,7 @@ function createGatewayMcpTools({ gateway, gatewayGuard, openLoginPage } = {}) {
           allowPopup: true,
           explicitUserChoice: true
         });
-        return toolResult(await optimizeWithModels({
+        const optimizeInput = {
           gateway,
           projectDir: required(input.projectDir, "projectDir"),
           draftText: required(input.draftText, "draftText"),
@@ -256,7 +302,32 @@ function createGatewayMcpTools({ gateway, gatewayGuard, openLoginPage } = {}) {
           focus: String(input.focus || "full"),
           instruction: String(input.instruction || ""),
           autoRecommend: input.autoRecommend !== false
-        }));
+        };
+        if (input.background === true) {
+          const job = jobs.start({
+            type: "optimization",
+            metadata: {
+              projectDir: optimizeInput.projectDir,
+              mode: optimizeInput.mode,
+              focus: optimizeInput.focus,
+              title: optimizeInput.title,
+              chapterNo: optimizeInput.chapterNo
+            },
+            run: () => optimizeWithModels(optimizeInput)
+          });
+          return toolResult({
+            ok: true,
+            background: true,
+            ...job,
+            waitingWork: [
+              "核对原稿中的剧情事实、人物选择和事件顺序",
+              "标记流程腔、说满、重复解释和人物声口风险",
+              "准备改后稿的保真验收重点"
+            ],
+            waitingBoundary: "仅做本地只读准备；不额外调用模型，不修改正式正文或事实台账。"
+          });
+        }
+        return toolResult(await optimizeWithModels(optimizeInput));
       }
       case "fiction_compare_style": return toolResult(await compareStyle({ projectDir: required(input.projectDir, "projectDir"), draftText: String(input.draftText || ""), draftPath: String(input.draftPath || ""), title: String(input.title || "") }));
       case "fiction_smoke_live_gateway": {

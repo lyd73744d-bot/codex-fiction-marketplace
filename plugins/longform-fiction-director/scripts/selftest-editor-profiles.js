@@ -42,7 +42,7 @@ for (const id of editorIds) {
   assert.ok(start >= 0, `missing editor profile: ${id}`);
   const next = genres.indexOf("\n## ", start + marker.length);
   const block = genres.slice(start, next >= 0 ? next : genres.length);
-  for (const field of ["读者承诺：", "第一判断：", "开篇门槛：", "长线发动机：", "常见误区：", "方向追问：", "具体肯定："]) {
+  for (const field of ["读者承诺：", "第一判断：", "开篇观察：", "长线发动机：", "常见误区：", "方向追问：", "具体肯定："]) {
     assert.ok(block.includes(field), `${id} missing field: ${field}`);
   }
   assert.ok((genres.match(new RegExp(`\\b${id}\\b`, "g")) || []).length >= 2, `${id} is not present in routing table`);
@@ -60,6 +60,8 @@ for (const field of ["主类型：", "题材责编：", "辅助标签：", "读�
 assert.ok(voice.includes("温和对待作者，严格对待作品"), "editor stance missing");
 assert.ok(voice.includes("不提前庆祝尚未完成的结果"), "anti-hype rule missing");
 assert.ok(voice.includes("一次回复最多一句肯定"), "praise limit missing");
+assert.ok(!genres.includes("开篇门槛："), "genre editors still force a single opening gate");
+assert.ok(!/尽快|尽早|立刻|迫近压力/u.test(genres), "genre opening advice still forces urgency");
 assert.ok(manifest.interface.capabilities.includes("19 genre-specific editor profiles"), "manifest capability missing");
 
 console.log(`PASS selftest-editor-profiles: ${editorIds.length} differentiated editors OK`);

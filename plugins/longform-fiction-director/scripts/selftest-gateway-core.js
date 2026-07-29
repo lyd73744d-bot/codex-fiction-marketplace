@@ -121,6 +121,7 @@ async function main() {
     fs.rmSync(popupDir, { recursive: true, force: true });
   }
 
+  let lastGatewayCallInput = null;
   const fakeGateway = {
     baseUrl: "https://example.test",
     async login() { return { ok: true, loggedIn: true }; },
@@ -128,6 +129,10 @@ async function main() {
     async connectionStatus() { return { ok: true, online: true }; },
     async listModels() { return { ok: true, models: [{ id: "claude-opus-5", credits: 20 }, { id: "claude-sonnet-5", credits: 10 }] }; },
     async callModels(input) {
+      lastGatewayCallInput = { ...input };
+      if (input.taskLabel === "background-test") {
+        await new Promise((resolve) => setTimeout(resolve, 40));
+      }
       const model = input.modelIds[0];
       const content = "测试候选正文。" + "他推开门，屋里的灯还亮着，桌上的茶已经凉了。".repeat(30);
       return { ok: true, modelIds: [model], outputs: [{ model, content, usage: null, transport: "stream_attempt_1" }], content };
@@ -164,7 +169,7 @@ async function main() {
   const expected = [
     "fiction_ensure_gateway", "fiction_open_gateway_login", "fiction_account_status",
     "fiction_list_models", "fiction_recommend_models", "fiction_list_model_tasks",
-    "fiction_generate_to_file", "fiction_write_artifact", "fiction_write_local_candidate",
+    "fiction_generate_to_file", "fiction_generation_status", "fiction_write_artifact", "fiction_write_local_candidate",
     "fiction_read_artifact", "fiction_list_artifacts",
     "fiction_optimize_with_models", "fiction_compare_style", "fiction_smoke_live_gateway"
   ];
@@ -174,6 +179,8 @@ async function main() {
   assert.strictEqual(definitions.get("fiction_generate_to_file").inputSchema.properties.modelIds.type, "array");
   assert.strictEqual(definitions.get("fiction_generate_to_file").inputSchema.properties.fallbackChain.type, "boolean");
   assert.strictEqual(definitions.get("fiction_generate_to_file").inputSchema.properties.authorConfirmed.type, "boolean");
+  assert.strictEqual(definitions.get("fiction_generate_to_file").inputSchema.properties.background.type, "boolean");
+  assert.deepStrictEqual(definitions.get("fiction_generation_status").inputSchema.required, ["jobId"]);
   assert.ok(!definitions.get("fiction_optimize_with_models").inputSchema.properties.modelId, "optimize must not expose singular modelId");
   assert.strictEqual(definitions.get("fiction_optimize_with_models").inputSchema.properties.modelIds.type, "array");
   assert.ok(definitions.get("fiction_optimize_with_models").inputSchema.required.includes("authorConfirmed"));
@@ -217,10 +224,13 @@ async function main() {
 
     const gen = await callTool("fiction_generate_to_file", { projectDir, prompt: "写一段测试", modelIds: ["claude-opus-5"], authorConfirmed: true, applyHardGates: false });
     assert.strictEqual(gen.ok, true);
+    assert.ok(lastGatewayCallInput.system.includes("事实是硬边界，写法是自由区"), "draft request misses fixed natural-prose policy");
+    assert.ok(lastGatewayCallInput.system.includes("不要把一章写成系统、兵种、语言、物资、能力、阵营或世界规则的展示与验收流程"), "draft request still permits checklist prose");
     const generateGuardCall = gatewayGuardArguments.find((item) => item.reason === "generate_to_file");
     assert.strictEqual(generateGuardCall?.allowPopup, true, "approved generation must allow first-use login");
     assert.strictEqual(generateGuardCall?.explicitUserChoice, true, "approved generation must record explicit choice");
     assert.ok(fs.existsSync(gen.artifact.path), "artifact txt missing");
+    assert.ok(fs.readFileSync(gen.artifact.path, "utf8").includes('"requestPolicyVersion":"natural-prose-v2"'), "artifact does not record draft policy version");
     assert.ok(fs.existsSync(gen.artifact.plainPath), "artifact .body.txt missing");
     assert.strictEqual(gen.artifact.recordedForMemory, true, "external model output must be recorded for memory");
     assert.ok(fs.existsSync(gen.artifact.memoryRecord.path), "model writing record missing");
@@ -232,10 +242,31 @@ async function main() {
     const read = await callTool("fiction_read_artifact", { path: gen.artifact.path });
     assert.ok(read.content.includes("测试候选正文"), "read content mismatch");
 
+    const background = await callTool("fiction_generate_to_file", {
+      projectDir,
+      prompt: "后台写一段测试",
+      modelIds: ["claude-opus-5"],
+      authorConfirmed: true,
+      background: true,
+      taskLabel: "background-test",
+      applyHardGates: false
+    });
+    assert.strictEqual(background.background, true, "background generation did not return immediately");
+    assert.ok(background.jobId, "background generation job id missing");
+    assert.ok(Array.isArray(background.waitingWork) && background.waitingWork.length > 0, "background waiting work missing");
+    let backgroundStatus = await callTool("fiction_generation_status", { jobId: background.jobId });
+    for (let attempt = 0; attempt < 20 && !["completed", "failed"].includes(backgroundStatus.status); attempt += 1) {
+      await new Promise((resolve) => setTimeout(resolve, 20));
+      backgroundStatus = await callTool("fiction_generation_status", { jobId: background.jobId });
+    }
+    assert.strictEqual(backgroundStatus.status, "completed", "background generation did not complete");
+    assert.ok(fs.existsSync(backgroundStatus.result.artifact.path), "background artifact txt missing");
+
+    const modelRecordBeforeLocal = fs.readFileSync(gen.artifact.memoryRecord.path, "utf8");
     const local = await callTool("fiction_write_local_candidate", { projectDir, content: "本地候选正文。", title: "本地" });
     assert.strictEqual(local.ok, true);
     assert.strictEqual(local.artifact.recordedForMemory, false, "local candidate must not impersonate external-model history");
-    assert.strictEqual(fs.readFileSync(gen.artifact.memoryRecord.path, "utf8"), firstModelRecord, "local candidate changed external-model history");
+    assert.strictEqual(fs.readFileSync(gen.artifact.memoryRecord.path, "utf8"), modelRecordBeforeLocal, "local candidate changed external-model history");
 
     const importedExternal = await callTool("fiction_write_artifact", {
       projectDir,

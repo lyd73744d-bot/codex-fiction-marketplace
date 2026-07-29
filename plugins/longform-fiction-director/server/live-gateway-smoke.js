@@ -77,7 +77,7 @@ async function smokeLiveGateway({ gateway, projectDir = "", title = "live-smoke"
   await fsp.mkdir(path.join(root, "细纲"), { recursive: true });
   await fsp.writeFile(
     path.join(root, "细纲", "01_当前章细纲.md"),
-    "# 冒烟控制卡\n\n冲突：门口有人压军报。\n钩子：第二份军报到了。\n",
+    "# 冒烟章节笔记\n\n人物正在整理一份尚未送出的军报，门外有人等他决定。\n",
     "utf8"
   );
 

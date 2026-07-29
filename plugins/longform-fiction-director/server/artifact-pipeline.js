@@ -14,7 +14,7 @@ function safeSegment(value, fallback = "item") {
 function stamp() {
   const d = new Date();
   const p = (n) => String(n).padStart(2, "0");
-  return d.getFullYear() + p(d.getMonth() + 1) + p(d.getDate()) + "-" + p(d.getHours()) + p(d.getMinutes()) + p(d.getSeconds());
+  return d.getFullYear() + p(d.getMonth() + 1) + p(d.getDate()) + "-" + p(d.getHours()) + p(d.getMinutes()) + p(d.getSeconds()) + String(d.getMilliseconds()).padStart(3, "0");
 }
 
 function candidateDir(projectDir) {
@@ -112,6 +112,16 @@ async function ensureDir(dir) {
   return dir;
 }
 
+async function writeTextAtomic(filePath, content) {
+  const tempPath = filePath + ".tmp-" + process.pid + "-" + Math.random().toString(16).slice(2);
+  try {
+    await fsp.writeFile(tempPath, content, "utf8");
+    await fsp.rename(tempPath, filePath);
+  } finally {
+    await fsp.unlink(tempPath).catch(() => {});
+  }
+}
+
 function extractModelPayload(result, fallbackModelId = "") {
   let content = "";
   let modelId = fallbackModelId || "";
@@ -165,11 +175,11 @@ async function writeArtifact({ projectDir, kind = "draft", title = "", chapterNo
     Object.keys(artifactMeta).length ? "meta: " + JSON.stringify(artifactMeta) : "",
     "---",
     ""
-  ].filter(Boolean).join("\n");
+  ].filter(Boolean).join("\n") + "\n\n";
   const body = content.replace(/\r\n?/g, "\n").trim() + "\n";
-  await fsp.writeFile(filePath, header + body, "utf8");
+  await writeTextAtomic(filePath, header + body);
   const plainPath = path.join(dir, parts.join("_") + ".body." + fileExt);
-  await fsp.writeFile(plainPath, body, "utf8");
+  await writeTextAtomic(plainPath, body);
   const chars = body.replace(/\s+/g, "").length;
   let memoryRecord = null;
   let memoryRecordError = null;
@@ -265,12 +275,13 @@ async function generateToArtifact({
   prompt = "",
   taskLabel = "fiction",
   previewChars = 800,
-  streamRetries = 1,
+  streamRetries = 2,
   outerAttempts = 1,
   fallbackChain = true,
   minChars = 0,
   applyHardGates = true,
-  maxTokens
+  maxTokens,
+  requestPolicyVersion = "caller-only"
 } = {}) {
   if (!gateway || typeof gateway.callModels !== "function") throw new Error("gateway.callModels required");
   if (!projectDir) throw new Error("projectDir required");
@@ -281,35 +292,37 @@ async function generateToArtifact({
   let lastError = null;
   let lastTransport = "none";
   let lastGate = null;
+  let lastPartial = false;
   let fallbackAttempts = [];
   const attempts = 1;
   const retries = Math.max(1, Math.min(Number(streamRetries) || 1, 2));
   const useFallback = fallbackChain !== false && ids.length > 1;
 
   async function callOne(modelId) {
-    const result = await gateway.callModels({
-      prompt: String(prompt),
-      system: system ? String(system) : undefined,
-      modelIds: [modelId],
-      taskLabel: String(taskLabel || kind || "fiction").slice(0, 64),
-      streamRetries: retries,
-      ...(maxTokens == null ? {} : { maxTokens: Number(maxTokens) })
-    });
-    const extracted = extractModelPayload(result, modelId);
+    let extracted;
+    try {
+      const result = await gateway.callModels({
+        prompt: String(prompt),
+        system: system ? String(system) : undefined,
+        modelIds: [modelId],
+        taskLabel: String(taskLabel || kind || "fiction").slice(0, 64),
+        streamRetries: retries,
+        ...(maxTokens == null ? {} : { maxTokens: Number(maxTokens) })
+      });
+      extracted = extractModelPayload(result, modelId);
+    } catch (error) {
+      const partial = String(error?.partialContent || "").replace(/\r\n?/g, "\n").trim();
+      if (!partial) throw error;
+      extracted = { content: partial, modelId, transport: "partial_error" };
+      lastPartial = true;
+    }
     lastTransport = extracted.transport;
-    if (!extracted.content || extracted.content.replace(/\s+/g, "").length < 8) {
-      throw Object.assign(new Error("empty_or_too_short_model_output"), { code: "EMPTY_MODEL_OUTPUT" });
+    if (!extracted.content || !extracted.content.replace(/\s+/g, "")) {
+      throw Object.assign(new Error("empty_model_output"), { code: "EMPTY_MODEL_OUTPUT" });
     }
     if (applyHardGates) {
       const check = isAcceptableCandidate(extracted.content, { minChars: Number(minChars) || 0 });
       lastGate = check.gate;
-      if (!check.ok) {
-        const err = new Error("hard_gate_failed:" + check.blockers.map((b) => b.rule).join(","));
-        err.code = "HARD_GATE_FAILED";
-        err.blockers = check.blockers;
-        err.gate = check.gate;
-        throw err;
-      }
     } else {
       lastGate = inspectChapter(extracted.content, { minChars: Number(minChars) || 0 });
     }
@@ -353,10 +366,12 @@ async function generateToArtifact({
           streamRetries: retries,
           fallbackChain: useFallback,
           degraded,
+          partial: lastPartial || /^partial_/u.test(lastTransport),
           hardGateOk: !lastGate || lastGate.ok !== false,
           hardGateIssues: lastGate && Array.isArray(lastGate.issues) ? lastGate.issues : [],
+          requestPolicyVersion: String(requestPolicyVersion || "caller-only"),
           fallbackAttempts: fallbackAttempts.slice(-12),
-          note: "完整候选 txt；.body 纯正文可再喂模型"
+          note: "模型返回即保存为候选 txt；中途断线也保留已收到正文；.body 纯正文可再喂模型，质量检查仅提示不拦截落盘"
         }
       });
 
@@ -372,7 +387,7 @@ async function generateToArtifact({
         hardGate: lastGate,
         fallbackAttempts,
         preview: content.slice(0, previewLimit),
-        coach: "候选已完整落盘。可读 " + saved.relativePath + " 与纯正文 " + saved.plainRelativePath +
+        coach: "模型输出已落盘。可读 " + saved.relativePath + " 与纯正文 " + saved.plainRelativePath +
           (saved.memoryRecord ? "；写作记录已更新 " + saved.memoryRecord.relativePath + "。" : "；写作记录未更新，请保留当前候选路径。") +
           "作者确认前不入正式正文/台账。"
       };

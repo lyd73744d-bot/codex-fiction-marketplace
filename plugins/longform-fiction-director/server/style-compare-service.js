@@ -42,11 +42,11 @@ function roughStats(text) {
   }
   if (dialogueLines / Math.max(lines.length, 1) > 0.55) {
     aiHints.push("对话过密");
-    fixes.push("补一点动作与环境压力，避免对白空转");
+    fixes.push("检查人物位置、手中物件和未完成动作，避免对白悬空");
   }
   if (longLines / Math.max(lines.length, 1) > 0.3) {
     aiHints.push("长句偏多");
-    fixes.push("高压段拆短句，一段只推一个动作");
+    fixes.push("动作连续处适当拆句，但不要机械地一段只放一个动作");
   }
   if (shortLines / Math.max(lines.length, 1) > 0.4 && chars > 600) {
     aiHints.push("短句连珠");

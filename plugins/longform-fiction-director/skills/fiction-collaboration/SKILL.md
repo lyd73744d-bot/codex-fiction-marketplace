@@ -22,30 +22,30 @@ description: Supplemental project-continuity and lead-editor boundaries for long
 
 ## 协作闭环
 1. Codex 自查项目缺什么（脑洞/样书/文风/大纲/核验/人物资料/细纲），缺的先补
-2. Codex 本地完成总责编工作：脑洞、研究、工程建档、拆卡点、控制卡、解释和审核
+2. Codex 本地完成总责编工作：脑洞、研究、工程建档、必要的自然章节笔记、解释和审核；创作规划遵守主 Skill 的 `natural-writing-system.md`
 3. 需要模型：`fiction_ensure_gateway` → `fiction_recommend_models` → 等确认 → 生成
 4. 每次先推荐模型并询问；作者当次选择使用后，生成用 `fiction_generate_to_file`（`authorConfirmed: true`，流式优先，完整落盘）
 5. 优化同样重新询问；确认后用 `fiction_optimize_with_models`（`authorConfirmed: true`）+ deslop/humanizer skills
 6. 作者确认后，Codex 直接把定稿写入 `正文/` 并更新台账 md
 
-## 网关 MCP（14 个工具，只负责网关与候选文件）
+## 网关 MCP（15 个工具，只负责网关与候选文件）
 - 登录/账号：`fiction_ensure_gateway` `fiction_open_gateway_login` `fiction_account_status`
 - 选模型：`fiction_list_models` `fiction_recommend_models` `fiction_list_model_tasks`
-- 生成/落盘：`fiction_generate_to_file` `fiction_write_artifact` `fiction_write_local_candidate` `fiction_read_artifact` `fiction_list_artifacts`
+- 生成/落盘：`fiction_generate_to_file` `fiction_generation_status` `fiction_write_artifact` `fiction_write_local_candidate` `fiction_read_artifact` `fiction_list_artifacts`
 - 优化/对比/自检：`fiction_optimize_with_models` `fiction_compare_style` `fiction_smoke_live_gateway`
 
 ## 本地由 Codex 直接做（总责编位）
 - 引导/进度：在对话与台账 md 里自己记录当前第几步
 - 样书：读作者放进 `样书/` 的文本，写手法笔记 md
 - 核验/人物：真实检索后写 `联网核验/`，更新 `辅助文档/02_人物台账.md` 和 `辅助文档/08_事实库_防OOC.md`
-- 大纲/细纲/控制卡：直接写成项目内 md
+- 大纲/细纲：需要时直接写成项目内自然 md；不做表格、逐场编号、字数分配或正文验收单
 - 候选审核：检查事实、因果、人物声音、时间线、伏笔和题材承诺，给写作模型明确返工点
 - 入台账：作者确认后把定稿写入 `正文/`，更新人物/时间线/伏笔/进度台账
-- 连续（隐藏）：仅黄金三章后且作者明确授权；每次外部模型调用前仍单独询问，不得用连续授权代替当次确认
+- 连续（隐藏）：仅在近期方向和事实边界已经清楚且作者明确授权后启用；每次外部模型调用前仍单独询问，不得用连续授权代替当次确认
 
 ## 禁止
 - 默认抢写完整正文、改写或润色；外部写作模型占 A 位
-- 作者拒绝外部模型后自动由 Codex 接管；应先问继续磨控制卡还是写本地临时候选
+- 作者拒绝外部模型后自动由 Codex 接管；应先问继续把这一章想清楚，还是写本地临时候选
 - 未确认就 settle / 覆盖正式正文
 - 暴露网关密钥、会话令牌、充值码
 - 把空核验文档当已完成

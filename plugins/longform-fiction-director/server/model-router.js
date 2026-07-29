@@ -10,7 +10,6 @@ const TASK_ROLES = {
   market_scan: ["explore"],
   outline: ["structure", "explore"],
   chapter_brief: ["structure"],
-  chapter_control_card: ["structure"],
   draft: ["draft"],
   continuous_draft: ["draft", "continuity"],
   humanize: ["style"],
@@ -86,7 +85,8 @@ function normalizeTask(task) {
     "脑洞": "brainstorm",
     "大纲": "outline",
     "细纲": "chapter_brief",
-    "控制卡": "chapter_control_card",
+    "控制卡": "chapter_brief",
+    "chapter_control_card": "chapter_brief",
     "正文": "draft",
     "候选": "draft",
     "去ai味": "humanize",
@@ -177,7 +177,7 @@ function buildCoachAdvice(taskId, plans, mode, unpaidNote) {
     const ids = plan.models.map((m) => m.id).join(" / ") || "暂无可用模型";
     lines.push("- " + plan.label + "：优先 " + ids + "。" + plan.why);
   }
-  lines.push("生成策略：一次流式提交；超时不重发，仅空流做协议兼容；作者确认多个模型时才按顺序换模型。完整 txt 落盘（.body 纯正文可再喂模型）。");
+  lines.push("生成策略：正式请求不先测活；无正文的明确临时故障最多重试一次，超时或部分流不重发；作者确认多个模型时才按顺序换模型。收到的正文全部落盘（.body 纯正文可再喂模型）。");
   lines.push("结果先在「Codex候选/」给作者看，确认前不入正式正文/台账。");
   if (mode === "quick") lines.push("快速模式：探索用 flash/luna；正文用 sonnet/terra/kimi/glm；终检再开 deep。");
   else lines.push("深度模式：主写用稳定模型，终检使用旗舰模型。");
@@ -258,15 +258,15 @@ function recommendModels({
       taskId,
       plans,
       modeId,
-      unpaid ? "当前未登录：作者当次确认使用后再完成登录；未确认则继续磨控制卡，或由作者明确选择临时候选。" : ""
+      unpaid ? "当前未登录：作者当次确认使用后再完成登录；未确认则继续把这一章想清楚，或由作者明确选择临时候选。" : ""
     ),
     transport: {
       mode: "stream_first_to_txt",
-      streamRetries: 1,
+      streamRetries: 2,
       outerAttempts: 1,
       nonStreamFallback: "empty_stream_only",
       multiModelFallback: true,
-      note: "一次流式提交；仅空流响应尝试非流式兼容，超时不重复提交。完整文本写入 Codex候选 txt（含 .body 纯正文），再读取。"
+      note: "正式生成不先测活；无正文的明确临时故障最多重试一次，超时或部分流不重复提交。已收到文本写入 Codex候选 txt（含 .body 纯正文），再读取。"
     },
     usageTips: [
       "脑洞/探索：快模型",

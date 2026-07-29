@@ -9,6 +9,7 @@ const read = (relative) => fs.readFileSync(path.join(root, relative), "utf8");
 
 const main = read("skills/longform-fiction-director/SKILL.md");
 const division = read("skills/longform-fiction-director/references/editor-model-division.md");
+const naturalSystem = read("skills/longform-fiction-director/references/natural-writing-system.md");
 const beginner = read("skills/longform-fiction-director/references/beginner-coach.md");
 const collaboration = read("skills/fiction-collaboration/SKILL.md");
 const humanizer = read("skills/humanizer-methods/SKILL.md");
@@ -25,13 +26,17 @@ const { recommendModels } = require("../server/model-router");
 const manifest = JSON.parse(read(".codex-plugin/plugin.json"));
 
 assert.ok(main.includes("references/editor-model-division.md"), "main skill must load editor/model division");
+assert.ok(main.includes("references/natural-writing-system.md"), "main skill must load the global natural-writing system");
 assert.ok(main.includes("references/codex-agent-team.md"), "main skill must load the prebuilt Codex agent team");
 assert.ok(main.includes("审稿记录/模型写作记录.md"), "main skill misses persistent model-writing history");
 assert.ok(main.includes("你大概想写什么类型？没想好也没关系"), "new-book flow must ask genre first");
 assert.ok(!main.includes("作者选新书后先问临时书名"), "new-book flow still asks title first");
 assert.ok(main.includes("角色定位：总责编位"), "Codex lead-editor role missing");
 assert.ok(main.includes("外部写作模型默认占正文与正文优化的 A 位"), "external prose A-position missing");
-assert.ok(division.includes("继续把控制卡磨清楚，还是让我先写一版临时候选？"), "decline fallback question missing");
+assert.ok(division.includes("继续把这一章想清楚，还是让我先写一版临时候选？"), "decline fallback question missing");
+assert.ok(naturalSystem.includes("事实是硬边界，写法是自由区"), "global creative-boundary rule missing");
+assert.ok(naturalSystem.includes("不得把旧表格或栏目原样发给写作模型"), "legacy brief sanitization rule missing");
+assert.ok(naturalSystem.includes("流程腔"), "whole-chapter process-voice audit missing");
 assert.ok(beginner.includes("不自动接管整章"), "beginner flow still lets Codex take prose by default");
 assert.ok(beginner.includes("核心脑洞问清后、正式收束前"), "beginner flow misses optional external brainstorm expansion");
 assert.ok(beginner.includes("作者不同意就按当前脑洞继续"), "declined brainstorm must stay local and silent");
@@ -64,9 +69,14 @@ assert.ok(manifest.interface.capabilities.includes("Optional external brainstorm
 assert.ok(manifest.interface.capabilities.includes("Prebuilt on-demand Codex editorial agents"), "manifest Codex agent-team capability missing");
 assert.ok(manifest.interface.capabilities.includes("Persistent model-output txt and Markdown writing history"), "manifest model-writing history capability missing");
 assert.ok(manifest.interface.capabilities.includes("Genre-first beginner cold start with automatic working title"), "manifest genre-first cold-start capability missing");
+assert.ok(manifest.interface.capabilities.includes("Global natural-writing policy; briefs never become prose checklists"), "manifest natural-writing policy capability missing");
+assert.ok(manifest.interface.capabilities.includes("Background long-form generation with local continuity work"), "manifest background generation capability missing");
 assert.ok(manifest.interface.defaultPrompt.some((item) => item.includes("准备定方向前建议一次可选的外部模型发散")), "default prompt misses brainstorm handoff");
 assert.ok(manifest.interface.defaultPrompt.some((item) => item.includes("我选择新书后，先问类型")), "default prompt misses genre-first cold start");
 assert.ok(manifest.interface.defaultPrompt.some((item) => item.includes("不先问书名和文件夹")), "default prompt still allows title-first cold start");
+assert.ok(manifest.interface.defaultPrompt.some((item) => item.includes("事实是硬边界，写法是自由区")), "default prompt misses the global creative-boundary rule");
+assert.ok(manifest.interface.defaultPrompt.some((item) => item.includes("长文调用使用后台生成")), "default prompt misses background generation behavior");
+assert.ok(!JSON.stringify(manifest).includes("控制卡"), "manifest still revives the legacy chapter-control-card workflow");
 for (const role of ["idea-architect", "research-verifier", "sample-method-analyst", "continuity-keeper", "draft-reviewer"]) {
   assert.ok(agentTeam.includes(role), `prebuilt Codex agent role missing: ${role}`);
 }

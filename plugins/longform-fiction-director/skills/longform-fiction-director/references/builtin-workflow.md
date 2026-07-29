@@ -4,7 +4,6 @@
 
 ## 内置位置
 - 项目模板：`assets/workflow/project-template/`
-- 通用辅助文档母版：`assets/workflow/auxiliary-base/`
 - 说明文档：`assets/workflow/docs/`
 
 ## 新书怎么开
@@ -16,12 +15,12 @@
 3. 每次生成正文或做终检前重读这份清单
 
 ## 默认一步步
-整理资料清单 → Codex 问清脑洞 → 接入题材责编 → 可选外部发散/优化 → 作者定方向 → 细纲 → 候选正文 → 去AI味(可选) → 质检(可选) → 确认入台账
+整理资料清单 → Codex 问清脑洞 → 接入题材责编 → 可选外部发散/优化 → 作者定方向 → 按需写自然章节笔记 → 候选正文 → 去AI味(可选) → 质检(可选) → 确认入台账
 
 ## 连续跑
 作者授权连续流程后仍需在每次外部模型调用前询问；当次确认后才以 `authorConfirmed: true` 调用 `fiction_generate_to_file`：
-- to_draft：细纲 → 正文
-- chapter_once：细纲 → 正文 → 去AI味 → 质检
+- to_draft：已有承接/可选章节笔记 → 正文
+- chapter_once：读取承接与事实 → 正文 → 去AI味 → 质检
 - polish_once：去AI味 → 质检
 - multi_chapter：循环 chapter_once
 
@@ -32,8 +31,9 @@
 
 
 ## 提示词增强（已内置）
-- 控制卡：chapter-control-card.md
-- 钩子爽点：hook-shuangdian-checklist.md
+- 全局自然写作制度：natural-writing-system.md
+- 可选章节笔记：chapter-control-card.md（旧文件名仅为兼容）
+- 可选平台节奏观察：hook-shuangdian-checklist.md
 - 去AI分级：deslop-grades.md
 - 里程碑状态摘要：delivery-dashboard.md（只在整章完成、质检完成或作者问进度时使用）
 - 拆解备忘：prompt-lessons-from-peers.md

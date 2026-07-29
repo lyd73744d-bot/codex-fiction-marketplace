@@ -1,66 +1,21 @@
 "use strict";
 
 const crypto = require("node:crypto");
-const { GatewayClientError, toGatewayNetworkError } = require("./gateway-client");
+const {
+  DEFAULT_MAX_RESPONSE_BYTES,
+  DEFAULT_STREAM_IDLE_TIMEOUT_MS,
+  DEFAULT_STREAM_TOTAL_TIMEOUT_MS,
+  GatewayClientError,
+  collectOpenAiStream,
+  completionContent,
+  completionParts,
+  createActivityDeadline,
+  isRetryableGenerationError,
+  toGatewayNetworkError
+} = require("./gateway-client");
 const { SessionStoreError, createSessionStore, publicUser } = require("./session-store");
 
-const MAX_RESPONSE_BYTES = 2 * 1024 * 1024;
-
-function completionContent(payload) {
-  const content = payload?.choices?.[0]?.message?.content ?? payload?.choices?.[0]?.delta?.content;
-  if (typeof content === "string") return content;
-  if (Array.isArray(content)) return content.map((part) => typeof part?.text === "string" ? part.text : "").join("");
-  return "";
-}
-
-async function collectOpenAiStream(response, onDelta) {
-  const contentType = response.headers?.get?.("content-type") || "";
-  if (!/text\/event-stream/iu.test(contentType)) {
-    let text;
-    try { text = await response.text(); } catch (error) { throw toGatewayNetworkError(error, "RESPONSE_INVALID"); }
-    if (Buffer.byteLength(text, "utf8") > MAX_RESPONSE_BYTES) throw new GatewayClientError("RESPONSE_INVALID");
-    let payload;
-    try { payload = JSON.parse(text); } catch { throw new GatewayClientError("RESPONSE_INVALID"); }
-    const content = completionContent(payload);
-    if (!content.trim()) throw new GatewayClientError("RESPONSE_INVALID");
-    if (typeof onDelta === "function") await onDelta(content);
-    return { content, usage: payload?.usage || null };
-  }
-
-  const reader = response.body?.getReader?.();
-  if (!reader) throw new GatewayClientError("RESPONSE_INVALID");
-  const decoder = new TextDecoder();
-  let receivedBytes = 0;
-  let buffer = "";
-  let content = "";
-  let usage = null;
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    receivedBytes += value?.byteLength || 0;
-    if (receivedBytes > MAX_RESPONSE_BYTES) throw new GatewayClientError("RESPONSE_INVALID");
-    buffer += decoder.decode(value, { stream: true });
-    const chunks = buffer.split(/\r?\n\r?\n/);
-    buffer = chunks.pop() || "";
-    for (const chunk of chunks) {
-      const lines = chunk.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
-      for (const line of lines) {
-        if (!line.startsWith("data:")) continue;
-        const data = line.slice(5).trim();
-        if (!data || data === "[DONE]") continue;
-        let payload;
-        try { payload = JSON.parse(data); } catch { continue; }
-        if (payload?.usage) usage = payload.usage;
-        const delta = completionContent(payload);
-        if (!delta) continue;
-        content += delta;
-        if (typeof onDelta === "function") await onDelta(delta);
-      }
-    }
-  }
-  if (!content.trim()) throw new GatewayClientError("RESPONSE_INVALID");
-  return { content, usage };
-}
+const MAX_RESPONSE_BYTES = DEFAULT_MAX_RESPONSE_BYTES;
 
 function createOpenAiCompatibleGateway(options = {}) {
   const baseUrl = String(options.baseUrl || "").replace(/\/+$/u, "");
@@ -92,7 +47,15 @@ function createOpenAiCompatibleGateway(options = {}) {
     ? options.modelCredits
     : {"claude-opus-4-8":10,"claude-opus-4-6":10,"claude-sonnet-5":5,"gpt-5.6-sol":10,"gpt-5.6-terra":5,"gpt-5.6-luna":2,"gpt-image-2":50,"glm-5.2":5,"deepseek-v4-flash":1,"minimax-m3":1,"gemini-3.1-pro-preview":10,"gemini-3.5-flash":2,"kimi-k2.6":10,"seed-2.1-pro":10};
   const timeoutMs = Number.isSafeInteger(options.timeoutMs) && options.timeoutMs > 0 ? options.timeoutMs : 120_000;
-  const streamTimeoutMs = Number.isSafeInteger(options.streamTimeoutMs) && options.streamTimeoutMs > 0 ? options.streamTimeoutMs : 20 * 60_000;
+  const streamTimeoutMs = Number.isSafeInteger(options.streamTimeoutMs) && options.streamTimeoutMs > 0 ? options.streamTimeoutMs : DEFAULT_STREAM_TOTAL_TIMEOUT_MS;
+  const streamIdleTimeoutMs = Number.isSafeInteger(options.streamIdleTimeoutMs) && options.streamIdleTimeoutMs > 0 ? options.streamIdleTimeoutMs : DEFAULT_STREAM_IDLE_TIMEOUT_MS;
+  const generationRetryBaseDelayMs = Number.isFinite(Number(options.generationRetryBaseDelayMs)) && Number(options.generationRetryBaseDelayMs) >= 0
+    ? Number(options.generationRetryBaseDelayMs)
+    : 2_000;
+
+  function wait(ms) {
+    return new Promise((resolve) => setTimeout(resolve, Math.max(0, Number(ms) || 0)));
+  }
 
   function isNexaModel(modelId) {
     const id = String(modelId || "").trim();
@@ -379,7 +342,7 @@ function createOpenAiCompatibleGateway(options = {}) {
 
 async function callModels(input = {}) {
     if (!input || typeof input !== "object" || Array.isArray(input)) throw new GatewayClientError("INVALID_REQUEST");
-    const allowed = new Set(["prompt", "system", "modelIds", "taskLabel", "onDelta", "streamRetries", "maxTokens"]);
+    const allowed = new Set(["prompt", "system", "modelIds", "taskLabel", "onDelta", "streamRetries", "requestId", "maxTokens"]);
     if (Object.keys(input).some((key) => !allowed.has(key))) throw new GatewayClientError("INVALID_REQUEST");
     if (typeof input.prompt !== "string" || !input.prompt.trim() || input.prompt.length > 200_000) throw new GatewayClientError("INVALID_REQUEST");
     if (!Array.isArray(input.modelIds) || input.modelIds.length < 1 || input.modelIds.length > 8) throw new GatewayClientError("INVALID_REQUEST");
@@ -387,9 +350,7 @@ async function callModels(input = {}) {
       throw new GatewayClientError("INVALID_REQUEST");
     }
     if (input.maxTokens !== undefined && (!Number.isSafeInteger(input.maxTokens) || input.maxTokens < 256 || input.maxTokens > 65536)) throw new GatewayClientError("INVALID_REQUEST");
-    const available = new Set((await listModels()).models.map((item) => item.id));
-    // key resolved per model below
-    if (input.modelIds.some((id) => !available.has(id))) throw new GatewayClientError("INVALID_REQUEST");
+    if (input.requestId !== undefined && (typeof input.requestId !== "string" || !/^[A-Za-z0-9][A-Za-z0-9._:-]{7,127}$/u.test(input.requestId))) throw new GatewayClientError("INVALID_REQUEST");
 
     const outputs = [];
     let content = "";
@@ -402,7 +363,8 @@ async function callModels(input = {}) {
         messages.push({ role: "user", content: "Review the previous version and return a complete improved version." });
       }
 
-      const maxStreamAttempts = Number.isSafeInteger(input.streamRetries) ? Math.max(1, Math.min(input.streamRetries, 2)) : 1;
+      const maxStreamAttempts = Number.isSafeInteger(input.streamRetries) ? Math.max(1, Math.min(input.streamRetries, 2)) : 2;
+      const requestId = input.requestId || crypto.randomUUID();
       let next = "";
       let usage = null;
       let transport = "none";
@@ -411,34 +373,52 @@ async function callModels(input = {}) {
 
       async function postOnce(stream) {
         const key = await requireApiKey(model);
-        const response = await fetcher(endpointForModel(model) + "/v1/chat/completions", {
-          method: "POST",
-          headers: {
-            authorization: "Bearer " + key,
-            "content-type": "application/json"
-          },
-          body: JSON.stringify({
-            model,
-            messages,
-            temperature: 0.7,
-            max_tokens: input.maxTokens || 12_000,
-            stream: !!stream
-          }),
-          redirect: "error",
-          signal: AbortSignal.timeout(streamTimeoutMs)
-        });
-        if (!response.ok) {
-          if (response.status === 401 || response.status === 403) throw new GatewayClientError("AUTH_FAILED");
-          if (response.status === 402) throw new GatewayClientError("INSUFFICIENT_BALANCE");
-          throw new GatewayClientError("SERVER_ERROR", undefined, response.status);
+        const deadline = createActivityDeadline({ idleTimeoutMs: streamIdleTimeoutMs, maxTotalTimeoutMs: streamTimeoutMs });
+        try {
+          const response = await fetcher(endpointForModel(model) + "/v1/chat/completions", {
+            method: "POST",
+            headers: {
+              authorization: "Bearer " + key,
+              "content-type": "application/json",
+              "idempotency-key": requestId
+            },
+            body: JSON.stringify({
+              model,
+              messages,
+              temperature: 0.7,
+              max_tokens: input.maxTokens || 24_000,
+              stream: !!stream
+            }),
+            redirect: "error",
+            signal: deadline.signal
+          });
+          deadline.touch();
+          if (!response.ok) {
+            let text = "";
+            try { text = await response.text(); } catch {}
+            if (response.status === 401 || response.status === 403) throw new GatewayClientError("AUTH_FAILED");
+            if (response.status === 402) throw new GatewayClientError("INSUFFICIENT_BALANCE");
+            const error = new GatewayClientError("SERVER_ERROR", undefined, response.status);
+            error.streamUnsupported = [400, 404, 405, 422, 501].includes(Number(response.status))
+              && /stream|event-stream|unsupported|not support|unrecognized|unknown parameter|invalid.*stream/iu.test(text);
+            throw error;
+          }
+          if (stream) {
+            const payload = await collectOpenAiStream(response, input.onDelta, { maxResponseBytes: MAX_RESPONSE_BYTES, onActivity: deadline.touch });
+            if (String(payload.finishReason || "").toLowerCase() === "length") {
+              const error = new GatewayClientError("RESPONSE_INCOMPLETE", "Model output reached its token limit.");
+              error.partialContent = payload.content;
+              error.finishReason = payload.finishReason;
+              throw error;
+            }
+            return { content: payload.content, usage: payload.usage || null };
+          }
+          const payload = await response.json();
+          const parts = completionParts(payload);
+          return { content: parts.content || completionContent(payload), usage: parts.usage || null };
+        } finally {
+          deadline.dispose();
         }
-        if (stream) {
-          const payload = await collectOpenAiStream(response, input.onDelta);
-          return { content: payload.content, usage: payload.usage || null };
-        }
-        const payload = await response.json();
-        const contentText = completionContent(payload) || String(payload?.choices?.[0]?.message?.content || "");
-        return { content: contentText, usage: payload?.usage || null };
       }
 
       for (let attempt = 1; attempt <= maxStreamAttempts; attempt += 1) {
@@ -453,8 +433,16 @@ async function callModels(input = {}) {
           lastError = new GatewayClientError("EMPTY_MODEL_OUTPUT");
           allowNonStreamFallback = true;
         } catch (error) {
+          const partial = String(error?.partialContent || "").trim();
+          if (partial) {
+            next = partial;
+            transport = "partial_stream_attempt_" + attempt;
+            break;
+          }
           lastError = toGatewayNetworkError(error, "SERVER_ERROR");
-          if (lastError.code !== "SERVER_OFFLINE") break;
+          allowNonStreamFallback = allowNonStreamFallback || error?.streamUnsupported === true;
+          if (!isRetryableGenerationError(lastError) || attempt >= maxStreamAttempts) break;
+          await wait(generationRetryBaseDelayMs * attempt);
         }
       }
 
@@ -465,7 +453,13 @@ async function callModels(input = {}) {
           usage = payload.usage;
           if (typeof next === "string" && next.trim()) transport = "non_stream_fallback";
         } catch (error) {
-          lastError = toGatewayNetworkError(error, "SERVER_ERROR");
+          const partial = String(error?.partialContent || "").trim();
+          if (partial) {
+            next = partial;
+            transport = "partial_non_stream_fallback";
+          } else {
+            lastError = toGatewayNetworkError(error, "SERVER_ERROR");
+          }
         }
       }
 

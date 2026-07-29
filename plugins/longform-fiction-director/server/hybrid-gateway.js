@@ -64,8 +64,8 @@ function createHybridGateway({ primary, secondary, label, allowedModels = [], pr
   async function pickGateway(modelIds) {
     const ids = Array.isArray(modelIds) ? modelIds : [];
     if (ids.some((id) => LEGACY_PREFERRED.has(String(id || "")))) return secondary;
-    const primaryIds = new Set((await safeList(primary)).map((item) => item.id));
-    if (ids.length && ids.every((id) => primaryIds.has(id))) return primary;
+    const primaryIds = new Set(Array.isArray(primary.allowedModels) ? primary.allowedModels : []);
+    if (!primaryIds.size || (ids.length && ids.every((id) => primaryIds.has(id)))) return primary;
     return secondary;
   }
 
@@ -74,6 +74,7 @@ function createHybridGateway({ primary, secondary, label, allowedModels = [], pr
     try {
       return await preferred.callModels(input);
     } catch (error) {
+      if (String(error?.partialContent || "").trim() || error?.code === "UPSTREAM_TIMEOUT") throw error;
       const other = preferred === primary ? secondary : primary;
       if (other === preferred) throw error;
       return other.callModels(input);

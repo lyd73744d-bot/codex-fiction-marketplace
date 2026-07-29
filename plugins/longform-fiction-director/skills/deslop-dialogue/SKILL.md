@@ -15,7 +15,7 @@ description: Diagnose AI-ish Chinese dialogue and provide a protected rewrite me
 ## 何时用
 - 角色轮流演讲、互相科普
 - 人人说话都像同一张嘴
-- 对白在解释剧情，而不是施压/躲闪/试探
+- 对白在解释剧情，而不是争取、回避、试探或改变决定
 - 角色把自己的动机、情绪、关系结论和“正确理解”一次说完
 
 ## 先读

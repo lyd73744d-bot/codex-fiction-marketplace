@@ -4,10 +4,10 @@ const fs = require("node:fs");
 const path = require("node:path");
 
 const FOCUS_HINTS = {
-  full: "综合去AI味：删空句、压解释腔、避免把潜台词说满、节奏可朗读。",
+  full: "综合去AI味：先查整章是否在逐项执行提示词，再删空句、压解释腔、避免把潜台词说满、节奏可朗读。",
   dialogue: "重点改对话：信息差、人物声口与自然留白；不改剧情。",
-  narration: "重点改叙述：删总结腔/套话，不替读者翻译潜台词。",
-  pacing: "重点改节奏：施压-反应-代价-钩子四拍清楚。",
+  narration: "重点改叙述：识别细纲验收流程腔和换皮结构，删总结腔/套话，不替读者翻译潜台词。",
+  pacing: "重点改节奏：修复因果跳步和重复解释，不套固定拍数，保留必要停留。",
   emotion: "重点改情绪表达：少贴标签，多动作停顿与选择。",
   info: "重点拆信息倾倒：本章立刻用到的才留在正文。",
   hook: "重点改章尾钩子：从本章因果长出，不要廉价惊吓。",
@@ -72,6 +72,7 @@ function buildOptimizeSystem({ mode = "humanize", focus = "full" } = {}) {
     "焦点：" + focusLine,
     "硬性保护：不改胜负/关系/知情范围/时间线/专名数值；不新增设定；不删章尾已成立钩子的因果。",
     "叙事留白：人物不一次说完动机、情绪、关系结论和正确答案，旁白不紧跟着翻译潜台词。必要事实与因果仍须清楚，未明说部分必须能从动作、反应、上下文或后果中读回；不得用密集省略号、神秘碎句或人人欲言又止假装留白。",
+    "结构去流程腔：先看整章是否按大纲、细纲或提示词的栏目顺序逐项展示和验收设定。若主角持续给出最优处理、其他人物只递交恰好需要的答案，或系统/兵种/语言/物资/能力依次亮相，应保留事实后重新组织场景与披露顺序；不得只换专名、同义词或套用另一种开篇公式。单独一次危机、命令、回报或正确判断不算问题。",
     "输出：除 review 模式外，只输出完整正文，不要前言后语。",
     methods ? ("参考方法（遵守，不要照抄示例句）：\n" + methods) : ""
   ].filter(Boolean).join("\n\n");
@@ -91,7 +92,7 @@ function buildOptimizePrompt({ mode = "humanize", focus = "full", instruction = 
     "- 文风锚点：", String(context.voice || "（无）").slice(0, 1200),
     context.facts ? ("\n# 事实库（防OOC）\n" + context.facts + "\n") : "",
     "- 人物/核验摘录：", String(context.cards || "（无）").slice(0, 1200),
-    "- 控制卡：", String(context.brief || "（无）").slice(0, 1000),
+    "- 可选章节笔记：", String(context.brief || "（无）").slice(0, 1000),
     "",
     "# 待处理正文",
     String(draftText || "").trim()
