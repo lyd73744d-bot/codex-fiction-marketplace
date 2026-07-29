@@ -29,7 +29,7 @@ function ensureMarketplace() {
   const entry = {
     name: pluginName,
     source: { source: "local", path: "./plugins/" + pluginName },
-    policy: { installation: "AVAILABLE", authentication: "ON_INSTALL" },
+    policy: { installation: "AVAILABLE", authentication: "ON_USE" },
     category: "Productivity"
   };
   const idx = payload.plugins.findIndex((p) => p && p.name === pluginName);

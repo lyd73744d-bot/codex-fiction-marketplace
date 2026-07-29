@@ -22,8 +22,6 @@
 - 番茄作家课堂：`https://fanqienovel.com/writer/zone/tutorial?enter_tutorial=class_zone`，2026-07-23 可见平台宝典、品类指南、写作技巧与平台规则入口。
 - Reedsy 对白指南：`https://reedsy.com/blog/guide/how-to-write-dialogue/`，页面标注 2023-09-21 更新；可迁移结论包括对白推进事件、区分人物声音、减少双方已知信息复述、使用动作节拍调节节奏，并明确反对把经验机械化为统一公式。
 - Reedsy 限知第三人称指南：`https://reedsy.com/blog/guide/point-of-view/third-person-limited/`，页面标注 2025-10-14 更新并由 Tom Bromley 审校；可迁移结论是限知视角不仅约束谁的内心能进入叙述，也应让人物目标、经验、损失与误判筛选已有细节。该方法不得变成职业术语清单，也不得写成“先看的不是……”一类解释选材的固定句式。
-- Node.js `AbortSignal.timeout()`：`https://nodejs.org/api/globals.html#static-method-abortsignaltimeoutdelay`，2026-07-23 核对；授权下载器可用运行时自带超时信号限制本地服务请求，不需要引入额外网络库。
-- Node.js `fsPromises.realpath()`：`https://nodejs.org/api/fs.html#fspromisesrealpathpath-options`，2026-07-23 核对；它返回解析后的真实路径，注册样书读取前可据此复核项目边界，避免只检查表面路径而漏掉符号链接跳转。
 
 ## 证据写入
 

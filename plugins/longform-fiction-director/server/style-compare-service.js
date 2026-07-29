@@ -7,6 +7,13 @@ const { writeArtifact } = require("./artifact-pipeline");
 async function readIfExists(file) {
   try { return await fsp.readFile(file, "utf8"); } catch { return ""; }
 }
+async function readFirst(files) {
+  for (const file of files) {
+    const content = await readIfExists(file);
+    if (content.trim()) return content;
+  }
+  return "";
+}
 function clip(text, n = 6000) {
   const s = String(text || "").replace(/\r\n?/g, "\n").trim();
   return s.length > n ? s.slice(0, n) + "\n…(截断)" : s;
@@ -50,10 +57,21 @@ function roughStats(text) {
   return { chars, lines: lines.length, dialogueLines, avgLine, shortLines, longLines, aiHints, fixes };
 }
 async function collectStyleContext(projectDir) {
-  const voice = await readIfExists(path.join(projectDir, "辅助文档", "08_文风锚点.md"));
-  const styleDoc = await readIfExists(path.join(projectDir, "辅助文档", "06_风格与写作要求.md"));
-  const skill = await readIfExists(path.join(projectDir, "辅助文档", "10_本书写作Skill.md"));
-  const facts = await readIfExists(path.join(projectDir, "辅助文档", "12_事实库_防OOC.md"));
+  const styleDoc = await readFirst([
+    path.join(projectDir, "辅助文档", "06_风格与写作要求.md"),
+    path.join(projectDir, "辅助文档", "08_文风锚点.md"),
+    path.join(projectDir, "08_文风锚点.md")
+  ]);
+  const voice = styleDoc;
+  const skill = await readFirst([
+    path.join(projectDir, "辅助文档", "10_本书写作Skill.md"),
+    path.join(projectDir, "10_本书写作Skill.md")
+  ]);
+  const facts = await readFirst([
+    path.join(projectDir, "辅助文档", "08_事实库_防OOC.md"),
+    path.join(projectDir, "辅助文档", "12_事实库_防OOC.md"),
+    path.join(projectDir, "12_事实库_防OOC.md")
+  ]);
   let sampleNotes = "";
   const sampleRoot = path.join(projectDir, "样书");
   if (fs.existsSync(sampleRoot)) {
@@ -77,7 +95,7 @@ async function compareStyle({ projectDir, draftText = "", draftPath = "", title 
   const ctx = await collectStyleContext(projectDir);
   const stats = roughStats(draft);
   const missing = [];
-  if (!ctx.voice.trim()) missing.push("缺少 辅助文档/08_文风锚点.md");
+  if (!ctx.voice.trim()) missing.push("缺少 辅助文档/06_风格与写作要求.md");
   if (!ctx.sampleNotes.trim()) missing.push("缺少样书手法笔记");
   const report = [
     "# 文风对比报告", "",
@@ -94,7 +112,7 @@ async function compareStyle({ projectDir, draftText = "", draftPath = "", title 
     missing.length ? missing.map((m) => "- " + m).join("\n") : "- 文风锚点/样书笔记可用",
     "",
     "## 文风锚点（摘录）", clip(ctx.voice || "（空）", 1600), "",
-    "## 本书写作Skill（摘录）", clip(ctx.skill || "（空）", 1200), "",
+    "## 旧项目写法补充（如有）", clip(ctx.skill || "（无）", 1200), "",
     "## 样书手法（摘录）", clip(ctx.sampleNotes || "（空）", 1600), "",
     "## 可执行修改（先改这些）",
     ...stats.fixes.map((f, i) => (i + 1) + ". " + f),

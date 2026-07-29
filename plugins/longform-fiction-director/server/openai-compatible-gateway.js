@@ -1,7 +1,7 @@
 "use strict";
 
 const crypto = require("node:crypto");
-const { GatewayClientError } = require("./gateway-client");
+const { GatewayClientError, toGatewayNetworkError } = require("./gateway-client");
 const { SessionStoreError, createSessionStore, publicUser } = require("./session-store");
 
 const MAX_RESPONSE_BYTES = 2 * 1024 * 1024;
@@ -17,7 +17,7 @@ async function collectOpenAiStream(response, onDelta) {
   const contentType = response.headers?.get?.("content-type") || "";
   if (!/text\/event-stream/iu.test(contentType)) {
     let text;
-    try { text = await response.text(); } catch { throw new GatewayClientError("RESPONSE_INVALID"); }
+    try { text = await response.text(); } catch (error) { throw toGatewayNetworkError(error, "RESPONSE_INVALID"); }
     if (Buffer.byteLength(text, "utf8") > MAX_RESPONSE_BYTES) throw new GatewayClientError("RESPONSE_INVALID");
     let payload;
     try { payload = JSON.parse(text); } catch { throw new GatewayClientError("RESPONSE_INVALID"); }
@@ -157,11 +157,11 @@ function createOpenAiCompatibleGateway(options = {}) {
         redirect: "error",
         signal: AbortSignal.timeout(init.timeoutMs || timeoutMs)
       });
-    } catch {
-      throw new GatewayClientError("SERVER_OFFLINE");
+    } catch (error) {
+      throw toGatewayNetworkError(error, "SERVER_OFFLINE");
     }
     let text = "";
-    try { text = await response.text(); } catch { throw new GatewayClientError("RESPONSE_INVALID"); }
+    try { text = await response.text(); } catch (error) { throw toGatewayNetworkError(error, "RESPONSE_INVALID"); }
     if (Buffer.byteLength(text, "utf8") > MAX_RESPONSE_BYTES) throw new GatewayClientError("RESPONSE_INVALID");
     let payload = {};
     try { payload = text ? JSON.parse(text) : {}; } catch {
@@ -351,11 +351,11 @@ function createOpenAiCompatibleGateway(options = {}) {
         redirect: "error",
         signal: AbortSignal.timeout(streamTimeoutMs)
       });
-    } catch {
-      throw new GatewayClientError("SERVER_OFFLINE");
+    } catch (error) {
+      throw toGatewayNetworkError(error, "SERVER_OFFLINE");
     }
     let text = "";
-    try { text = await response.text(); } catch { throw new GatewayClientError("RESPONSE_INVALID"); }
+    try { text = await response.text(); } catch (error) { throw toGatewayNetworkError(error, "RESPONSE_INVALID"); }
     let payload = {};
     try { payload = text ? JSON.parse(text) : {}; } catch { throw new GatewayClientError("RESPONSE_INVALID"); }
     if (!response.ok) {
@@ -379,13 +379,14 @@ function createOpenAiCompatibleGateway(options = {}) {
 
 async function callModels(input = {}) {
     if (!input || typeof input !== "object" || Array.isArray(input)) throw new GatewayClientError("INVALID_REQUEST");
-    const allowed = new Set(["prompt", "system", "modelIds", "taskLabel", "onDelta", "streamRetries"]);
+    const allowed = new Set(["prompt", "system", "modelIds", "taskLabel", "onDelta", "streamRetries", "maxTokens"]);
     if (Object.keys(input).some((key) => !allowed.has(key))) throw new GatewayClientError("INVALID_REQUEST");
     if (typeof input.prompt !== "string" || !input.prompt.trim() || input.prompt.length > 200_000) throw new GatewayClientError("INVALID_REQUEST");
     if (!Array.isArray(input.modelIds) || input.modelIds.length < 1 || input.modelIds.length > 8) throw new GatewayClientError("INVALID_REQUEST");
     if (input.modelIds.some((id) => typeof id !== "string" || !/^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/u.test(id))) {
       throw new GatewayClientError("INVALID_REQUEST");
     }
+    if (input.maxTokens !== undefined && (!Number.isSafeInteger(input.maxTokens) || input.maxTokens < 256 || input.maxTokens > 65536)) throw new GatewayClientError("INVALID_REQUEST");
     const available = new Set((await listModels()).models.map((item) => item.id));
     // key resolved per model below
     if (input.modelIds.some((id) => !available.has(id))) throw new GatewayClientError("INVALID_REQUEST");
@@ -401,11 +402,12 @@ async function callModels(input = {}) {
         messages.push({ role: "user", content: "Review the previous version and return a complete improved version." });
       }
 
-      const maxStreamAttempts = Number.isSafeInteger(input.streamRetries) ? Math.max(1, Math.min(input.streamRetries, 5)) : 3;
+      const maxStreamAttempts = Number.isSafeInteger(input.streamRetries) ? Math.max(1, Math.min(input.streamRetries, 2)) : 1;
       let next = "";
       let usage = null;
       let transport = "none";
       let lastError = null;
+      let allowNonStreamFallback = false;
 
       async function postOnce(stream) {
         const key = await requireApiKey(model);
@@ -419,7 +421,7 @@ async function callModels(input = {}) {
             model,
             messages,
             temperature: 0.7,
-            max_tokens: 12_000,
+            max_tokens: input.maxTokens || 12_000,
             stream: !!stream
           }),
           redirect: "error",
@@ -448,20 +450,22 @@ async function callModels(input = {}) {
             transport = "stream_attempt_" + attempt;
             break;
           }
-          lastError = new Error("empty stream content");
+          lastError = new GatewayClientError("EMPTY_MODEL_OUTPUT");
+          allowNonStreamFallback = true;
         } catch (error) {
-          lastError = error;
+          lastError = toGatewayNetworkError(error, "SERVER_ERROR");
+          if (lastError.code !== "SERVER_OFFLINE") break;
         }
       }
 
-      if (!(typeof next === "string" && next.trim())) {
+      if (!(typeof next === "string" && next.trim()) && allowNonStreamFallback) {
         try {
           const payload = await postOnce(false);
           next = payload.content;
           usage = payload.usage;
           if (typeof next === "string" && next.trim()) transport = "non_stream_fallback";
         } catch (error) {
-          lastError = error;
+          lastError = toGatewayNetworkError(error, "SERVER_ERROR");
         }
       }
 

@@ -1,9 +1,16 @@
 ---
 name: deslop-narration
-description: Clean AI-ish Chinese narration, translation tone, and summary voice without changing plot; write candidate txt.
+description: Diagnose AI-ish Chinese narration, translation tone, and summary voice; under longform-fiction-director, route the protected prose rewrite to an external model after per-call consent and save candidate txt.
 ---
 
 # 去AI味：叙述
+
+> 主流程分工：Codex 诊断并验收，外部写作模型默认改正文；作者明确要求 Codex 写临时候选时才本地改。
+
+## 铁律（先于下面所有改法）
+- 换皮不算改：同义替换（倒吸凉气→吸凉气、下一秒→紧接着）仍是 AI 味。
+- 只删表现手段，保留可核对事实（数字 / 物件 / 因果 / 伏笔 / 人物选择）。
+- 删套话后补回现场功能，不补造五感、动作、比喻、天气、心理。综合改味见 `humanizer-zh`。
 
 ## 症状
 - “总而言之 / 不难看出 / 这意味着”
@@ -11,18 +18,22 @@ description: Clean AI-ish Chinese narration, translation tone, and summary voice
 - 翻译腔：过长定语、英文思维句式
 - 先总结情绪，再补动作
 - 同义反复（他非常生气，他怒了）
+- 动作或对白刚结束，旁白立刻翻译潜台词、动机和关系结论
 
 ## 改法
 1. 先删总结句，只留事件与反应
-2. 抽象判断改成可见动作/感官
+2. 抽象判断落到原文已有的动作/物件/感官；原文没有就直接删判断，不凭空补五感或比喻
 3. 一段一个功能：推进、反应、代价
 4. 背景只塞本章马上用到的一句
 5. 极端词（非常/极大/无比）能删就删
+6. 现场已经能证明的情绪和意图不再讲解；让动作、反应、上下文或后果承担答案，同时保留理解剧情所需的事实与因果
 
 ## 自检
 - 删掉形容词后，因果还在吗？
 - 读者是看见了，还是被通知了？
 - 有没有连续三句同一句式？
+- 改完是不是只换了近义词？换皮＝没改
+- 叙述是不是怕读者不懂，又把人物没说出口的话完整说了一遍？
 
 ## 输出
 候选 txt；改腔不改剧情。

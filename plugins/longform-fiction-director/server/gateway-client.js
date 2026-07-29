@@ -12,7 +12,9 @@ const ERROR_MESSAGES = Object.freeze({
   AUTH_FAILED: "Username or password is incorrect.",
   INVALID_REQUEST: "Request is invalid.",
   RESPONSE_INVALID: "Gateway response is invalid.",
+  EMPTY_MODEL_OUTPUT: "Model returned no usable text.",
   SERVER_OFFLINE: "Gateway is offline.",
+  UPSTREAM_TIMEOUT: "Model response timed out.",
   SERVER_ERROR: "Gateway request failed.",
   CONFLICT: "Request conflicts with an existing record.",
   INSUFFICIENT_BALANCE: "Insufficient balance.",
@@ -27,6 +29,25 @@ class GatewayClientError extends Error {
     this.status = status;
     if (typeof publicMessage === "string" && publicMessage) this.publicMessage = publicMessage;
   }
+}
+
+function isTimeoutError(error) {
+  let current = error;
+  for (let depth = 0; current && depth < 4; depth += 1, current = current.cause) {
+    const name = String(current.name || "");
+    const code = String(current.code || "");
+    const message = String(current.message || "");
+    if (name === "TimeoutError" || name === "AbortError" || code === "ETIMEDOUT" || /timed?\s*out|timeout|deadline|超时/iu.test(message)) return true;
+  }
+  return false;
+}
+
+function toGatewayNetworkError(error, fallbackCode = "SERVER_OFFLINE") {
+  if (error instanceof GatewayClientError) return error;
+  if (isTimeoutError(error)) {
+    return new GatewayClientError("UPSTREAM_TIMEOUT", ERROR_MESSAGES.UPSTREAM_TIMEOUT, null, "模型响应超时，本次没有完成。");
+  }
+  return new GatewayClientError(fallbackCode, ERROR_MESSAGES[fallbackCode] || ERROR_MESSAGES.SERVER_ERROR);
 }
 
 function canonicalKey(key) { return String(key).replace(/[^a-z0-9]/gi, "").toLowerCase(); }
@@ -75,7 +96,7 @@ function upstreamPublicMessage(payload) {
   if (/(?:api[\s_-]*key|authori[sz]ation|unauthori[sz]ed|authentication|invalid[\s_-]*(?:key|token)|\b401\b)/iu.test(source)) return "网关上游鉴权失败。";
   if (/(?:model.*(?:not[\s_-]*found|unavailable|does[\s_-]*not[\s_-]*exist)|invalid[\s_-]*model|\b404\b)/iu.test(source)) return "网关上游模型或路由不可用。";
   if (/(?:rate|too[\s_-]*many|overload|busy|\b429\b)/iu.test(source)) return "网关上游繁忙或触发限流。";
-  if (/(?:timeout|timed[\s_-]*out|deadline)/iu.test(source)) return "网关上游请求超时。";
+  if (/(?:timeout|timed[\s_-]*out|deadline|超时)/iu.test(source)) return "网关上游请求超时。";
   return "网关上游请求失败。";
 }
 
@@ -85,7 +106,11 @@ function responseError(status, payload) {
   if (status === 403) return new GatewayClientError("AUTH_FAILED", ERROR_MESSAGES.AUTH_FAILED, status);
   if (status === 402 || serverCode === "INSUFFICIENT_BALANCE") return new GatewayClientError("INSUFFICIENT_BALANCE", ERROR_MESSAGES.INSUFFICIENT_BALANCE, status);
   if (status === 409) return new GatewayClientError("CONFLICT", ERROR_MESSAGES.CONFLICT, status);
-  if (status >= 500) return new GatewayClientError("SERVER_ERROR", ERROR_MESSAGES.SERVER_ERROR, status, upstreamPublicMessage(payload));
+  if (status >= 500) {
+    const publicMessage = upstreamPublicMessage(payload);
+    if (publicMessage === "网关上游请求超时。") return new GatewayClientError("UPSTREAM_TIMEOUT", ERROR_MESSAGES.UPSTREAM_TIMEOUT, status, publicMessage);
+    return new GatewayClientError("SERVER_ERROR", ERROR_MESSAGES.SERVER_ERROR, status, publicMessage);
+  }
   return new GatewayClientError("INVALID_REQUEST", ERROR_MESSAGES.INVALID_REQUEST, status);
 }
 
@@ -122,7 +147,7 @@ async function collectOpenAiStream(response, onDelta, { maxResponseBytes = DEFAU
   const contentType = response.headers?.get?.("content-type") || "";
   if (!/text\/event-stream/iu.test(contentType)) {
     let text;
-    try { text = await response.text(); } catch { throw new GatewayClientError("RESPONSE_INVALID"); }
+    try { text = await response.text(); } catch (error) { throw toGatewayNetworkError(error, "RESPONSE_INVALID"); }
     if (Buffer.byteLength(text, "utf8") > maxResponseBytes) throw new GatewayClientError("RESPONSE_TOO_LARGE");
     let payload;
     try { payload = JSON.parse(text); } catch { throw new GatewayClientError("RESPONSE_INVALID"); }
@@ -187,10 +212,10 @@ function createGatewayClient(options = {}) {
       response = await fetcher(`${baseUrl}${pathname}`, { method: init.method || "GET", headers: init.headers || {}, body: init.body, redirect: "error", signal: AbortSignal.timeout(init.timeoutMs || timeoutMs) });
     } catch (error) {
       if (error instanceof GatewayClientError) throw error;
-      throw new GatewayClientError("SERVER_OFFLINE", ERROR_MESSAGES.SERVER_OFFLINE);
+      throw toGatewayNetworkError(error, "SERVER_OFFLINE");
     }
     let text;
-    try { text = await response.text(); } catch { throw new GatewayClientError("RESPONSE_INVALID"); }
+    try { text = await response.text(); } catch (error) { throw toGatewayNetworkError(error, "RESPONSE_INVALID"); }
     if (Buffer.byteLength(text, "utf8") > maxResponseBytes) throw new GatewayClientError("RESPONSE_INVALID");
     let payload = {};
     try { payload = text ? JSON.parse(text) : {}; } catch { throw new GatewayClientError("RESPONSE_INVALID"); }
@@ -234,12 +259,12 @@ function createGatewayClient(options = {}) {
       });
     } catch (error) {
       if (error instanceof GatewayClientError) throw error;
-      throw new GatewayClientError("SERVER_OFFLINE", ERROR_MESSAGES.SERVER_OFFLINE);
+      throw toGatewayNetworkError(error, "SERVER_OFFLINE");
     }
   }
   async function rawFailure(response) {
     let text = "";
-    try { text = await response.text(); } catch { throw new GatewayClientError("RESPONSE_INVALID"); }
+    try { text = await response.text(); } catch (error) { throw toGatewayNetworkError(error, "RESPONSE_INVALID"); }
     if (Buffer.byteLength(text, "utf8") > maxResponseBytes) throw new GatewayClientError("RESPONSE_INVALID");
     let payload = {};
     try { payload = text ? JSON.parse(text) : {}; } catch { payload = {}; }
@@ -329,18 +354,20 @@ function createGatewayClient(options = {}) {
       messages.push({ role: "user", content: input.prompt });
       if (content) messages.push({ role: "assistant", content }, { role: "user", content: "Review the previous version and return a complete improved version." });
 
-      // Prefer streaming; retry a few times; then non-stream. Must produce text for txt persistence.
-      const maxStreamAttempts = Number.isSafeInteger(input.streamRetries) ? Math.max(1, Math.min(input.streamRetries, 5)) : 3;
+      // Submit once by default. A timeout must never trigger a second long generation.
+      const maxStreamAttempts = Number.isSafeInteger(input.streamRetries) ? Math.max(1, Math.min(input.streamRetries, 2)) : 1;
+      const requestId = input.requestId || crypto.randomUUID();
       let next = "";
       let usage = null;
       let transport = "none";
       let lastError = null;
+      let allowNonStreamFallback = false;
 
       for (let attempt = 1; attempt <= maxStreamAttempts; attempt += 1) {
         try {
           const response = await authenticatedRawRequest("/e/catalog/chat/completions", {
             method: "POST",
-            headers: { "content-type": "application/json", "x-workflow-operation": String(input.taskLabel || "fiction").slice(0, 32), "idempotency-key": input.requestId || crypto.randomUUID() },
+            headers: { "content-type": "application/json", "x-workflow-operation": String(input.taskLabel || "fiction").slice(0, 32), "idempotency-key": requestId },
             body: JSON.stringify({ model, messages, temperature: 0.7, max_tokens: input.maxTokens || 24_000, stream: true }),
             timeoutMs: streamTimeoutMs
           });
@@ -352,17 +379,19 @@ function createGatewayClient(options = {}) {
             transport = "stream_attempt_" + attempt;
             break;
           }
-          lastError = new Error("empty stream content");
+          lastError = new GatewayClientError("EMPTY_MODEL_OUTPUT");
+          allowNonStreamFallback = true;
         } catch (error) {
-          lastError = error;
+          lastError = toGatewayNetworkError(error, "SERVER_ERROR");
+          if (lastError.code !== "SERVER_OFFLINE") break;
         }
       }
 
-      if (!(typeof next === "string" && next.trim())) {
+      if (!(typeof next === "string" && next.trim()) && allowNonStreamFallback) {
         try {
           const response = await authenticatedRawRequest("/e/catalog/chat/completions", {
             method: "POST",
-            headers: { "content-type": "application/json", "x-workflow-operation": String(input.taskLabel || "fiction").slice(0, 32), "idempotency-key": input.requestId || crypto.randomUUID() },
+            headers: { "content-type": "application/json", "x-workflow-operation": String(input.taskLabel || "fiction").slice(0, 32), "idempotency-key": requestId },
             body: JSON.stringify({ model, messages, temperature: 0.7, max_tokens: input.maxTokens || 24_000, stream: false }),
             timeoutMs: streamTimeoutMs
           });
@@ -375,7 +404,7 @@ function createGatewayClient(options = {}) {
           usage = parts.usage;
           if (typeof next === "string" && next.trim()) transport = "non_stream_fallback";
         } catch (error) {
-          lastError = error;
+          lastError = toGatewayNetworkError(error, "SERVER_ERROR");
         }
       }
 
@@ -456,7 +485,7 @@ function createGatewayClient(options = {}) {
     if (typeof input.code !== "string") throw new GatewayClientError("INVALID_REQUEST");
     const code = input.code.trim().replace(/\s+/gu, "");
     if (code.length < 6 || code.length > 128) throw new GatewayClientError("INVALID_REQUEST");
-    const payload = await authenticatedRequest("/api/recharge/redeem", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ code }) }, false);
+    const payload = await authenticatedRequest("/api/redeem", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ code }) }, false);
     return { ok: payload.ok !== false, balance: payload.balance, credited: payload.credited, currency: payload.currency, expiresAt: payload.expiresAt };
   }
   async function proxyChatCompletions(input) {
@@ -479,4 +508,4 @@ function createGatewayClient(options = {}) {
   return Object.freeze({ accountStatus, callModels, connectionStatus, getHumanizerEffectiveManifest, getHumanizerLibrary, getRun, listModels, listWorkflows, login, logout, proxyChatCompletions, redeemRechargeCode, register, runWorkflow, saveHumanizerRuleDraft, baseUrl });
 }
 
-module.exports = { DEFAULT_GATEWAY, ERROR_MESSAGES, GatewayClientError, createGatewayClient, collectOpenAiStream, completionContent, completionParts, DEFAULT_MAX_RESPONSE_BYTES };
+module.exports = { DEFAULT_GATEWAY, ERROR_MESSAGES, GatewayClientError, createGatewayClient, collectOpenAiStream, completionContent, completionParts, DEFAULT_MAX_RESPONSE_BYTES, isTimeoutError, toGatewayNetworkError };

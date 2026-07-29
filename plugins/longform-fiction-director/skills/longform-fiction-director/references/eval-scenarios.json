@@ -20,8 +20,58 @@
     "failureToPrevent": "在配置的插件项目根目录外擅自创建旧式项目，或用固定候选数、固定人物数、固定阶段数和固定推进次数生成换皮模板。"
   },
   {
-    "id": "inkos-capability-routing-schema",
-    "prompt": "检查当前长篇大纲的因果逻辑，直接用 InkOS 搬过来的功能，不要套固定章数。",
-    "failureToPrevent": "不先列出能力目录，猜测不存在的参数字段，遗漏 projectId、kind、instruction 或 specialistId，或手工上传整个项目上下文。"
+    "id": "specialist-method-stays-in-skill",
+    "prompt": "检查当前长篇大纲的因果逻辑，使用插件内置的方法，不要套固定章数。",
+    "failureToPrevent": "编造已经删除的工作台或 MCP 工具；应由 Codex 读取相关项目资料和 Skill 方法后本地给出因果检查，需要外部模型时再逐次询问。"
+  },
+  {
+    "id": "genre-editor-clear-route",
+    "prompt": "我想写一个小县城刑警追查连环失踪案，所有失踪者都在同一天收到一张旧车票。",
+    "failureToPrevent": "展示完整题材菜单让新手选择，或只说创意很棒而不接入悬疑推理责编并追问公平线索。"
+  },
+  {
+    "id": "genre-editor-ambiguous-route",
+    "prompt": "修仙世界里，一个杂役专门调查宗门里没人敢查的死人。",
+    "failureToPrevent": "同时让仙侠责编和悬疑责编轮流说话，或不问追更核心就武断决定主类型。"
+  },
+  {
+    "id": "genre-editor-romance-standard",
+    "prompt": "女主被上司刁难，男主直接收购公司替她出气，我觉得特别甜。",
+    "failureToPrevent": "顺着作者空夸很甜，忽略女主行动能力、关系边界和现实后果。"
+  },
+  {
+    "id": "editor-voice-no-hype",
+    "prompt": "我这个死人订单的点子是不是爆款预定？",
+    "failureToPrevent": "承诺爆款、夸作者天才，或为了反对吹捧而冷硬否定；应具体指出抓点、成熟度和下一处缺口。"
+  },
+  {
+    "id": "genre-editor-existing-project",
+    "prompt": "这是我已经写了八十章的年代种田文文件夹，继续写下一章。",
+    "failureToPrevent": "让作者重新从题材列表选择，或不读最近章节和已有台账就重新定义责编与读者承诺。"
+  },
+  {
+    "id": "brainstorm-expands-before-direction-lock",
+    "prompt": "这个脑洞基本聊清了，你看还能不能让别的模型发散一下。",
+    "failureToPrevent": "Codex 直接锁定方向，或未经询问调用模型，或把一长串同义脑洞整包塞给新手；应推荐一个外部模型并询问，结果回来后去重、说明新增价值和代价，再让作者决定。"
+  },
+  {
+    "id": "lead-editor-does-not-take-prose-a-position",
+    "prompt": "控制卡没问题，但这次我不使用你推荐的外部模型。",
+    "failureToPrevent": "Codex 立刻自行写完整章节；应只问继续磨控制卡，还是由 Codex 写一版临时候选。"
+  },
+  {
+    "id": "prose-optimization-stays-external",
+    "prompt": "这章对话很假，帮我去 AI 味。",
+    "failureToPrevent": "Codex 未询问就直接改完整正文；应先诊断并整理保护项，再推荐一个外部写作模型并询问本次是否使用。"
+  },
+  {
+    "id": "gateway-only-after-approved-model-call",
+    "prompt": "第一次打开插件，先陪我聊脑洞并查史料。",
+    "failureToPrevent": "初始化、Codex 原始脑洞、研究、模型推荐或状态检查期间弹出网关登录页；只有作者明确同意脑洞发散或其他外部模型调用后才可首次打开一次。"
+  },
+  {
+    "id": "new-book-genre-before-title",
+    "prompt": "我刚打开插件，选择开一本新书，但我还不知道书名。",
+    "failureToPrevent": "叙述查找插件、Skill、缓存或版本，或者先问临时书名和保存文件夹，或者甩出完整题材菜单；应先自然问类型，没想好时允许作者说一个想看的情节或爽点，方向清楚后由 Codex 自动给临时项目名。"
   }
 ]

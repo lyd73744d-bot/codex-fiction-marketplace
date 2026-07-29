@@ -24,9 +24,12 @@ function emptyState() {
     lastSessionDropAt: null,
     lastPopupAt: null,
     lastPopupReason: null,
-    pendingFirstLogin: true,
+    pendingFirstLogin: false,
+    modelGatewayBound: false,
+    modelGatewayBoundAt: null,
+    modelGatewayUnboundAt: null,
     shopUrl: DEFAULT_SHOP,
-    notes: "install must popup once; after shown do not casual re-popup; after login never casual popup; only re-prompt on session drop; cooldown blocks drop spam"
+    notes: "gateway login is optional; install never opens login; only open after explicit user choice"
   };
 }
 
@@ -42,7 +45,7 @@ async function readState(statePath = defaultStatePath()) {
     if (!merged.shopUrl) merged.shopUrl = DEFAULT_SHOP;
     // migrate old states: if already logged in once, pendingFirstLogin=false
     if (merged.firstLoginCompletedAt) merged.pendingFirstLogin = false;
-    else if (merged.pendingFirstLogin == null) merged.pendingFirstLogin = true;
+    else if (merged.pendingFirstLogin == null) merged.pendingFirstLogin = false;
     return merged;
   } catch {
     return { ...emptyState(), statePath };
@@ -60,20 +63,18 @@ async function writeState(next, statePath = defaultStatePath()) {
 }
 
 /**
- * Called by installer / first boot.
- * Preserves successful login history on reinstall/update so we do NOT spam popup again.
- * Only forces first-login pending when user has never completed login.
+ * Called by installer / first boot. Installation only records state; gateway login
+ * remains optional regardless of previous login history.
  */
 async function markInstalled(statePath = defaultStatePath()) {
   const now = new Date().toISOString();
   const state = await readState(statePath);
-  const neverLoggedIn = !state.firstLoginCompletedAt;
   return writeState({
     ...state,
     installedAt: state.installedAt || now,
     lastInstalledAt: now,
     installCount: Math.max(1, Number(state.installCount || 0) + (state.installedAt ? 0 : 1)),
-    pendingFirstLogin: neverLoggedIn,
+    pendingFirstLogin: false,
     shopUrl: state.shopUrl || DEFAULT_SHOP
   }, statePath);
 }
@@ -81,23 +82,17 @@ async function markInstalled(statePath = defaultStatePath()) {
 /**
  * Fresh package install marker from install.cmd.
  * Does NOT wipe firstLoginCompletedAt / lastLoginOkAt.
- * If never logged in: pendingFirstLogin=true (must popup).
- * If already logged in before: keep success flags (no casual popup).
- * Clears lastPopupAt only when never logged in so install can force-open once again.
+ * Gateway registration is optional, so package installation never schedules a popup.
  */
 async function markPackageInstalled(statePath = defaultStatePath()) {
   const now = new Date().toISOString();
   const state = await readState(statePath);
-  const neverLoggedIn = !state.firstLoginCompletedAt;
   return writeState({
     ...state,
     installedAt: state.installedAt || now,
     lastInstalledAt: now,
     installCount: Number(state.installCount || 0) + 1,
-    pendingFirstLogin: neverLoggedIn,
-    // clear popup cooldown only when first login still pending, so install can force open once
-    lastPopupAt: neverLoggedIn ? null : state.lastPopupAt,
-    lastPopupReason: neverLoggedIn ? null : state.lastPopupReason,
+    pendingFirstLogin: false,
     shopUrl: state.shopUrl || DEFAULT_SHOP
   }, statePath);
 }
@@ -134,17 +129,31 @@ async function markSessionDrop(statePath = defaultStatePath()) {
   }, statePath);
 }
 
+async function markModelGatewayBinding(bound, statePath = defaultStatePath()) {
+  const state = await readState(statePath);
+  const now = new Date().toISOString();
+  return writeState({
+    ...state,
+    modelGatewayBound: bound === true,
+    modelGatewayBoundAt: bound === true ? (state.modelGatewayBoundAt || now) : null,
+    modelGatewayUnboundAt: bound === true ? null : now
+  }, statePath);
+}
+
 /**
  * Decide whether to open login popup.
  * Product rules (owner):
- * 1) First install / never completed login => MUST open once automatically
- * 2) After that install popup has been shown => do NOT auto re-open casually
- *    (user can still force via fiction_open_gateway_login / install script)
- * 3) After successful login => NEVER casually open
- * 4) Only re-open when session dropped / login invalid (with cooldown anti-spam)
- * 5) force=true always opens (manual / install keeper)
+ * Gateway registration is optional. Initialization and status checks are silent.
+ * A fresh-user popup is allowed only for an explicitly approved model call;
+ * force=true is reserved for an explicit fiction_open_gateway_login request.
  */
-function decidePopup(state, { loggedIn, cooldownMs = 120_000, force = false } = {}) {
+function decidePopup(state, {
+  loggedIn,
+  cooldownMs = 120_000,
+  force = false,
+  allowPopup = false,
+  explicitUserChoice = false
+} = {}) {
   const now = Date.now();
   const lastPopup = state.lastPopupAt ? Date.parse(state.lastPopupAt) : 0;
   const inCooldown = !!(lastPopup && Number.isFinite(lastPopup) && now - lastPopup < cooldownMs);
@@ -159,7 +168,7 @@ function decidePopup(state, { loggedIn, cooldownMs = 120_000, force = false } = 
     };
   }
 
-  // Manual force is handled by gateway-guard; keep escape hatch for tests/tools/install
+  // Manual force is reserved for an explicit user request from the gateway tool.
   if (force) {
     return {
       open: true,
@@ -168,27 +177,33 @@ function decidePopup(state, { loggedIn, cooldownMs = 120_000, force = false } = 
     };
   }
 
-  const neverLoggedIn = !state.firstLoginCompletedAt || state.pendingFirstLogin === true;
+  const neverLoggedIn = !state.firstLoginCompletedAt;
+  if (!allowPopup || !explicitUserChoice) {
+    return {
+      open: false,
+      reason: neverLoggedIn ? "gateway_optional" : "session_dropped_silent",
+      message: neverLoggedIn
+        ? "字字珠玑网关是可选增强。只有作者同意外部模型调用后才打开登录页。"
+        : "网关会话已失效；普通初始化和状态检查保持静默，等作者同意下一次外部模型调用时再登录。"
+    };
+  }
 
-  // First install / never completed login:
-  // MUST popup once. After shown once, stop auto-popping until reinstall clears lastPopupAt
-  // or user explicitly force-opens. This prevents casual re-popup after install.
   if (neverLoggedIn) {
-    if (hasShownPopup) {
+    if (inCooldown) {
       return {
         open: false,
-        reason: "first_install_already_shown",
-        message: "安装登录窗已弹出过，不会再随便弹。请先在浏览器完成登录；需要时用 fiction_open_gateway_login。登录成功后不乱弹，只有掉线才会再提醒。"
+        reason: "first_model_use_cooldown",
+        message: "登录页刚刚已经打开，请先完成登录；不会重复弹窗。"
       };
     }
     return {
       open: true,
-      reason: "first_install",
-      message: "安装后首次使用：请先登录字字珠玑网关账号（可在小店充值积分）。登录成功后不会再乱弹；只有掉线才会再提醒。"
+      reason: "first_model_use",
+      message: "作者已同意本次外部模型调用，首次使用需要登录字字珠玑网关。"
     };
   }
 
-  // Already completed first login before: only remind on session drop / invalid login
+  // Previous login expired: only an explicitly approved model call may reopen it.
   if (inCooldown) {
     return {
       open: false,
@@ -214,5 +229,6 @@ module.exports = {
   markLoginOk,
   markPopup,
   markSessionDrop,
+  markModelGatewayBinding,
   decidePopup
 };

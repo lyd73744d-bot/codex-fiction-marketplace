@@ -22,7 +22,7 @@ function normalizeOpenAiBaseUrl(raw) {
 function normalizeModelCredits(value, allowedModels = []) {
   const out = {};
   const source = value && typeof value === "object" && !Array.isArray(value) ? value : {};
-  const defaults = {"claude-opus-5":20,"claude-sonnet-5":10,"claude-opus-4-6":20,"claude-opus-4-6-thinking":20,"claude-opus-4-7":20,"claude-opus-4-8":20,"gemini-3.1-pro-preview":12,"gemini-3.5-flash":8,"glm-5.2":8,"gpt-5.6-terra":12,"gpt-5.6-luna":5,"gpt-5-5":12,"gpt-5":12,"gpt-5-3":10,"gpt-5-mini":5,"seed-2.1-pro":20,"seed-2.1-turbo":10,"kimi-k2.6":20,"qwen3.7-max":5,"gpt-image-2":50};
+  const defaults = {"claude-opus-5":20,"claude-sonnet-5":10,"claude-opus-4-6":20,"claude-opus-4-8":20,"gemini-3.1-pro-preview":12,"gemini-3.5-flash":8,"glm-5.2":8,"gpt-5.6-terra":12,"gpt-5.6-luna":5,"gpt-5-5":12,"gpt-5":12,"gpt-5-3":10,"gpt-5-mini":5,"seed-2.1-pro":20,"seed-2.1-turbo":10,"kimi-k2.6":20,"qwen3.7-max":5,"gpt-image-2":50};
   const ids = Array.isArray(allowedModels) && allowedModels.length
     ? allowedModels
     : Object.keys(Object.assign({}, defaults, source));
@@ -109,7 +109,7 @@ function loadPrimaryGatewayConfig(options = {}) {
       || file.allowedModels
       || [preferredModel || "claude-opus-5", "claude-opus-4-6", "claude-sonnet-5"]
     );
-    const allowed = allowedModels.length ? allowedModels : ["claude-opus-5","claude-sonnet-5","claude-opus-4-6","claude-opus-4-6-thinking","claude-opus-4-7","claude-opus-4-8","gemini-3.1-pro-preview","gemini-3.5-flash","glm-5.2","gpt-5.6-terra","gpt-5.6-luna","gpt-5-5","gpt-5","gpt-5-3","gpt-5-mini","seed-2.1-pro","seed-2.1-turbo","kimi-k2.6","qwen3.7-max","gpt-image-2"];
+    const allowed = allowedModels.length ? allowedModels : ["claude-opus-5","claude-sonnet-5","claude-opus-4-6","claude-opus-4-8","gemini-3.1-pro-preview","gemini-3.5-flash","glm-5.2","gpt-5.6-terra","gpt-5.6-luna","gpt-5-5","gpt-5","gpt-5-3","gpt-5-mini","seed-2.1-pro","seed-2.1-turbo","kimi-k2.6","qwen3.7-max","gpt-image-2"];
     const modelCredits = normalizeModelCredits(options.modelCredits || file.modelCredits, allowed);
     const creditsPerCall = Number(options.creditsPerCall ?? process.env.FICTION_DIRECTOR_CREDITS_PER_CALL ?? file.creditsPerCall ?? modelCredits[preferredModel] ?? 10);
     const balance = Number(options.balance ?? process.env.FICTION_DIRECTOR_BALANCE ?? file.balance ?? -1);
@@ -152,13 +152,13 @@ async function savePrimaryGatewayConfig(input = {}, options = {}) {
     label: String(input.label || "平价站第一模型源").slice(0, 80),
     baseUrl: mode === "openai" ? normalizeOpenAiBaseUrl(input.baseUrl) : String(input.baseUrl || "").trim(),
     preferredModel: String(input.preferredModel || "claude-opus-5").trim() || "claude-opus-4-6",
-    allowedModels: normalizeModelList(input.allowedModels || ["claude-opus-5","claude-sonnet-5","claude-opus-4-6","claude-opus-4-6-thinking","claude-opus-4-7","claude-opus-4-8","gemini-3.1-pro-preview","gemini-3.5-flash","glm-5.2","gpt-5.6-terra","gpt-5.6-luna","gpt-5-5","gpt-5","gpt-5-3","gpt-5-mini","seed-2.1-pro","seed-2.1-turbo","kimi-k2.6","qwen3.7-max","gpt-image-2"]),
+    allowedModels: normalizeModelList(input.allowedModels || ["claude-opus-5","claude-sonnet-5","claude-opus-4-6","claude-opus-4-8","gemini-3.1-pro-preview","gemini-3.5-flash","glm-5.2","gpt-5.6-terra","gpt-5.6-luna","gpt-5-5","gpt-5","gpt-5-3","gpt-5-mini","seed-2.1-pro","seed-2.1-turbo","kimi-k2.6","qwen3.7-max","gpt-image-2"]),
     modelCredits: normalizeModelCredits(input.modelCredits, input.allowedModels || ["claude-opus-4-8", "claude-opus-4-6", "claude-sonnet-5"]),
     creditsPerCall: Number(input.creditsPerCall ?? 10),
     balance: Number(input.balance ?? -1),
     updatedAt: new Date().toISOString()
   };
-  if (!payload.allowedModels.length) payload.allowedModels = ["claude-opus-5","claude-sonnet-5","claude-opus-4-6","claude-opus-4-6-thinking","claude-opus-4-7","claude-opus-4-8","gemini-3.1-pro-preview","gemini-3.5-flash","glm-5.2","gpt-5.6-terra","gpt-5.6-luna","gpt-5-5","gpt-5","gpt-5-3","gpt-5-mini","seed-2.1-pro","seed-2.1-turbo","kimi-k2.6","qwen3.7-max","gpt-image-2"];
+  if (!payload.allowedModels.length) payload.allowedModels = ["claude-opus-5","claude-sonnet-5","claude-opus-4-6","claude-opus-4-8","gemini-3.1-pro-preview","gemini-3.5-flash","glm-5.2","gpt-5.6-terra","gpt-5.6-luna","gpt-5-5","gpt-5","gpt-5-3","gpt-5-mini","seed-2.1-pro","seed-2.1-turbo","kimi-k2.6","qwen3.7-max","gpt-image-2"];
   payload.modelCredits = normalizeModelCredits(payload.modelCredits, payload.allowedModels);
   if (!Number.isFinite(payload.creditsPerCall)) payload.creditsPerCall = payload.modelCredits[payload.preferredModel] || 10;
   if (!Number.isFinite(payload.balance)) payload.balance = -1;

@@ -1,8 +1,9 @@
 {
-  "version": "4.1.0-fusion.28",
-  "fullVersion": "4.1.0-fusion.28+codex.20260726034256",
+  "version": "4.2.0",
+  "fullVersion": "4.2.0+codex.gateway-only",
   "gateway": "https://api.nanshanyougui.xyz",
-  "updatedAt": "2026-07-25T19:42:56.666718+00:00",
+  "relay": "https://nanshanyougui.xyz",
+  "updatedAt": "2026-07-29T03:30:00+00:00",
   "preferredModel": "claude-opus-5",
   "models": [
     {
@@ -21,20 +22,6 @@
     },
     {
       "id": "claude-opus-4-6",
-      "credits": 20,
-      "available": true,
-      "status": "live",
-      "flagship": true
-    },
-    {
-      "id": "claude-opus-4-6-thinking",
-      "credits": 20,
-      "available": true,
-      "status": "live",
-      "flagship": true
-    },
-    {
-      "id": "claude-opus-4-7",
       "credits": 20,
       "available": true,
       "status": "live",
@@ -151,7 +138,7 @@
       "claude-opus-5",
       "claude-sonnet-5"
     ],
-    "opus5_route": "ssycai via Windows reverse-tunnel relay",
-    "sonnet5_route": "ssycai relay + byteclaude fallback"
+    "claude_relay": "https://nanshanyougui.xyz",
+    "gateway_role": "api.nanshanyougui.xyz keeps plugin accounts, credits and model routing"
   }
 }

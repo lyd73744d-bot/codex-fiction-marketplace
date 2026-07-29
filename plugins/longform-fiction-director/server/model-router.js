@@ -1,7 +1,7 @@
 "use strict";
 
 /**
- * Auxiliary model router (责编建议，不是强制调度器).
+ * Lead-editor model router (责编建议，不是强制调度器).
  * Absorbs zizhuji quick/deep writing modes as soft advice only.
  */
 
@@ -169,21 +169,18 @@ function writingPresetFor(taskId, mode) {
 
 function buildCoachAdvice(taskId, plans, mode, unpaidNote) {
   const lines = [
-    "我是责编助手（辅助位）：先选够用的模型，不为了面子堆旗舰。",
-    "当前任务：" + taskId + "；模式：" + (mode === "deep" ? "深度/高配" : "快速/省积分") + "。",
-    unpaidNote || "不充值也能本地写候选；登录网关后多模型效果会好很多。"
+    "Codex 在总责编位调度，本次外部模型负责对应的写作 A 位；先选够用的模型，不为了面子堆旗舰。",
+    "当前任务：" + taskId + "；模式：" + (mode === "deep" ? "深度/高配" : "快速/轻量") + "。",
+    unpaidNote || "已生成本次模型推荐；必须等待作者当次确认后才能调用。"
   ];
   for (const plan of plans) {
     const ids = plan.models.map((m) => m.id).join(" / ") || "暂无可用模型";
     lines.push("- " + plan.label + "：优先 " + ids + "。" + plan.why);
   }
-  lines.push("生成策略：流式优先 → 失败重试 → 非流式兜底 → 多模型回退链 → 完整 txt 落盘（.body 纯正文可再喂模型）。");
+  lines.push("生成策略：一次流式提交；超时不重发，仅空流做协议兼容；作者确认多个模型时才按顺序换模型。完整 txt 落盘（.body 纯正文可再喂模型）。");
   lines.push("结果先在「Codex候选/」给作者看，确认前不入正式正文/台账。");
-  if (mode === "quick") {
-    lines.push("积分紧：探索用 flash/luna；正文用 sonnet/terra/kimi/glm；找硬伤/定稿再开 deep。");
-  } else {
-    lines.push("深度模式可上 opus/sol，但仍建议主写中档、终检旗舰，避免整章烧积分。");
-  }
+  if (mode === "quick") lines.push("快速模式：探索用 flash/luna；正文用 sonnet/terra/kimi/glm；终检再开 deep。");
+  else lines.push("深度模式：主写用稳定模型，终检使用旗舰模型。");
   return lines.join("\n");
 }
 
@@ -235,7 +232,7 @@ function recommendModels({
       role,
       label: ROLE_HINTS[role]?.label || role,
       why: ROLE_HINTS[role]?.why || "",
-      models: picks
+      models: picks.map(({ credits, ...model }) => model)
     };
   });
 
@@ -248,7 +245,8 @@ function recommendModels({
   ].filter(Boolean))].slice(0, 4);
 
   return {
-    auxiliary: true,
+    leadEditorRouter: true,
+    externalWritingModels: true,
     task: taskId,
     mode: modeId,
     writingPreset: preset,
@@ -260,15 +258,15 @@ function recommendModels({
       taskId,
       plans,
       modeId,
-      unpaid ? "当前未登录/未充值：可继续引导与本地候选；要强模型请先 fiction_open_gateway_login。" : ""
+      unpaid ? "当前未登录：作者当次确认使用后再完成登录；未确认则继续磨控制卡，或由作者明确选择临时候选。" : ""
     ),
     transport: {
       mode: "stream_first_to_txt",
-      streamRetries: 4,
-      outerAttempts: 2,
-      nonStreamFallback: true,
+      streamRetries: 1,
+      outerAttempts: 1,
+      nonStreamFallback: "empty_stream_only",
       multiModelFallback: true,
-      note: "优先流式，失败重试，再非流式兜底；完整文本写入 Codex候选 txt（含 .body 纯正文），再读取。"
+      note: "一次流式提交；仅空流响应尝试非流式兼容，超时不重复提交。完整文本写入 Codex候选 txt（含 .body 纯正文），再读取。"
     },
     usageTips: [
       "脑洞/探索：快模型",

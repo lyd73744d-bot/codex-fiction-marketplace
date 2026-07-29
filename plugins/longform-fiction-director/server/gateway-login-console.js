@@ -117,7 +117,7 @@ function page({ authMode = "password", sourceLabel = "默认模型源", paymentP
     <div class="shop-box">
       <div class="shop-title">积分小店</div>
       <div class="shop-desc">登录后可调用多模型。小店可买积分；不充值也能用，但效果会差很多。店铺链接后续可替换。</div>
-      <a class="shop-link" href="${String(paymentPortalUrl || "https://catfk.com/shop/ZVZNANU8")}" target="_blank" rel="noreferrer">打开小店</a>
+      <a class="shop-link" href="${String(paymentPortalUrl || "https://catfk.com/shop/ZVZNANU8")}" target="_blank" rel="noreferrer">打开积分小店</a><div style="margin-top:8px"><a class="shop-link" href="https://api.nanshanyougui.xyz/shop" target="_blank" rel="noreferrer">注册 / 登录 / 兑换积分</a></div>
     </div>`
   return `<!doctype html>
 <html lang="zh-CN">
@@ -144,14 +144,7 @@ function page({ authMode = "password", sourceLabel = "默认模型源", paymentP
   .panel.show { display: block; }
   .kv { display: grid; grid-template-columns: 72px 1fr; gap: 6px 10px; margin: 0 0 12px; font-size: 13px; }
   .kv b { color: #64748b; font-weight: 600; }
-  .models { max-height: 240px; overflow: auto; border: 1px solid #e2e8f0; border-radius: 10px; background: #fafcff; }
-  .models li { list-style: none; margin: 0; padding: 8px 10px; border-bottom: 1px solid #eef2f7; font-size: 13px; }
-  .models li:last-child { border-bottom: 0; }
-  .tag { display: inline-block; margin-left: 6px; padding: 1px 6px; border-radius: 999px; background: #e8f6ee; color: #0f7b3a; font-size: 11px; }
-  .tag.muted { background: #f1f5f9; color: #64748b; }
-  .actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
   .hint { margin: 8px 0 0; color: #64748b; font-size: 12px; }
-  #probe { white-space: pre-wrap; font-size: 13px; background: #f8fafc; border-radius: 10px; padding: 10px; border: 1px solid #e2e8f0; min-height: 48px; }
 .shop-box{margin-top:14px;padding:12px;border:1px solid #e5e7eb;border-radius:10px;background:#f8fafc}
 .shop-title{font-weight:600;margin-bottom:6px}
 .shop-desc{font-size:13px;color:#475569;margin-bottom:8px;line-height:1.5}
@@ -161,7 +154,7 @@ function page({ authMode = "password", sourceLabel = "默认模型源", paymentP
 <body>
   <div class="card">
     <h1>字字珠玑网关登录</h1>
-    <p class="sub">首次安装必弹一次；登录成功后不乱弹，掉线才再提醒。可打开小店充值积分。</p>
+    <p class="sub">首次连接后只显示账号、积分和连接状态；掉线时再提醒。</p>
     <div class="source" id="sourceView">${escapeHtml(sourceLabel)}</div>
     <p id="status">正在检查模型连接…</p>
     ${formHtml}
@@ -173,19 +166,9 @@ function page({ authMode = "password", sourceLabel = "默认模型源", paymentP
         <b>积分</b><span id="balanceView">-</span>
         <b>用量</b><span id="usageView">-</span>
         <b>连接</b><span id="connView">-</span>
-        <b>测活</b><span id="probeView">未测</span>
         <b>模型数</b><span id="modelCountView">-</span>
       </div>
-      <div class="actions">
-        <button type="button" class="secondary" id="refreshBtn">刷新状态</button>
-        <button type="button" id="probeBtn">测活</button>
-      </div>
-      <p style="margin:14px 0 6px;font-size:13px;color:#5b6b7c;">已配置模型全部显示；有积分即可调用。</p>
-      <input id="modelFilter" type="search" placeholder="搜索模型，例如 grok、deepseek、seed" style="margin:0 0 8px;padding:10px 12px;border:1px solid #c9d4e3;border-radius:10px;width:100%;box-sizing:border-box;font:inherit;">
-      <label style="display:flex;align-items:center;gap:8px;margin:0 0 8px;font-size:13px;color:#334155;"><input id="showAllModels" type="checkbox" style="width:auto;margin:0;">显示全部模型</label>
-      <ul id="models" class="models"></ul>
-      <p id="modelHiddenNote" style="margin:6px 0 0;font-size:12px;color:#5b6b7c;"></p>
-      <pre id="probe"></pre>
+      <button type="button" class="secondary" id="refreshBtn">刷新连接状态</button>
     </div>
   </div>
 <script>
@@ -193,11 +176,8 @@ const AUTH_MODE = ${JSON.stringify(isApiKey ? "api_key" : "password")};
 const statusEl = document.getElementById("status");
 const form = document.getElementById("login");
 const panel = document.getElementById("panel");
-const modelsEl = document.getElementById("models");
-const probeEl = document.getElementById("probe");
 const loginBtn = document.getElementById("loginBtn");
 const refreshBtn = document.getElementById("refreshBtn");
-const probeBtn = document.getElementById("probeBtn");
 
 function setStatus(text, ok) {
   statusEl.textContent = text;
@@ -229,12 +209,7 @@ function renderDashboard(data) {
     usageView.textContent = (used != null && quota != null) ? (used + " / " + quota) : (data.credits?.summary || "-");
   }
   document.getElementById("connView").textContent = data.online === true ? "在线" : data.online === false ? "离线" : "未知";
-  document.getElementById("probeView").textContent = data.probe?.ok ? "通过" : data.probe ? "未通过" : "未测";
-  document.getElementById("probeView").className = data.probe?.ok ? "ok" : data.probe ? "bad" : "";
-  window.__allModels = Array.isArray(data.models) ? data.models : [];
-  document.getElementById("modelCountView").textContent = String(window.__allModels.length);
-  renderModelList();
-  if (data.probe?.detail) probeEl.textContent = data.probe.detail;
+  document.getElementById("modelCountView").textContent = String(Array.isArray(data.models) ? data.models.length : 0);
   setStatus(data.message || "模型已连接。", true);
 }
 
@@ -246,48 +221,8 @@ function formatBalance(data) {
   return String(balance) + " 积分";
 }
 
-function escapeHtml(value) {
-  return String(value || "")
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
-}
-
-function renderModelList() {
-  const filter = String(document.getElementById("modelFilter")?.value || "").trim().toLowerCase();
-  const showAll = document.getElementById("showAllModels")?.checked === true;
-  const all = Array.isArray(window.__allModels) ? window.__allModels : [];
-  const visible = all.filter((model) => {
-    if (!showAll && model.hiddenByDefault && Number(model.credits) <= 0) return false;
-    if (!filter) return true;
-    return String(model.id || "").toLowerCase().includes(filter)
-      || String(model.label || "").toLowerCase().includes(filter);
-  });
-  modelsEl.innerHTML = visible.map((model) => {
-    const tags = [];
-    if (Number(model.credits) > 0) tags.push('<span class="tag">' + model.credits + '积分</span>');
-    if (model.credits != null) tags.push('<span class="tag muted">' + model.credits + '积分</span>');
-    if (model.isCover) tags.push('<span class="tag muted">封面</span>');
-    if (model.isCover) tags.push('<span class="tag muted">封面</span>');
-    return "<li><code>" + escapeHtml(model.id) + "</code>" + tags.join("") + "</li>";
-  }).join("");
-  const hidden = all.filter((model) => model.hiddenByDefault).length;
-  const note = document.getElementById("modelHiddenNote");
-  if (note) {
-    note.textContent = showAll
-      ? ("共 " + all.length + " 个模型")
-      : ("已隐藏弱模型 " + hidden + " 个；当前显示 " + visible.length + " 个");
-  }
-  document.getElementById("modelCountView").textContent = String(visible.length) + (showAll ? "" : (" / " + all.length));
-}
-
-document.getElementById("modelFilter")?.addEventListener("input", renderModelList);
-document.getElementById("showAllModels")?.addEventListener("change", renderModelList);
-
-async function loadStatus(withProbe) {
-  const url = withProbe ? "/api/status?probe=1" : "/api/status";
-  const response = await fetch(url, { cache: "no-store" });
+async function loadStatus() {
+  const response = await fetch("/api/status", { cache: "no-store" });
   const data = await response.json();
   renderDashboard(data);
   return data;
@@ -309,7 +244,7 @@ if (form) form.addEventListener("submit", async (event) => {
     });
     const data = await response.json();
     renderDashboard(data);
-    if (data.loggedIn) await loadStatus(true);
+    if (data.loggedIn) await loadStatus();
   } catch {
     setStatus("连接失败：本地页面或模型服务不可用。", false);
   } finally {
@@ -319,18 +254,10 @@ if (form) form.addEventListener("submit", async (event) => {
 
 refreshBtn.addEventListener("click", async () => {
   refreshBtn.disabled = true;
-  try { await loadStatus(false); } finally { refreshBtn.disabled = false; }
+  try { await loadStatus(); } finally { refreshBtn.disabled = false; }
 });
 
-probeBtn.addEventListener("click", async () => {
-  probeBtn.disabled = true;
-  setStatus("正在测活…");
-  try { await loadStatus(true); } finally { probeBtn.disabled = false; }
-});
-
-loadStatus(false).then((data) => {
-  if (data && data.loggedIn) return loadStatus(true);
-}).catch(() => setStatus("无法读取模型连接状态。", false));
+loadStatus().catch(() => setStatus("无法读取模型连接状态。", false));
 </script>
 </body>
 </html>`;

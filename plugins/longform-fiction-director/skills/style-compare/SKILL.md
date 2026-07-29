@@ -8,8 +8,8 @@ description: Compare draft style against sample-book notes and voice anchors; gi
 ## 输入
 - 当前候选正文（优先 plainPath）
 - `样书/*/00_手法学习笔记.md`
-- `辅助文档/08_文风锚点.md`
-- `辅助文档/10_本书写作Skill.md`
+- `辅助文档/06_风格与写作要求.md`
+- `辅助文档/08_事实库_防OOC.md`
 
 ## 对比维度
 1. 句长与段节奏

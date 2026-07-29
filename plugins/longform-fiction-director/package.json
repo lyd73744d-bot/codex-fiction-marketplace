@@ -1,26 +1,21 @@
 {
   "name": "longform-fiction-director",
-  "version": "4.1.0-fusion.28",
+  "version": "4.2.0",
   "private": true,
   "type": "commonjs",
   "files": [
     ".codex-plugin",
     ".mcp.json",
     "package.json",
-    "package-lock.json",
-    "bin",
     "assets",
     "skills",
     "server",
-    "web"
+    "scripts"
   ],
   "scripts": {
-    "test": "node --test test/*.test.js",
-    "verify:package": "node scripts/verify-package-content.js"
+    "test": "node scripts/selftest-gateway-core.js && node scripts/selftest-gateway-reliability.js && node scripts/selftest-editor-profiles.js && node scripts/selftest-editor-model-division.js && node scripts/selftest-narrative-restraint.js",
+    "login": "node scripts/open-login-now.js",
+    "smoke": "node scripts/smoke-live-gateway.js"
   },
-  "dependencies": {
-    "parse5": "7.3.0",
-    "proper-lockfile": "4.1.2"
-  },
-  "description": "Chinese longform fiction Codex plugin with live Claude Opus 5 / Sonnet 5."
+  "description": "Chinese longform fiction lead-editor plugin: Codex guides, researches, engineers and reviews while external models write prose through a gateway-only MCP."
 }

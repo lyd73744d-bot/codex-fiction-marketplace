@@ -91,8 +91,8 @@ async function optimizeWithModels({
       system,
       prompt,
       taskLabel: "optimize-" + mode,
-      streamRetries: 4,
-      outerAttempts: 2
+      streamRetries: 1,
+      outerAttempts: 1
     });
     if (mode !== "review" && result?.artifact?.plainPath) {
       current = await fsp.readFile(result.artifact.plainPath, "utf8");
@@ -135,7 +135,8 @@ async function optimizeWithModels({
     title: title || mode,
     content: summary,
     ext: "md",
-    modelId: ids.join("+")
+    modelId: ids.join("+"),
+    meta: { recordModelOutput: false, note: "本地生成的优化路径摘要；各模型正文已分别记录" }
   });
 
   return {

@@ -24,7 +24,7 @@ function createGatewayGuard({ gateway, openLoginPage, paymentPortalUrl } = {}) {
   if (!gateway) throw new TypeError("gateway required");
   if (typeof openLoginPage !== "function") throw new TypeError("openLoginPage required");
 
-  let inflight = null;
+  const inflight = new Map();
 
   async function accountSnapshot() {
     try {
@@ -44,9 +44,16 @@ function createGatewayGuard({ gateway, openLoginPage, paymentPortalUrl } = {}) {
     }
   }
 
-  async function ensureAccess({ force = false, reason = "tool_call", openBrowser = true } = {}) {
-    if (inflight) return inflight;
-    inflight = (async () => {
+  async function ensureAccess({
+    force = false,
+    reason = "tool_call",
+    openBrowser = true,
+    allowPopup = false,
+    explicitUserChoice = false
+  } = {}) {
+    const requestKey = JSON.stringify({ force, openBrowser, allowPopup, explicitUserChoice });
+    if (inflight.has(requestKey)) return inflight.get(requestKey);
+    const pending = (async () => {
       await onboarding.markInstalled();
       const snap = await accountSnapshot();
       let state = await onboarding.readState();
@@ -85,7 +92,11 @@ function createGatewayGuard({ gateway, openLoginPage, paymentPortalUrl } = {}) {
             reason: reason || "forced",
             message: "按请求打开登录窗（含积分小店）。"
           }
-        : onboarding.decidePopup(state, { loggedIn: false });
+        : onboarding.decidePopup(state, {
+            loggedIn: false,
+            allowPopup,
+            explicitUserChoice
+          });
 
       if (!decision.open) {
         return {
@@ -107,7 +118,7 @@ function createGatewayGuard({ gateway, openLoginPage, paymentPortalUrl } = {}) {
       }
 
       const page = await openLoginPage();
-      await onboarding.markPopup(decision.reason);
+      state = await onboarding.markPopup(decision.reason);
       const loginUrl = page?.url || null;
       if (loginUrl) {
         try { await saveLoginUrl({ loginUrl, shopUrl, reason: decision.reason }); } catch {}
@@ -134,11 +145,12 @@ function createGatewayGuard({ gateway, openLoginPage, paymentPortalUrl } = {}) {
         }
       };
     })();
+    inflight.set(requestKey, pending);
 
     try {
-      return await inflight;
+      return await pending;
     } finally {
-      inflight = null;
+      inflight.delete(requestKey);
     }
   }
 

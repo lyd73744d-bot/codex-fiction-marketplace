@@ -21,6 +21,92 @@ function candidateDir(projectDir) {
   return path.join(projectDir, "Codex候选");
 }
 
+function reviewDir(projectDir) {
+  return path.join(projectDir, "审稿记录");
+}
+
+function modelWritingRecordPath(projectDir) {
+  return path.join(reviewDir(projectDir), "模型写作记录.md");
+}
+
+const recordQueues = new Map();
+
+function projectRelative(projectDir, filePath) {
+  return path.relative(projectDir, filePath).split(path.sep).join("/");
+}
+
+function recordValue(value, fallback = "未填写") {
+  const text = String(value || "").replace(/\r?\n/g, " ").replace(/`/g, "'").replace(/\s+/g, " ").trim();
+  return (text || fallback).slice(0, 180);
+}
+
+function shouldRecordModelOutput(modelId, meta = {}) {
+  if (meta.recordModelOutput === false) return false;
+  if (meta.recordModelOutput === true) return true;
+  const id = String(modelId || "").trim().toLowerCase();
+  if (!id) return false;
+  return !/^(local|codex)(?:-|$)/.test(id);
+}
+
+async function appendModelWritingRecord({
+  projectDir,
+  kind,
+  title,
+  chapterNo,
+  modelId,
+  createdAt,
+  filePath,
+  plainPath,
+  chars
+}) {
+  await ensureDir(reviewDir(projectDir));
+  const logPath = modelWritingRecordPath(projectDir);
+  const entry = [
+    "",
+    "## " + createdAt + " · " + recordValue(kind, "model_output"),
+    "",
+    "- 模型：`" + recordValue(modelId, "external-model") + "`",
+    "- 标题：" + recordValue(title),
+    "- 章节：" + recordValue(chapterNo),
+    "- 候选文件：`" + projectRelative(projectDir, filePath) + "`",
+    "- 纯文本：`" + projectRelative(projectDir, plainPath) + "`",
+    "- 非空字符：" + Number(chars || 0),
+    "- 状态：候选，尚未由作者确认；不得作为正文事实或正式台账依据。",
+    "",
+    "---",
+    ""
+  ].join("\n");
+  const header = [
+    "# 模型写作记录",
+    "",
+    "> 本文件是外部模型输出的过程索引。继续写作时先看索引，再按需读取对应 `.body.txt`。",
+    "> 未经作者确认的候选只用于恢复写作过程，不得当作人物、设定、时间线或正文事实。",
+    ""
+  ].join("\n");
+
+  const previous = recordQueues.get(logPath) || Promise.resolve();
+  const current = previous.catch(() => {}).then(async () => {
+    let needsHeader = true;
+    try {
+      const stat = await fsp.stat(logPath);
+      needsHeader = !stat.isFile() || stat.size === 0;
+    } catch {}
+    if (needsHeader) await fsp.writeFile(logPath, header, "utf8");
+    await fsp.appendFile(logPath, entry, "utf8");
+    return {
+      ok: true,
+      path: logPath,
+      relativePath: projectRelative(projectDir, logPath)
+    };
+  });
+  recordQueues.set(logPath, current);
+  try {
+    return await current;
+  } finally {
+    if (recordQueues.get(logPath) === current) recordQueues.delete(logPath);
+  }
+}
+
 async function ensureDir(dir) {
   await fsp.mkdir(dir, { recursive: true });
   return dir;
@@ -64,16 +150,19 @@ async function writeArtifact({ projectDir, kind = "draft", title = "", chapterNo
   if (modelId) parts.push(safeSegment(modelId, "model"));
   const fileExt = String(ext || "txt").replace(/^\./, "") || "txt";
   const filePath = path.join(dir, parts.join("_") + "." + fileExt);
+  const createdAt = new Date().toISOString();
+  const artifactMeta = { ...(meta || {}) };
+  delete artifactMeta.recordModelOutput;
   const header = [
     "# artifact",
     "kind: " + kind,
     "title: " + (title || ""),
     "chapterNo: " + (chapterNo || ""),
     "modelId: " + (modelId || ""),
-    "createdAt: " + new Date().toISOString(),
+    "createdAt: " + createdAt,
     "readableByModel: plainPath 是纯正文，可直接再喂给模型",
     "note: 候选稿/模型输出，作者确认前不得当作正式正文。",
-    meta && Object.keys(meta).length ? "meta: " + JSON.stringify(meta) : "",
+    Object.keys(artifactMeta).length ? "meta: " + JSON.stringify(artifactMeta) : "",
     "---",
     ""
   ].filter(Boolean).join("\n");
@@ -81,6 +170,26 @@ async function writeArtifact({ projectDir, kind = "draft", title = "", chapterNo
   await fsp.writeFile(filePath, header + body, "utf8");
   const plainPath = path.join(dir, parts.join("_") + ".body." + fileExt);
   await fsp.writeFile(plainPath, body, "utf8");
+  const chars = body.replace(/\s+/g, "").length;
+  let memoryRecord = null;
+  let memoryRecordError = null;
+  if (shouldRecordModelOutput(modelId, meta)) {
+    try {
+      memoryRecord = await appendModelWritingRecord({
+        projectDir,
+        kind,
+        title,
+        chapterNo,
+        modelId: modelId || "external-model",
+        createdAt,
+        filePath,
+        plainPath,
+        chars
+      });
+    } catch (error) {
+      memoryRecordError = String(error?.message || error || "model_record_failed");
+    }
+  }
   return {
     ok: true,
     path: filePath,
@@ -88,8 +197,11 @@ async function writeArtifact({ projectDir, kind = "draft", title = "", chapterNo
     relativePath: path.relative(projectDir, filePath),
     plainRelativePath: path.relative(projectDir, plainPath),
     bytes: Buffer.byteLength(body, "utf8"),
-    chars: body.replace(/\s+/g, "").length,
-    modelReadable: true
+    chars,
+    modelReadable: true,
+    recordedForMemory: Boolean(memoryRecord),
+    memoryRecord,
+    memoryRecordError
   };
 }
 
@@ -153,11 +265,12 @@ async function generateToArtifact({
   prompt = "",
   taskLabel = "fiction",
   previewChars = 800,
-  streamRetries = 4,
-  outerAttempts = 2,
+  streamRetries = 1,
+  outerAttempts = 1,
   fallbackChain = true,
   minChars = 0,
-  applyHardGates = true
+  applyHardGates = true,
+  maxTokens
 } = {}) {
   if (!gateway || typeof gateway.callModels !== "function") throw new Error("gateway.callModels required");
   if (!projectDir) throw new Error("projectDir required");
@@ -169,8 +282,8 @@ async function generateToArtifact({
   let lastTransport = "none";
   let lastGate = null;
   let fallbackAttempts = [];
-  const attempts = Math.max(1, Math.min(Number(outerAttempts) || 2, 3));
-  const retries = Math.max(1, Math.min(Number(streamRetries) || 4, 5));
+  const attempts = 1;
+  const retries = Math.max(1, Math.min(Number(streamRetries) || 1, 2));
   const useFallback = fallbackChain !== false && ids.length > 1;
 
   async function callOne(modelId) {
@@ -179,7 +292,8 @@ async function generateToArtifact({
       system: system ? String(system) : undefined,
       modelIds: [modelId],
       taskLabel: String(taskLabel || kind || "fiction").slice(0, 64),
-      streamRetries: retries
+      streamRetries: retries,
+      ...(maxTokens == null ? {} : { maxTokens: Number(maxTokens) })
     });
     const extracted = extractModelPayload(result, modelId);
     lastTransport = extracted.transport;
@@ -258,7 +372,9 @@ async function generateToArtifact({
         hardGate: lastGate,
         fallbackAttempts,
         preview: content.slice(0, previewLimit),
-        coach: "候选已完整落盘。可读 " + saved.relativePath + " 与纯正文 " + saved.plainRelativePath + "。作者确认前不入正式正文/台账。"
+        coach: "候选已完整落盘。可读 " + saved.relativePath + " 与纯正文 " + saved.plainRelativePath +
+          (saved.memoryRecord ? "；写作记录已更新 " + saved.memoryRecord.relativePath + "。" : "；写作记录未更新，请保留当前候选路径。") +
+          "作者确认前不入正式正文/台账。"
       };
     } catch (error) {
       lastError = error;
@@ -278,5 +394,6 @@ module.exports = {
   listArtifacts,
   generateToArtifact,
   candidateDir,
+  modelWritingRecordPath,
   extractModelPayload
 };

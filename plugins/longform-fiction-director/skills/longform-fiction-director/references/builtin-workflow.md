@@ -8,32 +8,34 @@
 - 说明文档：`assets/workflow/docs/`
 
 ## 新书怎么开
-1. 调用 `fiction_create_project`（自动带中文台账模板），或
-2. 调用 `fiction_scaffold_book_folder` 把模板写到指定书目录
-3. 用 `fiction_bind_quality_context` 绑定：
+1. Codex 直接在指定书目录内建好中文台账模板（参照 `assets/workflow/project-template/`）
+2. Codex 读取并**记住**要长期重读的资料清单：
    - `辅助文档/00_使用说明与当前状态.md`
    - 人物/设定/时间线/伏笔等
    - 文风锚点与授权参考（如有）
+3. 每次生成正文或做终检前重读这份清单
 
 ## 默认一步步
-绑定 → 脑洞(本地) → 细纲 → 候选正文 → 去AI味(可选) → 质检(可选) → 确认入台账
+整理资料清单 → Codex 问清脑洞 → 接入题材责编 → 可选外部发散/优化 → 作者定方向 → 细纲 → 候选正文 → 去AI味(可选) → 质检(可选) → 确认入台账
 
 ## 连续跑
-`fiction_workflow_guide` + continuousPreset：
-- to_draft
-- chapter_once
-- polish_once
-- multi_chapter
+作者授权连续流程后仍需在每次外部模型调用前询问；当次确认后才以 `authorConfirmed: true` 调用 `fiction_generate_to_file`：
+- to_draft：细纲 → 正文
+- chapter_once：细纲 → 正文 → 去AI味 → 质检
+- polish_once：去AI味 → 质检
+- multi_chapter：循环 chapter_once
 
-不自动 settle；作者确认后才入台账。
+不自动 settle；作者确认后 Codex 才把定稿写入 `正文/` 并更新台账。
 
 ## 模型
-有积分即可调用。细纲/正文/去AI味/质检前先打开模型登录页确认。
+选择使用其他模型并永久绑定后即可调用。只有未登录时才打开登录页。
 
 
 ## 提示词增强（已内置）
 - 控制卡：chapter-control-card.md
 - 钩子爽点：hook-shuangdian-checklist.md
 - 去AI分级：deslop-grades.md
-- 仪表盘：delivery-dashboard.md
+- 里程碑状态摘要：delivery-dashboard.md（只在整章完成、质检完成或作者问进度时使用）
 - 拆解备忘：prompt-lessons-from-peers.md
+- 题材责编：genre-recipes.md
+- 责编口吻：editor-voice.md
