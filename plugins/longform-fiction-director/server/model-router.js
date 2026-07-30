@@ -26,43 +26,43 @@ const TASK_ROLES = {
 const ROLE_HINTS = {
   explore: {
     label: "探索/脑洞",
-    prefer: ["gpt-5.6-luna", "deepseek-v4-flash", "minimax-m3", "gemini-3.5-flash", "glm-5.2"],
+    prefer: ["gemini-3.5-flash", "glm-5.2", "qwen3.7-max"],
     avoidHeavy: true,
     why: "要快、要多方向，不值得上最贵模型"
   },
   structure: {
     label: "结构/大纲/细纲",
-    prefer: ["gpt-5.6-terra", "kimi-k2.6", "claude-sonnet-5", "glm-5.2", "gemini-3.1-pro-preview"],
+    prefer: ["kimi-k2.6", "claude-sonnet-5", "gemini-3.1-pro-preview", "glm-5.2"],
     why: "要因果与节奏，中档推理足够"
   },
   draft: {
     label: "正文主写",
-    prefer: ["claude-sonnet-5", "kimi-k2.6", "gpt-5.6-terra", "glm-5.2", "seed-2.1-pro"],
+    prefer: ["claude-sonnet-5", "kimi-k2.6", "seed-2.1-pro", "glm-5.2", "claude-opus-5"],
     why: "主写要稳、文风可控；默认中档，作者点名再用旗舰"
   },
   continuity: {
     label: "连续性/台账",
-    prefer: ["gpt-5.6-terra", "claude-sonnet-5", "kimi-k2.6", "glm-5.2"],
+    prefer: ["claude-sonnet-5", "kimi-k2.6", "glm-5.2", "gemini-3.1-pro-preview"],
     why: "核对人物/时间线/伏笔，重准确不重花活"
   },
   style: {
     label: "去AI味/润色",
-    prefer: ["claude-sonnet-5", "gpt-5.6-terra", "kimi-k2.6", "seed-2.1-pro"],
+    prefer: ["claude-sonnet-5", "kimi-k2.6", "seed-2.1-pro", "claude-opus-4-8"],
     why: "改味不改剧情，中档写手模型更合适"
   },
   adversary: {
     label: "反方/找硬伤",
-    prefer: ["gpt-5.6-sol", "claude-opus-4-6", "claude-opus-4-8", "gemini-3.1-pro-preview"],
+    prefer: ["claude-opus-5", "claude-opus-4-8", "gemini-3.1-pro-preview", "qwen3.7-max"],
     why: "专门挑弃读点与逻辑崩，可短上下文上旗舰"
   },
   review: {
     label: "质检审核",
-    prefer: ["gpt-5.6-terra", "claude-sonnet-5", "kimi-k2.6", "glm-5.2"],
+    prefer: ["claude-sonnet-5", "kimi-k2.6", "gemini-3.1-pro-preview", "glm-5.2"],
     why: "结构化审稿；证据不足再换旗舰复审"
   },
   finalize: {
     label: "定稿成稿",
-    prefer: ["gpt-5.6-sol", "claude-opus-4-6", "claude-opus-4-8", "gpt-5.6-terra"],
+    prefer: ["claude-opus-5", "claude-opus-4-8", "claude-opus-4-6", "claude-sonnet-5"],
     why: "作者确认前最后一轮，才考虑高积分模型"
   }
 };
@@ -70,12 +70,12 @@ const ROLE_HINTS = {
 // Fused from zizhuji workflow-model-policy: soft presets only
 const WRITING_MODE_PRESETS = {
   chapterWrite: {
-    quick: ["glm-5.2", "gpt-5.6-luna", "claude-sonnet-5", "kimi-k2.6"],
-    deep: ["claude-opus-4-6", "claude-sonnet-5", "kimi-k2.6", "gpt-5.6-terra", "gpt-5.6-luna"]
+    quick: ["glm-5.2", "claude-sonnet-5", "kimi-k2.6", "gemini-3.5-flash"],
+    deep: ["claude-opus-5", "claude-opus-4-8", "claude-opus-4-6", "claude-sonnet-5", "kimi-k2.6"]
   },
   chapterOptimize: {
-    quick: ["glm-5.2", "gpt-5.6-luna", "claude-sonnet-5"],
-    deep: ["claude-opus-4-6", "kimi-k2.6", "claude-sonnet-5", "gpt-5.6-terra", "gpt-5.6-luna"]
+    quick: ["glm-5.2", "claude-sonnet-5", "gemini-3.5-flash"],
+    deep: ["claude-opus-5", "claude-opus-4-8", "claude-opus-4-6", "kimi-k2.6", "claude-sonnet-5"]
   }
 };
 
@@ -120,13 +120,13 @@ function scoreModel(modelId, role, creditsMap = {}, mode = "quick") {
   });
   if (ROLE_HINTS[role]?.avoidHeavy) {
     if (/opus|sol|o1|o3|ultra|pro-preview|4\.6|4-6|4-8/.test(lower)) score -= 40;
-    if (/flash|luna|mini|haiku|air/.test(lower)) score += 20;
+    if (/flash|mini|haiku|air|turbo/.test(lower)) score += 20;
   }
   if (mode === "deep") {
-    if (/opus|sol|pro|kimi|sonnet|terra/.test(lower)) score += 18;
+    if (/opus|pro|kimi|sonnet/.test(lower)) score += 18;
   } else {
-    if (/flash|luna|glm|mini|haiku/.test(lower)) score += 12;
-    if (/opus|sol/.test(lower)) score -= 15;
+    if (/flash|glm|mini|haiku|turbo/.test(lower)) score += 12;
+    if (/opus/.test(lower)) score -= 15;
   }
   const credits = Number(creditsMap[id]);
   if (Number.isFinite(credits)) {
@@ -179,7 +179,7 @@ function buildCoachAdvice(taskId, plans, mode, unpaidNote) {
   }
   lines.push("生成策略：正式请求不先测活；无正文的明确临时故障最多重试一次，超时或部分流不重发；作者确认多个模型时才按顺序换模型。收到的正文全部落盘（.body 纯正文可再喂模型）。");
   lines.push("结果先在「Codex候选/」给作者看，确认前不入正式正文/台账。");
-  if (mode === "quick") lines.push("快速模式：探索用 flash/luna；正文用 sonnet/terra/kimi/glm；终检再开 deep。");
+  if (mode === "quick") lines.push("快速模式：探索用 flash/glm/qwen；正文用 sonnet/kimi/seed；终检再开 deep。");
   else lines.push("深度模式：主写用稳定模型，终检使用旗舰模型。");
   return lines.join("\n");
 }

@@ -18,11 +18,6 @@ function json(res, status, value) {
   res.end(body);
 }
 
-function isGptModel(model) {
-  return /\bgpt(?:[-_.:]|$)/iu.test(String(model?.id || ""))
-    || /\bgpt(?:\s|$)/iu.test(String(model?.label || model?.name || ""));
-}
-
 function publicModel(model) {
   if (!model || typeof model !== "object") return null;
   const id = typeof model.id === "string" ? model.id : "";
@@ -43,49 +38,20 @@ function publicModel(model) {
   };
 }
 
-/** Keep only models that are strong enough for longform writing by default. */
-function isStrongModel(id) {
-  const value = String(id || "").toLowerCase();
-  if (!value) return false;
-  // explicit allowlist first (before weak filters like flash/mini)
-  if (/claude-opus-4(?:[-.]?)6(?:-thinking)?$/.test(value)) return true;
-  if (value === "gemini-3.1-pro-preview") return true;
-  if (value === "gemini-3.5-flash") return true;
-  if (value === "glm-5.2") return true;
-  if (/^gpt-5(?:\.6)?-(terra|luna)$/.test(value)) return true;
-  if (value === "gpt-5" || value === "gpt-5-5" || value === "gpt-5-3" || value === "gpt-5-mini") return true;
-  if (value === "seed-2.1-pro" || value === "seed-2.1-turbo") return true;
-  if (value === "kimi-k2.6") return true;
-  if (value === "qwen3.7-max") return true;
-  if (value === "gpt-image-2") return true;
-  if (isGptModel({ id: value })) return false;
-  if (isWeakModel(value)) return false;
-  return false;
-}
-
-function isWeakModel(id) {
-  const value = String(id || "").toLowerCase();
-  return /haiku|flash|mini|nano|turbo|preview|vl-flash|fable|nemotron|llama|mistral|next-80b|sonnet-4(?![-.]?[56])|sonnet-4-thinking|hy3$/.test(value);
-}
-
 function orderModels(models) {
   const list = Array.isArray(models) ? models.slice() : [];
   const rank = (model) => {
     const id = String(model.id || "").toLowerCase();
-    if (/claude-opus-4(?:[-.]?)6(?:-thinking)?$/.test(id)) return 1;
-    if (id === "gemini-3.1-pro-preview") return 2;
-    if (id === "gpt-5.6-terra") return 3;
-    if (id === "gpt-5-5" || id === "gpt-5") return 4;
-    if (id === "kimi-k2.6") return 5;
-    if (id === "seed-2.1-pro") return 6;
-    if (id === "glm-5.2") return 7;
-    if (id === "gpt-5-3") return 8;
+    if (id === "claude-opus-5") return 1;
+    if (id === "claude-opus-4-8") return 2;
+    if (id === "claude-opus-4-6") return 3;
+    if (id === "claude-sonnet-5") return 4;
+    if (id === "gemini-3.1-pro-preview") return 5;
+    if (id === "kimi-k2.6") return 6;
+    if (id === "seed-2.1-pro") return 7;
+    if (id === "glm-5.2") return 8;
     if (id === "gemini-3.5-flash") return 9;
-    if (id === "seed-2.1-turbo") return 10;
-    if (id === "gpt-5.6-luna") return 11;
-    if (id === "gpt-5-mini") return 12;
-    if (id === "qwen3.7-max") return 13;
-    if (id === "gpt-image-2") return 14;
+    if (id === "qwen3.7-max") return 10;
     if (model.isCover) return 50;
     return 100;
   };

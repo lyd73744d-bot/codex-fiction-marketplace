@@ -1,9 +1,9 @@
 {
   "version": "4.2.0",
-  "fullVersion": "4.2.0+codex.gateway-only",
+  "fullVersion": "4.2.0+codex.20260730191834",
   "gateway": "https://api.nanshanyougui.xyz",
-  "relay": "https://nanshanyougui.xyz",
-  "updatedAt": "2026-07-29T03:30:00+00:00",
+  "relay": "https://api.ssycai.com",
+  "updatedAt": "2026-07-31T03:18:34+08:00",
   "preferredModel": "claude-opus-5",
   "models": [
     {
@@ -56,57 +56,8 @@
       "flagship": false
     },
     {
-      "id": "gpt-5.6-terra",
-      "credits": 12,
-      "available": true,
-      "status": "live",
-      "flagship": true
-    },
-    {
-      "id": "gpt-5.6-luna",
-      "credits": 5,
-      "available": true,
-      "status": "live",
-      "flagship": false
-    },
-    {
-      "id": "gpt-5-5",
-      "credits": 12,
-      "available": true,
-      "status": "live",
-      "flagship": false
-    },
-    {
-      "id": "gpt-5",
-      "credits": 12,
-      "available": true,
-      "status": "live",
-      "flagship": false
-    },
-    {
-      "id": "gpt-5-3",
-      "credits": 10,
-      "available": true,
-      "status": "live",
-      "flagship": false
-    },
-    {
-      "id": "gpt-5-mini",
-      "credits": 5,
-      "available": true,
-      "status": "live",
-      "flagship": false
-    },
-    {
       "id": "seed-2.1-pro",
       "credits": 20,
-      "available": true,
-      "status": "live",
-      "flagship": false
-    },
-    {
-      "id": "seed-2.1-turbo",
-      "credits": 10,
       "available": true,
       "status": "live",
       "flagship": false
@@ -124,13 +75,6 @@
       "available": true,
       "status": "live",
       "flagship": false
-    },
-    {
-      "id": "gpt-image-2",
-      "credits": 50,
-      "available": true,
-      "status": "live",
-      "flagship": true
     }
   ],
   "notes": {
@@ -138,7 +82,8 @@
       "claude-opus-5",
       "claude-sonnet-5"
     ],
-    "claude_relay": "https://nanshanyougui.xyz",
-    "gateway_role": "api.nanshanyougui.xyz keeps plugin accounts, credits and model routing"
+    "claude_relay": "https://api.ssycai.com",
+    "gateway_role": "api.nanshanyougui.xyz keeps plugin accounts, credits and exact one-route-per-model routing",
+    "request_concurrency": "unlimited"
   }
 }
