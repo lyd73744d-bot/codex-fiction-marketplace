@@ -29,10 +29,10 @@ codex plugin add longform-fiction-director@zizhuji-fiction
 
 **写小说真的太简单了 / longform-fiction-director**
 
-- 版本：`4.1.0-fusion.28+codex.20260726034256`
+- 版本：`4.2.0`（安装包使用时间戳缓存版本）
 - 对话前台责编教练
-- 网关模型调用（有积分可调用）
-- **Claude Opus 5 / Sonnet 5 已测活并展示**
+- 5 个本地核心工具：项目建档、样书学习、研究、事实库、文风锚点
+- 15 个网关与候选稿工具；每次调用外部模型前由作者确认
 - 流式候选 txt
-- 样书精拆 / 去 AI 味 / 风格对照
+- 样书剧情、对话、文风对照 / 去 AI 味 / 自然大纲与章节笔记
 - 作者确认后再入台账

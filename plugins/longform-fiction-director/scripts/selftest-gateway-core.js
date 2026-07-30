@@ -173,13 +173,20 @@ async function main() {
     "fiction_read_artifact", "fiction_list_artifacts",
     "fiction_optimize_with_models", "fiction_compare_style", "fiction_smoke_live_gateway"
   ];
-  assert.strictEqual(names.length, expected.length, "tool count " + names.length);
+  const expectedLocal = [
+    "fiction_project", "fiction_sample_book", "fiction_research",
+    "fiction_facts", "fiction_voice_anchor"
+  ];
+  assert.strictEqual(names.length, expected.length + expectedLocal.length, "tool count " + names.length);
   for (const name of expected) assert.ok(names.includes(name), "missing tool " + name);
+  for (const name of expectedLocal) assert.ok(names.includes(name), "missing local core tool " + name);
   assert.deepStrictEqual(definitions.get("fiction_generate_to_file").inputSchema.required, ["projectDir", "prompt", "modelIds", "authorConfirmed"]);
   assert.strictEqual(definitions.get("fiction_generate_to_file").inputSchema.properties.modelIds.type, "array");
   assert.strictEqual(definitions.get("fiction_generate_to_file").inputSchema.properties.fallbackChain.type, "boolean");
+  assert.strictEqual(definitions.get("fiction_generate_to_file").inputSchema.properties.projectContext.type, "string");
   assert.strictEqual(definitions.get("fiction_generate_to_file").inputSchema.properties.authorConfirmed.type, "boolean");
   assert.strictEqual(definitions.get("fiction_generate_to_file").inputSchema.properties.background.type, "boolean");
+  assert.strictEqual(definitions.get("fiction_generate_to_file").inputSchema.properties.minChars.type, "number");
   assert.deepStrictEqual(definitions.get("fiction_generation_status").inputSchema.required, ["jobId"]);
   assert.ok(!definitions.get("fiction_optimize_with_models").inputSchema.properties.modelId, "optimize must not expose singular modelId");
   assert.strictEqual(definitions.get("fiction_optimize_with_models").inputSchema.properties.modelIds.type, "array");
@@ -222,15 +229,39 @@ async function main() {
     const deniedSmoke = await handle({ jsonrpc: "2.0", id: 82, method: "tools/call", params: { name: "fiction_smoke_live_gateway", arguments: {} } }, runtime);
     assert.strictEqual(deniedSmoke.error?.data?.code, "AUTHOR_CONFIRMATION_REQUIRED", "unconfirmed live smoke must be blocked");
 
-    const gen = await callTool("fiction_generate_to_file", { projectDir, prompt: "写一段测试", modelIds: ["claude-opus-5"], authorConfirmed: true, applyHardGates: false });
+    const gen = await callTool("fiction_generate_to_file", {
+      projectDir,
+      prompt: "写一段测试",
+      projectContext: [
+        "卢象升不知道后世历史，系统不给敌情透视。",
+        "前500字内同时出现至少三项压力。",
+        "第1章完成文化选择，第2章列阵。",
+        "每400至700字必须出现一次压力变化。"
+      ].join("\n"),
+      modelIds: ["claude-opus-5"],
+      authorConfirmed: true,
+      minChars: 1200,
+      applyHardGates: false
+    });
     assert.strictEqual(gen.ok, true);
+    assert.strictEqual(gen.transport, "stream_attempt_1", "artifact lost the model transport detail");
     assert.ok(lastGatewayCallInput.system.includes("事实是硬边界，写法是自由区"), "draft request misses fixed natural-prose policy");
-    assert.ok(lastGatewayCallInput.system.includes("不要把一章写成系统、兵种、语言、物资、能力、阵营或世界规则的展示与验收流程"), "draft request still permits checklist prose");
+    assert.ok(lastGatewayCallInput.system.includes("不能按提示词栏目逐项亮相"), "draft request still permits checklist prose");
+    assert.ok(lastGatewayCallInput.system.includes("不要为了所谓人味刻意制造误判或残缺"), "draft request replaces checklist prose with forced imperfection");
+    assert.ok(lastGatewayCallInput.prompt.includes("卢象升不知道后世历史"), "draft request dropped a factual project boundary");
+    assert.ok(lastGatewayCallInput.prompt.includes("写一段测试"), "draft request dropped the current author request");
+    assert.ok(!lastGatewayCallInput.prompt.includes("前500字"), "draft request leaked a fixed opening quota");
+    assert.ok(!lastGatewayCallInput.prompt.includes("第1章完成"), "draft request leaked fixed chapter slots");
+    assert.ok(!lastGatewayCallInput.prompt.includes("每400至700字"), "draft request leaked a fixed pacing interval");
+    assert.ok(lastGatewayCallInput.prompt.includes("完整正文不得少于 1200 个中文字符"), "minChars was checked after generation but not sent to the model");
+    assert.ok(lastGatewayCallInput.prompt.includes("沿现有因果") && lastGatewayCallInput.prompt.includes("不得靠复述"), "long-form prompt permits padding");
     const generateGuardCall = gatewayGuardArguments.find((item) => item.reason === "generate_to_file");
     assert.strictEqual(generateGuardCall?.allowPopup, true, "approved generation must allow first-use login");
     assert.strictEqual(generateGuardCall?.explicitUserChoice, true, "approved generation must record explicit choice");
     assert.ok(fs.existsSync(gen.artifact.path), "artifact txt missing");
-    assert.ok(fs.readFileSync(gen.artifact.path, "utf8").includes('"requestPolicyVersion":"natural-prose-v2"'), "artifact does not record draft policy version");
+    const generatedArtifact = fs.readFileSync(gen.artifact.path, "utf8");
+    assert.ok(generatedArtifact.includes('"requestPolicyVersion":"natural-prose-v5"'), "artifact does not record draft policy version");
+    assert.ok(generatedArtifact.includes('"removedCount":3'), "artifact does not record context sanitation");
     assert.ok(fs.existsSync(gen.artifact.plainPath), "artifact .body.txt missing");
     assert.strictEqual(gen.artifact.recordedForMemory, true, "external model output must be recorded for memory");
     assert.ok(fs.existsSync(gen.artifact.memoryRecord.path), "model writing record missing");
@@ -331,7 +362,7 @@ async function main() {
     await loginConsole.stop();
   }
 
-  console.log("PASS selftest-gateway-core: " + expected.length + " tools OK, version " + pkg.version);
+  console.log("PASS selftest-gateway-core: " + expected.length + " gateway + " + expectedLocal.length + " local tools OK, version " + pkg.version);
 }
 
 main().catch((error) => {

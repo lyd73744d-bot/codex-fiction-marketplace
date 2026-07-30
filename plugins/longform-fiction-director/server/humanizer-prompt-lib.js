@@ -30,14 +30,14 @@ function pluginRootFromHere() {
 function loadMethodPack(focus = "full") {
   const rootDir = pluginRootFromHere();
   const map = {
-    full: ["skills/humanizer-methods/SKILL.md", "skills/humanizer-zh/SKILL.md"],
-    dialogue: ["skills/deslop-dialogue/SKILL.md"],
-    narration: ["skills/deslop-narration/SKILL.md"],
-    pacing: ["skills/deslop-pacing/SKILL.md"],
-    emotion: ["skills/deslop-emotion/SKILL.md"],
-    info: ["skills/deslop-info-dump/SKILL.md"],
-    hook: ["skills/deslop-hook/SKILL.md"],
-    explain: ["skills/deslop-explain/SKILL.md"]
+    full: ["skills/deslop-all/SKILL.md", "skills/humanizer-zh/SKILL.md"],
+    dialogue: ["skills/deslop-all/SKILL.md"],
+    narration: ["skills/deslop-all/SKILL.md"],
+    pacing: ["skills/deslop-all/SKILL.md"],
+    emotion: ["skills/deslop-all/SKILL.md"],
+    info: ["skills/deslop-all/SKILL.md"],
+    hook: ["skills/deslop-all/SKILL.md"],
+    explain: ["skills/deslop-all/SKILL.md"]
   };
   const files = map[focus] || map.full;
   const chunks = [];

@@ -8,6 +8,7 @@ const { createHybridGateway } = require("./hybrid-gateway");
 const { createGatewayLoginConsole } = require("./gateway-login-console");
 const { createGatewayGuard } = require("./gateway-guard");
 const { createGatewayMcpTools } = require("./gateway-mcp-tools");
+const { createLocalCoreTools } = require("./local-core-tools");
 const onboardingState = require("./onboarding-state");
 const packageInfo = require("../package.json");
 
@@ -113,13 +114,23 @@ function createRuntime(options = {}) {
     return { url: page.url, message: "已按用户请求打开可选的字字珠玑网关登录页。普通写作无需注册。" };
   });
   const gatewayGuard = options.gatewayGuard || createGatewayGuard({ gateway, openLoginPage, paymentPortalUrl });
+  const tools = options.tools || (() => {
+    const gatewayTools = createGatewayMcpTools({ gateway, gatewayGuard, openLoginPage });
+    const localTools = options.localTools || createLocalCoreTools(options.localCoreOptions || {});
+    return Object.freeze({
+      list: () => [...gatewayTools.list(), ...localTools.list()],
+      call: (name, input) => localTools.has(name)
+        ? localTools.call(name, input)
+        : gatewayTools.call(name, input)
+    });
+  })();
   return {
     gateway,
     gatewayGuard,
     openLoginPage,
     paymentPortalUrl,
     getLoginConsole: () => loginConsole,
-    tools: options.tools || createGatewayMcpTools({ gateway, gatewayGuard, openLoginPage })
+    tools
   };
 }
 async function handle(message, dependencies = {}) {
@@ -147,7 +158,7 @@ async function handle(message, dependencies = {}) {
       serverInfo: {
         name: "longform-fiction-director",
         version: packageInfo.version,
-        productRole: "gateway-only-model-bridge",
+        productRole: "lead-editor-with-local-core-and-model-gateway",
         onboarding: onboarding ? {
           pendingFirstLogin: !!onboarding.pendingFirstLogin,
           firstLoginCompletedAt: onboarding.firstLoginCompletedAt,

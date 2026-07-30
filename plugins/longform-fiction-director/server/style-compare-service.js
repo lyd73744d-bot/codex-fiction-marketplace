@@ -34,7 +34,7 @@ function roughStats(text) {
   }
   if (/(首先|其次|总之|由此可见|这意味着|不难看出)/.test(body)) {
     aiHints.push("解释腔/议论文腔");
-    fixes.push("用 deslop-explain：删结论句，改成选择与代价");
+    fixes.push("用 deslop-all 的解释腔检查：删掉重复结论，保留必要事实与因果");
   }
   if (dialogueLines === 0 && chars > 800) {
     aiHints.push("对话偏少");
@@ -58,11 +58,13 @@ function roughStats(text) {
 }
 async function collectStyleContext(projectDir) {
   const styleDoc = await readFirst([
-    path.join(projectDir, "辅助文档", "06_风格与写作要求.md"),
+    path.join(projectDir, "辅助文档", "06_风格与写作要求.md")
+  ]);
+  const voiceAnchor = await readFirst([
     path.join(projectDir, "辅助文档", "08_文风锚点.md"),
     path.join(projectDir, "08_文风锚点.md")
   ]);
-  const voice = styleDoc;
+  const voice = [styleDoc, voiceAnchor].filter((value) => value.trim()).join("\n\n");
   const skill = await readFirst([
     path.join(projectDir, "辅助文档", "10_本书写作Skill.md"),
     path.join(projectDir, "10_本书写作Skill.md")
@@ -73,17 +75,22 @@ async function collectStyleContext(projectDir) {
     path.join(projectDir, "12_事实库_防OOC.md")
   ]);
   let sampleNotes = "";
+  let sampleExcerpts = "";
   const sampleRoot = path.join(projectDir, "样书");
   if (fs.existsSync(sampleRoot)) {
     for (const name of await fsp.readdir(sampleRoot)) {
       const notes = path.join(sampleRoot, name, "00_手法学习笔记.md");
       if (fs.existsSync(notes)) {
         sampleNotes += "\n\n# 样书 " + name + "\n" + await readIfExists(notes);
+        sampleExcerpts += await readFirst([
+          path.join(sampleRoot, name, "01_剧情对话文风摘句.md"),
+          path.join(sampleRoot, name, "01_措辞节奏文风摘句.md")
+        ]);
         break;
       }
     }
   }
-  return { voice, styleDoc, skill, sampleNotes, facts };
+  return { voice, styleDoc, skill, sampleNotes, sampleExcerpts, facts };
 }
 async function compareStyle({ projectDir, draftText = "", draftPath = "", title = "" } = {}) {
   if (!projectDir) throw new Error("projectDir required");
@@ -114,17 +121,22 @@ async function compareStyle({ projectDir, draftText = "", draftPath = "", title 
     "## 文风锚点（摘录）", clip(ctx.voice || "（空）", 1600), "",
     "## 旧项目写法补充（如有）", clip(ctx.skill || "（无）", 1200), "",
     "## 样书手法（摘录）", clip(ctx.sampleNotes || "（空）", 1600), "",
+    "## 剧情、对话与文风片段（只供本地对照）", clip(ctx.sampleExcerpts || "（空）", 3200), "",
+    "## 与当前稿并排看",
+    "- 剧情：看当前事件是否自然生出下一件事，不搬样书情节。",
+    "- 对话：看人物各自想要什么、说了多少、沉默和动作是否有用，不借用原句。",
+    "- 文风：看措辞、句段换气、叙述距离和说透程度，不模仿标志性表达。",
+    "- 这些只是参考；觉得有用才试，作者确认后才写入本书 Skill。", "",
     "## 可执行修改（先改这些）",
     ...stats.fixes.map((f, i) => (i + 1) + ". " + f),
     "",
     "## 事实库提醒",
     clip(ctx.facts || "（空：历史/真实人物风险高）", 1000),
     "",
-    "## deslop 路由建议",
-    "- 对话假：deslop-dialogue",
-    "- 解释腔：deslop-explain",
-    "- 节奏：deslop-pacing",
-    "- 综合：humanizer-zh 或 fiction_optimize_with_models",
+    "## 去 AI 味建议",
+    "- 单项或综合诊断：deslop-all",
+    "- 深度整章检查：humanizer-zh",
+    "- 外部模型改写：fiction_optimize_with_models（每次先询问作者）",
     "",
     "## 候选摘录", clip(draft, 2500), ""
   ].join("\n");

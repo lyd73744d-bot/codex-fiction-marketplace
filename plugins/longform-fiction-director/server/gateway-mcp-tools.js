@@ -5,7 +5,7 @@ const { recommendModels, listTaskCatalog } = require("./model-router");
 const { optimizeWithModels } = require("./multi-model-optimize");
 const { compareStyle } = require("./style-compare-service");
 const { smokeLiveGateway } = require("./live-gateway-smoke");
-const { buildDraftSystem } = require("./draft-prompt-lib");
+const { buildDraftSystem, prepareDraftPrompt } = require("./draft-prompt-lib");
 const { createGenerationJobManager } = require("./generation-job-manager");
 const onboarding = require("./onboarding-state");
 
@@ -76,7 +76,7 @@ function createGatewayMcpTools({ gateway, gatewayGuard, openLoginPage, generatio
     { name: "fiction_list_models", description: "List models available to the logged-in account and its public balance status.", annotations: safetyAnnotations(true), inputSchema: { type: "object", additionalProperties: false, properties: {} } },
     { name: "fiction_recommend_models", description: "Lead-editor router: recommend an external model for a writing task. Supports mode=quick|deep. Pass returned modelIds to generate_to_file.modelIds; set generate_to_file.fallbackChain to true to enable ordered fallback.", annotations: safetyAnnotations(true), inputSchema: { type: "object", additionalProperties: false, properties: { task: { type: "string", maxLength: 64 }, mode: { type: "string", maxLength: 16 }, maxPerRole: { type: "number" }, authorPrefer: { type: "array", items: { type: "string" }, maxItems: 8 } } } },
     { name: "fiction_list_model_tasks", description: "List task types supported by the lead-editor model router.", annotations: safetyAnnotations(true), inputSchema: { type: "object", additionalProperties: false, properties: {} } },
-    { name: "fiction_generate_to_file", description: "Call the model only after the author confirms this specific call. authorConfirmed=true is required every time. Set background=true for long prose so Codex can do local continuity work while generation runs; poll fiction_generation_status afterward.", annotations: safetyAnnotations(false), inputSchema: { type: "object", additionalProperties: false, required: ["projectDir", "prompt", "modelIds", "authorConfirmed"], properties: { projectDir: { type: "string", maxLength: 512 }, prompt: { type: "string", maxLength: 200000 }, system: { type: "string", maxLength: 100000 }, modelIds: { type: "array", items: { type: "string" }, minItems: 1, maxItems: 8 }, authorConfirmed: { type: "boolean" }, background: { type: "boolean" }, kind: { type: "string", maxLength: 64 }, title: { type: "string", maxLength: 120 }, chapterNo: { type: "string", maxLength: 32 }, taskLabel: { type: "string", maxLength: 64 }, previewChars: { type: "number" }, fallbackChain: { type: "boolean" }, minChars: { type: "number" }, applyHardGates: { type: "boolean" }, maxTokens: { type: "number", minimum: 256, maximum: 65536 } } } },
+    { name: "fiction_generate_to_file", description: "Call the model only after the author confirms this specific call. authorConfirmed=true is required every time. Put old-project notes in projectContext so legacy chapter, word-count, frequency and checklist directives are removed before generation. Set background=true for long prose and poll fiction_generation_status afterward.", annotations: safetyAnnotations(false), inputSchema: { type: "object", additionalProperties: false, required: ["projectDir", "prompt", "modelIds", "authorConfirmed"], properties: { projectDir: { type: "string", maxLength: 512 }, prompt: { type: "string", maxLength: 200000 }, projectContext: { type: "string", maxLength: 400000 }, system: { type: "string", maxLength: 100000 }, modelIds: { type: "array", items: { type: "string" }, minItems: 1, maxItems: 8 }, authorConfirmed: { type: "boolean" }, background: { type: "boolean" }, kind: { type: "string", maxLength: 64 }, title: { type: "string", maxLength: 120 }, chapterNo: { type: "string", maxLength: 32 }, taskLabel: { type: "string", maxLength: 64 }, previewChars: { type: "number" }, fallbackChain: { type: "boolean" }, minChars: { type: "number" }, applyHardGates: { type: "boolean" }, maxTokens: { type: "number", minimum: 256, maximum: 65536 } } } },
     { name: "fiction_generation_status", description: "Read a background generation/optimization job. While it runs, do only local continuity, fact, foreshadowing, and review preparation; do not start another paid call or edit canon.", annotations: safetyAnnotations(true), inputSchema: { type: "object", additionalProperties: false, required: ["jobId"], properties: { jobId: { type: "string", maxLength: 96 } } } },
     { name: "fiction_write_artifact", description: "Write candidate text to project Codex候选 as txt. When modelId identifies an external model, also append the Markdown writing-history entry.", annotations: safetyAnnotations(false), inputSchema: { type: "object", additionalProperties: false, required: ["projectDir", "content"], properties: { projectDir: { type: "string", maxLength: 512 }, content: { type: "string", maxLength: 400000 }, kind: { type: "string", maxLength: 64 }, title: { type: "string", maxLength: 120 }, chapterNo: { type: "string", maxLength: 32 }, modelId: { type: "string", maxLength: 128 }, ext: { type: "string", maxLength: 8 } } } },
     { name: "fiction_write_local_candidate", description: "Save author/Codex-written prose to Codex候选 txt without gateway (for unpaid/local path). Model optimize still needs login.", annotations: safetyAnnotations(false), inputSchema: { type: "object", additionalProperties: false, required: ["projectDir", "content"], properties: { projectDir: { type: "string", maxLength: 512 }, content: { type: "string", maxLength: 400000 }, title: { type: "string", maxLength: 120 }, chapterNo: { type: "string", maxLength: 32 }, kind: { type: "string", maxLength: 40 } } } },
@@ -201,10 +201,15 @@ function createGatewayMcpTools({ gateway, gatewayGuard, openLoginPage, generatio
           kind,
           taskLabel
         });
+        const preparedPrompt = prepareDraftPrompt({
+          prompt: required(input.prompt, "prompt"),
+          projectContext: String(input.projectContext || ""),
+          minChars: input.minChars
+        });
         const generationInput = {
           gateway,
           projectDir: required(input.projectDir, "projectDir"),
-          prompt: required(input.prompt, "prompt"),
+          prompt: preparedPrompt.prompt,
           system: draftSystem.system,
           modelIds: input.modelIds,
           kind,
@@ -213,10 +218,11 @@ function createGatewayMcpTools({ gateway, gatewayGuard, openLoginPage, generatio
           taskLabel,
           previewChars: Number(input.previewChars || 800),
           fallbackChain: input.fallbackChain !== false,
-          minChars: Number(input.minChars || 0),
+          minChars: preparedPrompt.minimumChars,
           applyHardGates: input.applyHardGates !== false,
           maxTokens: Number(input.maxTokens || 24000),
-          requestPolicyVersion: draftSystem.policyVersion
+          requestPolicyVersion: draftSystem.policyVersion,
+          contextSanitization: preparedPrompt.contextSanitization
         };
         if (input.background === true) {
           const job = jobs.start({
@@ -226,7 +232,8 @@ function createGatewayMcpTools({ gateway, gatewayGuard, openLoginPage, generatio
               kind,
               title: generationInput.title,
               chapterNo: generationInput.chapterNo,
-              policyVersion: draftSystem.policyVersion
+              policyVersion: draftSystem.policyVersion,
+              contextSanitization: preparedPrompt.contextSanitization
             },
             run: () => generateToArtifact(generationInput)
           });

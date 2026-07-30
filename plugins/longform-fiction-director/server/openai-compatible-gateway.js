@@ -367,6 +367,7 @@ async function callModels(input = {}) {
       const requestId = input.requestId || crypto.randomUUID();
       let next = "";
       let usage = null;
+      let finishReason = null;
       let transport = "none";
       let lastError = null;
       let allowNonStreamFallback = false;
@@ -411,11 +412,11 @@ async function callModels(input = {}) {
               error.finishReason = payload.finishReason;
               throw error;
             }
-            return { content: payload.content, usage: payload.usage || null };
+            return { content: payload.content, usage: payload.usage || null, finishReason: payload.finishReason || null };
           }
           const payload = await response.json();
           const parts = completionParts(payload);
-          return { content: parts.content || completionContent(payload), usage: parts.usage || null };
+          return { content: parts.content || completionContent(payload), usage: parts.usage || null, finishReason: parts.finishReason || null };
         } finally {
           deadline.dispose();
         }
@@ -426,6 +427,7 @@ async function callModels(input = {}) {
           const payload = await postOnce(true);
           next = payload.content;
           usage = payload.usage;
+          finishReason = payload.finishReason || null;
           if (typeof next === "string" && next.trim()) {
             transport = "stream_attempt_" + attempt;
             break;
@@ -436,6 +438,7 @@ async function callModels(input = {}) {
           const partial = String(error?.partialContent || "").trim();
           if (partial) {
             next = partial;
+            finishReason = error?.finishReason || null;
             transport = "partial_stream_attempt_" + attempt;
             break;
           }
@@ -451,11 +454,13 @@ async function callModels(input = {}) {
           const payload = await postOnce(false);
           next = payload.content;
           usage = payload.usage;
+          finishReason = payload.finishReason || null;
           if (typeof next === "string" && next.trim()) transport = "non_stream_fallback";
         } catch (error) {
           const partial = String(error?.partialContent || "").trim();
           if (partial) {
             next = partial;
+            finishReason = error?.finishReason || null;
             transport = "partial_non_stream_fallback";
           } else {
             lastError = toGatewayNetworkError(error, "SERVER_ERROR");
@@ -467,7 +472,7 @@ async function callModels(input = {}) {
         throw lastError || new GatewayClientError("RESPONSE_INVALID");
       }
       content = next.trim();
-      outputs.push({ model, content, usage: usage || null, transport });
+      outputs.push({ model, content, usage: usage || null, finishReason, transport });
     }
     return { ok: true, modelIds: [...new Set(input.modelIds)], outputs, content };
   }

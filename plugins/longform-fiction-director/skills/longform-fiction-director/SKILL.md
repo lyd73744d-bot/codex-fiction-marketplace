@@ -17,12 +17,18 @@ description: "Use as the built-in Chinese fiction lead-editor/director skill (MC
 6. 没明确授权：禁止连写多章、禁止“自动写完全书”。
 7. 复杂能力（连续跑、多模型交叉、发布脚本）默认隐藏，用户主动要再开。
 
+涉及参考样书时再读 `references/sample-learning.md`：先留有原文位置依据的观察，再结合当前项目筛选；未经作者确认的观察不写入本书 Skill，也不下发给正文模型。
+
 ### 写作主线
 新书或已有文件夹 → 自动建/补台账 → 聊清方向 → 按需留一页内章节笔记 → 外部模型写候选正文 → Codex 审核 → 作者确认后入正文和台账。网关登录只在作者同意首次外部调用后出现，不是开书前置。
 
 ### 创作制度
 
-事实台账负责防止写错，创作规划不得指挥正文。大纲、细纲和章节笔记都是可选记忆，不得做表格、逐场施工单、字数分配或功能验收表；旧项目已有这类文件时，先提取事实，再删除顺序、次数和展示命令后才可发给模型。不得用一套“反模板开头”替换旧模板。具体执行与验收见 `references/natural-writing-system.md`。
+事实台账负责防止写错，创作规划不得指挥正文。全书大纲要把故事从开头到结局大致讲完，让人读后能复述主要事件与因果，但不得变成逐章任务表。细纲和章节笔记只作临时记忆，不得做表格、逐场施工单、字数分配或功能验收表；旧项目已有这类文件时，先提取事实，再删除顺序、次数和展示命令后才可发给模型。不得用一套“反模板开头”替换旧模板。具体执行与验收见 `references/natural-writing-system.md`。
+
+已有项目不能只清细纲：动笔前同时扫描 `00-08` 核心台账与项目 README，过去模型留下的固定章位、字数、频率、前三章配额和每章职能数都先改写成无章号的事实或删除。Codex 在本地读全台账，但 `projectContext` 只摘录当前场景确实可能写错的少量事实和必要承接，不得把整份人物库、系统表、历史库或 `00-08` 合并后发给模型。调用 `fiction_generate_to_file` 时，作者当前要求放 `prompt`，最小事实摘录放 `projectContext`，再由服务器执行第二层净化。
+
+正文请求不能只有“自然续写 + 字数”。先用一两句自然话定下这次最值得发生的变化：写人物、关系或局势从什么状态走向什么状态，不写成“先做 A、再做 B、最后发现 C”的动作顺序。作者已经指定就沿用；作者只说“继续”时，Codex 根据最近正文给一个具体建议并在模型推荐时一并说清。它不规定场景顺序或开头。长文靠新的行动、取舍和后果展开，不靠重复解释、逐项点验、过渡摩擦或模型自行补造的精确数字撑篇幅。
 
 ### 开场（冷启动）
 开场直接问一句，不检查登录、不介绍功能、不列菜单、不弹网页：
@@ -102,6 +108,10 @@ description: "Use as the built-in Chinese fiction lead-editor/director skill (MC
    - `fiction_read_artifact` / `fiction_list_artifacts`
 10. **责编话术**：先给路径和预览，问作者要不要去AI味/换模型，不自动入台账。
 
+### 长文截断与续写
+
+作者明确要长文时，把本次最低篇幅传给 `minChars`，但它只做完成度提示，不能拦截非空正文落盘。结果短于要求、停在半句、末尾没有正常句末标点，或传输标为 `partial_*` 时，如实称为“已保存的正文段落”，不得因上游返回 `stop` 就宣称整章完成，也不得从头重发覆盖它。作者只授权一次调用时，先询问是否让同一模型续写；作者已经明确授权连续测试或分段长章时，读取 `.body.txt`，让同一模型从最后一个字继续，禁止概括和重写前段。各段先独立保存，最后只在本地按原文顺序合并为新的候选，记录来源段路径；不让另一个模型偷偷补写连接句。耗时 502 不自动重发。
+
 
 
 ## 模型与落盘（必做）
@@ -151,7 +161,7 @@ description: "Use as the built-in Chinese fiction lead-editor/director skill (MC
 
 1. **写前笔记可选**：只有人物、事实或承接容易写错时，才参考 `references/chapter-control-card.md` 写一页以内的自然笔记；不得做表格或逐场施工命令。作者已经说清楚时直接进入正文候选。
 2. **可选网文专项**：只有作者明确追求平台化快节奏或正在诊断兑现问题时，才参考 `references/hook-shuangdian-checklist.md`；不得作为每章必过模板。
-3. **去 AI 味分级**：轻/中/重删改上限见 `references/deslop-grades.md`，细则仍用 humanizer-zh。
+3. **去 AI 味分级**：轻/中/重删改上限见 `references/deslop-grades.md`；问题分类统一用 `deslop-all`，整章深度检查用 `humanizer-zh`。
 4. **里程碑摘要**：只在整章完成、质检完成或作者问进度时使用 `references/delivery-dashboard.md`。
 5. **方法论备忘**：`references/prompt-lessons-from-peers.md`。
 
@@ -169,7 +179,7 @@ description: "Use as the built-in Chinese fiction lead-editor/director skill (MC
 
 默认一步步：
 
-1. 脑洞 → 样书导入学习 → 文风锚点
+1. 脑洞 → 按需导入样书并留下观察 → 作者确认可迁移部分 → 文风锚点
 2. 大纲（只定长期方向，不锁章节表）→ 联网核验/事实库 → 人物卡
 3. 可选章节笔记 → 初稿候选 txt → 文风对比/去AI味 → 作者确认台账
 4. 绑定关系可永久保留，但每次调用其他模型前都必须询问；当次选择使用才调用
@@ -284,16 +294,16 @@ description: "Use as the built-in Chinese fiction lead-editor/director skill (MC
 
 由作者决定是否开启最终质量门，不需要在界面点选。你说“过质检”“去 AI 味”“检查这段”或同义自然语言指令时，Codex 用 `fiction_optimize_with_models`（mode: review）做终检；Codex 应在交付候选正文前推荐这一步，但不得自动发起付费的网关质检。
 
-终检或去 AI 味前，Codex 用 `fiction_recommend_models` 选型：普通终检用 mode: review，去 AI 味用 mode: humanize。向作者说明推荐模型和用途并询问；作者当次选择使用后才调用 `fiction_optimize_with_models`。不得手填或猜测模型 ID。修订稿只是候选；要判定为“通过”，仍须由 Codex 对照 `references/quality-gates.md` 四轮自检确认。
+终检或去 AI 味前，Codex 用 `fiction_recommend_models` 选型：普通终检用 mode: review，去 AI 味用 mode: humanize。向作者说明推荐模型和用途并询问；作者当次选择使用后才调用 `fiction_optimize_with_models`。不得手填或猜测模型 ID。修订稿只是候选；要判定为“通过”，仍须由 Codex 对照 `references/quality-gates.md` 完整通读确认。
 
-做终检时 Codex 重读资料清单里的辅助文档、授权参考书和文风锚点，并做四轮检查：
+做终检时 Codex 重读当前真正相关的辅助文档、样书观察和文风锚点，在一次完整通读中核对：
 
 - 基础：错别字、称谓、标点、硬禁与格式。
 - 文风：模板句、重复解释、机械转场、对话功能、叙事距离和 AI 腔；检查人物是否把潜台词说满、旁白是否又替读者解释一遍。
 - 设定：人物、地点、时间、数值、物件、伏笔和因果。
 - 收尾：本章是否有具体结果、承受者或自然停住的位置；不强制制造悬念。
 
-四轮全部过关才算终检通过；只要有一轮存在硬伤，或生成时触发硬门槛拦截（过程泄漏 / 审稿腔包装 / 空输出），都视为未通过，不得说成已质检通过。未做终检的候选稿仍可直接交给作者自行确认。
+这些方面没有硬伤才算终检通过；生成时若出现过程泄漏、审稿腔包装或空输出，也不得说成已质检通过。未做终检的候选稿仍可直接交给作者自行确认。
 
 ## 确认与更新
 
@@ -313,7 +323,7 @@ description: "Use as the built-in Chinese fiction lead-editor/director skill (MC
 
 ## 引导主线
 见 references/guided-editor-workflow.md
-相关：deslop-dialogue / deslop-narration / style-compare / anti-ooc-research / humanizer-zh
+相关：deslop-all / style-compare / anti-ooc-research / humanizer-zh
 
 
 ## 引导阶段动作
@@ -336,7 +346,7 @@ description: "Use as the built-in Chinese fiction lead-editor/director skill (MC
 - 样书入库后学习：Codex 直接读样书正文，把可迁移手法写进 `样书/*/00_手法学习笔记.md`
 - 本书写法：Codex 维护 `辅助文档/06_风格与写作要求.md`
 - 联网后回填：Codex 必须先用内置浏览器真实检索，再把来源 / 事实 / 禁写写进 `联网核验/` 与 `辅助文档/08_事实库_防OOC.md`
-- 去AI味路由：`humanizer-methods`
+- 去AI味路由：`deslop-all`
 
 
 ## 写前总检

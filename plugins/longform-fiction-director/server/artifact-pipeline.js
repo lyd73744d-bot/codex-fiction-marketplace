@@ -126,28 +126,46 @@ function extractModelPayload(result, fallbackModelId = "") {
   let content = "";
   let modelId = fallbackModelId || "";
   let transport = "unknown";
+  let finishReason = null;
   if (typeof result === "string") {
     content = result;
     transport = "string";
   } else if (result && typeof result === "object") {
     transport = String(result.transport || result.mode || "gateway");
+    finishReason = result.finishReason ?? result.finish_reason ?? null;
     if (typeof result.content === "string") content = result.content;
     else if (typeof result.text === "string") content = result.text;
-    else if (Array.isArray(result.outputs) && result.outputs.length) {
+    if (Array.isArray(result.outputs) && result.outputs.length) {
       const last = result.outputs[result.outputs.length - 1];
-      content = String(last?.content || last?.text || "");
+      if (!content) content = String(last?.content || last?.text || "");
       modelId = last?.model || last?.modelId || modelId;
       transport = String(last?.transport || result.transport || transport);
-    } else if (Array.isArray(result.choices) && result.choices[0]?.message?.content) {
+      finishReason = last?.finishReason ?? last?.finish_reason ?? finishReason;
+    }
+    if (!content && Array.isArray(result.choices) && result.choices[0]?.message?.content) {
       content = String(result.choices[0].message.content);
-    } else {
-      content = "";
     }
     if (result.modelId) modelId = String(result.modelId);
     if (result.model) modelId = String(result.model);
   }
   content = String(content || "").replace(/\r\n?/g, "\n").trim();
-  return { content, modelId, transport };
+  let reasoningBlocksRemoved = 0;
+  content = content.replace(/<(think|thinking|analysis|reasoning)(?:\s[^>]*)?>[\s\S]*?<\/\1\s*>/giu, () => {
+    reasoningBlocksRemoved += 1;
+    return "";
+  });
+  content = content.replace(/<(think|thinking|analysis|reasoning)(?:\s[^>]*)?>[\s\S]*$/iu, () => {
+    reasoningBlocksRemoved += 1;
+    return "";
+  }).replace(/\n{3,}/g, "\n\n").trim();
+  return { content, modelId, transport, finishReason, reasoningBlocksRemoved };
+}
+
+function hasAbruptProseEnding(value = "") {
+  const text = String(value || "").replace(/\r\n?/g, "\n").trim();
+  if (!text) return false;
+  const unwrapped = text.replace(/[\s"'”’）)\]】》」』]+$/gu, "");
+  return !/[。！？!?….…—]$/u.test(unwrapped);
 }
 
 async function writeArtifact({ projectDir, kind = "draft", title = "", chapterNo = "", modelId = "", content, ext = "txt", meta = {} } = {}) {
@@ -281,7 +299,8 @@ async function generateToArtifact({
   minChars = 0,
   applyHardGates = true,
   maxTokens,
-  requestPolicyVersion = "caller-only"
+  requestPolicyVersion = "caller-only",
+  contextSanitization = null
 } = {}) {
   if (!gateway || typeof gateway.callModels !== "function") throw new Error("gateway.callModels required");
   if (!projectDir) throw new Error("projectDir required");
@@ -291,8 +310,11 @@ async function generateToArtifact({
 
   let lastError = null;
   let lastTransport = "none";
+  let lastFinishReason = null;
   let lastGate = null;
   let lastPartial = false;
+  let lastAbruptEnding = false;
+  let reasoningBlocksRemoved = 0;
   let fallbackAttempts = [];
   const attempts = 1;
   const retries = Math.max(1, Math.min(Number(streamRetries) || 1, 2));
@@ -313,10 +335,12 @@ async function generateToArtifact({
     } catch (error) {
       const partial = String(error?.partialContent || "").replace(/\r\n?/g, "\n").trim();
       if (!partial) throw error;
-      extracted = { content: partial, modelId, transport: "partial_error" };
+      extracted = extractModelPayload({ content: partial, modelId, transport: "partial_error", finishReason: error?.finishReason || null }, modelId);
       lastPartial = true;
     }
+    reasoningBlocksRemoved += Number(extracted.reasoningBlocksRemoved || 0);
     lastTransport = extracted.transport;
+    lastFinishReason = extracted.finishReason;
     if (!extracted.content || !extracted.content.replace(/\s+/g, "")) {
       throw Object.assign(new Error("empty_model_output"), { code: "EMPTY_MODEL_OUTPUT" });
     }
@@ -326,6 +350,8 @@ async function generateToArtifact({
     } else {
       lastGate = inspectChapter(extracted.content, { minChars: Number(minChars) || 0 });
     }
+    lastAbruptEnding = Number(minChars) > 0 && hasAbruptProseEnding(extracted.content);
+    if (lastAbruptEnding) lastPartial = true;
     return extracted.content;
   }
 
@@ -361,15 +387,21 @@ async function generateToArtifact({
         ext: "txt",
         meta: {
           transport: lastTransport,
+          finishReason: lastFinishReason,
           streamFirst: true,
           outerAttempt: attempt,
           streamRetries: retries,
           fallbackChain: useFallback,
           degraded,
           partial: lastPartial || /^partial_/u.test(lastTransport),
+          abruptEnding: lastAbruptEnding,
           hardGateOk: !lastGate || lastGate.ok !== false,
           hardGateIssues: lastGate && Array.isArray(lastGate.issues) ? lastGate.issues : [],
           requestPolicyVersion: String(requestPolicyVersion || "caller-only"),
+          contextSanitization: contextSanitization && typeof contextSanitization === "object"
+            ? contextSanitization
+            : null,
+          reasoningBlocksRemoved,
           fallbackAttempts: fallbackAttempts.slice(-12),
           note: "模型返回即保存为候选 txt；中途断线也保留已收到正文；.body 纯正文可再喂模型，质量检查仅提示不拦截落盘"
         }
@@ -381,15 +413,22 @@ async function generateToArtifact({
         artifact: saved,
         modelId,
         transport: lastTransport,
+        finishReason: lastFinishReason,
         attempt,
         outerAttempt: attempt,
         degraded,
+        partial: lastPartial || /^partial_/u.test(lastTransport),
+        abruptEnding: lastAbruptEnding,
         hardGate: lastGate,
         fallbackAttempts,
+        contextSanitization,
+        reasoningBlocksRemoved,
         preview: content.slice(0, previewLimit),
         coach: "模型输出已落盘。可读 " + saved.relativePath + " 与纯正文 " + saved.plainRelativePath +
           (saved.memoryRecord ? "；写作记录已更新 " + saved.memoryRecord.relativePath + "。" : "；写作记录未更新，请保留当前候选路径。") +
-          "作者确认前不入正式正文/台账。"
+          (lastPartial || /^partial_/u.test(lastTransport)
+            ? "当前只算已保存的正文段落，不算完整章；需要续写时从 .body.txt 最后一个字接下去。"
+            : "作者确认前不入正式正文/台账。")
       };
     } catch (error) {
       lastError = error;
@@ -410,5 +449,6 @@ module.exports = {
   generateToArtifact,
   candidateDir,
   modelWritingRecordPath,
-  extractModelPayload
+  extractModelPayload,
+  hasAbruptProseEnding
 };

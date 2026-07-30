@@ -3,6 +3,7 @@
 const crypto = require("node:crypto");
 const os = require("node:os");
 const { SessionStoreError, createSessionStore, publicUser } = require("./session-store");
+const { createFakeIpAwareFetch } = require("./fake-ip-aware-fetch");
 
 const DEFAULT_GATEWAY = "https://api.nanshanyougui.xyz";
 const DEFAULT_MAX_RESPONSE_BYTES = 16 * 1024 * 1024;
@@ -128,6 +129,9 @@ function isRetryableGenerationError(error) {
   if (!error || isTimeoutError(error) || error.code === "UPSTREAM_TIMEOUT") return false;
   if (error.code === "SERVER_OFFLINE") return true;
   const status = Number(error.status || 0);
+  // A 502 commonly arrives only after the upstream has spent minutes generating.
+  // Replaying it risks duplicate work and only repeats the same proxy timeout.
+  if (status === 502) return false;
   return error.code === "SERVER_ERROR" && (status === 0 || status === 408 || status === 409 || status === 425 || status === 429 || status >= 500);
 }
 
@@ -245,7 +249,7 @@ async function collectOpenAiStream(response, onDelta, { maxResponseBytes = DEFAU
 
 function createGatewayClient(options = {}) {
   const baseUrl = normalizeBaseUrl(options.baseUrl, options.allowInsecureLoopback);
-  const fetcher = options.fetch || globalThis.fetch;
+  const fetcher = options.fetch || createFakeIpAwareFetch();
   if (typeof fetcher !== "function") throw new TypeError("fetch implementation is required");
   const sessionStore = options.sessionStore || createSessionStore(options.sessionOptions);
   if (!sessionStore || typeof sessionStore.read !== "function") throw new TypeError("sessionStore is required");
@@ -414,6 +418,7 @@ function createGatewayClient(options = {}) {
       const requestId = input.requestId || crypto.randomUUID();
       let next = "";
       let usage = null;
+      let finishReason = null;
       let transport = "none";
       let lastError = null;
       let allowNonStreamFallback = false;
@@ -433,6 +438,7 @@ function createGatewayClient(options = {}) {
           if (String(payload.finishReason || "").toLowerCase() === "length") throw incompleteStreamError("Model output reached its token limit.", { partialContent: payload.content, partialReasoning: payload.reasoning || "", finishReason: payload.finishReason });
           next = payload.content;
           usage = payload.usage || null;
+          finishReason = payload.finishReason || null;
           if (typeof next === "string" && next.trim()) {
             transport = "stream_attempt_" + attempt;
             break;
@@ -443,6 +449,7 @@ function createGatewayClient(options = {}) {
           const partial = String(error?.partialContent || "").trim();
           if (partial) {
             next = partial;
+            finishReason = error?.finishReason || null;
             transport = "partial_stream_attempt_" + attempt;
             break;
           }
@@ -473,11 +480,13 @@ function createGatewayClient(options = {}) {
           if (String(parts.finishReason || "").toLowerCase() === "length") throw incompleteStreamError("Model output reached its token limit.", { partialContent: parts.content, partialReasoning: parts.reasoning || "", finishReason: parts.finishReason });
           next = parts.content;
           usage = parts.usage;
+          finishReason = parts.finishReason || null;
           if (typeof next === "string" && next.trim()) transport = "non_stream_fallback";
         } catch (error) {
           const partial = String(error?.partialContent || "").trim();
           if (partial) {
             next = partial;
+            finishReason = error?.finishReason || null;
             transport = "partial_non_stream_fallback";
           } else {
             lastError = toGatewayNetworkError(error, "SERVER_ERROR");
@@ -491,7 +500,7 @@ function createGatewayClient(options = {}) {
         throw lastError || new GatewayClientError("RESPONSE_INVALID");
       }
       content = next.trim();
-      outputs.push({ model, content, usage: sanitizePublicValue(usage), transport });
+      outputs.push({ model, content, usage: sanitizePublicValue(usage), finishReason, transport });
     }
     return { ok: true, modelIds: [...new Set(input.modelIds)], outputs, content };
   }
