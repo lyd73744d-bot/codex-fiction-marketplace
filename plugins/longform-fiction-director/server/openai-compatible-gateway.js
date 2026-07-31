@@ -45,7 +45,7 @@ function createOpenAiCompatibleGateway(options = {}) {
   const displayCallsLeft = displayBalance < 0 ? -1 : 999;
   const modelCredits = options.modelCredits && typeof options.modelCredits === "object" && !Array.isArray(options.modelCredits)
     ? options.modelCredits
-    : {"claude-opus-5":20,"claude-sonnet-5":10,"claude-opus-4-6":20,"claude-opus-4-8":20,"gemini-3.1-pro-preview":12,"gemini-3.5-flash":8,"glm-5.2":8,"seed-2.1-pro":20,"kimi-k2.6":20,"qwen3.7-max":5};
+    : {"claude-opus-5":20,"claude-sonnet-5":10,"claude-opus-4-6":20,"claude-opus-4-8":20,"gemini-3.1-pro-preview":12,"gemini-3.5-flash":8,"glm-5.2":8,"seed-2.1-pro":20,"kimi-k2.6":20,"qwen3.7-max":5,"grok-4.5":5};
   const timeoutMs = Number.isSafeInteger(options.timeoutMs) && options.timeoutMs > 0 ? options.timeoutMs : 120_000;
   const streamTimeoutMs = Number.isSafeInteger(options.streamTimeoutMs) && options.streamTimeoutMs > 0 ? options.streamTimeoutMs : DEFAULT_STREAM_TOTAL_TIMEOUT_MS;
   const streamIdleTimeoutMs = Number.isSafeInteger(options.streamIdleTimeoutMs) && options.streamIdleTimeoutMs > 0 ? options.streamIdleTimeoutMs : DEFAULT_STREAM_IDLE_TIMEOUT_MS;

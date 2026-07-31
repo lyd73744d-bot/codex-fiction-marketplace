@@ -16,9 +16,9 @@
 
 | 任务 | 角色 | 默认倾向 |
 |---|---|---|
-| 脑洞/市场 | 探索 | gemini-3.5-flash / glm-5.2 / qwen3.7-max |
+| 脑洞/市场 | 探索 | gemini-3.5-flash / glm-5.2 / qwen3.7-max；需要慢速发散时可选 grok-4.5 |
 | 大纲/细纲/章节构思 | Codex 总责编默认本地完成；需要第二意见才调用 | kimi-k2.6 / claude-sonnet-5 / gemini-3.1-pro-preview / glm-5.2 |
-| 正文候选 | 主写 | claude-sonnet-5 / kimi-k2.6 / seed-2.1-pro；需要旗舰时再选 claude-opus-5 / 4-8 / 4-6 |
+| 正文候选 | 主写 | claude-sonnet-5 / kimi-k2.6 / seed-2.1-pro；需要旗舰时再选 claude-opus-5 / 4-8 / 4-6 / grok-4.5 |
 | 去AI味 | 风格 | claude-sonnet-5 / kimi-k2.6 / seed-2.1-pro |
 | 质检 | 审核+连续 | claude-sonnet-5 / kimi-k2.6 / gemini-3.1-pro-preview；硬伤再上 Claude Opus |
 | 定稿 | 成稿 | claude-opus-4-6 / claude-opus-4-8（作者确认前） |

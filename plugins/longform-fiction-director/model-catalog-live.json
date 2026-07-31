@@ -1,9 +1,9 @@
 {
   "version": "4.2.0",
-  "fullVersion": "4.2.0+codex.20260730191834",
+  "fullVersion": "4.2.0+codex.20260731025927",
   "gateway": "https://api.nanshanyougui.xyz",
   "relay": "https://api.ssycai.com",
-  "updatedAt": "2026-07-31T03:18:34+08:00",
+  "updatedAt": "2026-07-31T10:59:27+08:00",
   "preferredModel": "claude-opus-5",
   "models": [
     {
@@ -75,6 +75,13 @@
       "available": true,
       "status": "live",
       "flagship": false
+    },
+    {
+      "id": "grok-4.5",
+      "credits": 5,
+      "available": true,
+      "status": "live",
+      "flagship": true
     }
   ],
   "notes": {
@@ -83,6 +90,7 @@
       "claude-sonnet-5"
     ],
     "claude_relay": "https://api.ssycai.com",
+    "grok_relay": "https://nanshanyougui.xyz/v1",
     "gateway_role": "api.nanshanyougui.xyz keeps plugin accounts, credits and exact one-route-per-model routing",
     "request_concurrency": "unlimited"
   }

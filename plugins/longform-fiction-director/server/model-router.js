@@ -26,18 +26,18 @@ const TASK_ROLES = {
 const ROLE_HINTS = {
   explore: {
     label: "探索/脑洞",
-    prefer: ["gemini-3.5-flash", "glm-5.2", "qwen3.7-max"],
+    prefer: ["gemini-3.5-flash", "glm-5.2", "qwen3.7-max", "grok-4.5"],
     avoidHeavy: true,
     why: "要快、要多方向，不值得上最贵模型"
   },
   structure: {
     label: "结构/大纲/细纲",
-    prefer: ["kimi-k2.6", "claude-sonnet-5", "gemini-3.1-pro-preview", "glm-5.2"],
+    prefer: ["kimi-k2.6", "claude-sonnet-5", "gemini-3.1-pro-preview", "glm-5.2", "grok-4.5"],
     why: "要因果与节奏，中档推理足够"
   },
   draft: {
     label: "正文主写",
-    prefer: ["claude-sonnet-5", "kimi-k2.6", "seed-2.1-pro", "glm-5.2", "claude-opus-5"],
+    prefer: ["claude-sonnet-5", "kimi-k2.6", "seed-2.1-pro", "glm-5.2", "claude-opus-5", "grok-4.5"],
     why: "主写要稳、文风可控；默认中档，作者点名再用旗舰"
   },
   continuity: {
@@ -52,7 +52,7 @@ const ROLE_HINTS = {
   },
   adversary: {
     label: "反方/找硬伤",
-    prefer: ["claude-opus-5", "claude-opus-4-8", "gemini-3.1-pro-preview", "qwen3.7-max"],
+    prefer: ["claude-opus-5", "claude-opus-4-8", "grok-4.5", "gemini-3.1-pro-preview", "qwen3.7-max"],
     why: "专门挑弃读点与逻辑崩，可短上下文上旗舰"
   },
   review: {
@@ -62,7 +62,7 @@ const ROLE_HINTS = {
   },
   finalize: {
     label: "定稿成稿",
-    prefer: ["claude-opus-5", "claude-opus-4-8", "claude-opus-4-6", "claude-sonnet-5"],
+    prefer: ["claude-opus-5", "claude-opus-4-8", "claude-opus-4-6", "grok-4.5", "claude-sonnet-5"],
     why: "作者确认前最后一轮，才考虑高积分模型"
   }
 };
@@ -71,11 +71,11 @@ const ROLE_HINTS = {
 const WRITING_MODE_PRESETS = {
   chapterWrite: {
     quick: ["glm-5.2", "claude-sonnet-5", "kimi-k2.6", "gemini-3.5-flash"],
-    deep: ["claude-opus-5", "claude-opus-4-8", "claude-opus-4-6", "claude-sonnet-5", "kimi-k2.6"]
+    deep: ["claude-opus-5", "claude-opus-4-8", "claude-opus-4-6", "grok-4.5", "claude-sonnet-5", "kimi-k2.6"]
   },
   chapterOptimize: {
     quick: ["glm-5.2", "claude-sonnet-5", "gemini-3.5-flash"],
-    deep: ["claude-opus-5", "claude-opus-4-8", "claude-opus-4-6", "kimi-k2.6", "claude-sonnet-5"]
+    deep: ["claude-opus-5", "claude-opus-4-8", "claude-opus-4-6", "grok-4.5", "kimi-k2.6", "claude-sonnet-5"]
   }
 };
 

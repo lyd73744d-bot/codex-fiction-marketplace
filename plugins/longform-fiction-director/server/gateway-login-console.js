@@ -52,6 +52,7 @@ function orderModels(models) {
     if (id === "glm-5.2") return 8;
     if (id === "gemini-3.5-flash") return 9;
     if (id === "qwen3.7-max") return 10;
+    if (id === "grok-4.5") return 11;
     if (model.isCover) return 50;
     return 100;
   };

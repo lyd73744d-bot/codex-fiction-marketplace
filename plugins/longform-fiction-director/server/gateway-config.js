@@ -15,7 +15,8 @@ const DEFAULT_MODEL_CREDITS = Object.freeze({
   "glm-5.2": 8,
   "seed-2.1-pro": 20,
   "kimi-k2.6": 20,
-  "qwen3.7-max": 5
+  "qwen3.7-max": 5,
+  "grok-4.5": 5
 });
 const DEFAULT_MODELS = Object.freeze(Object.keys(DEFAULT_MODEL_CREDITS));
 

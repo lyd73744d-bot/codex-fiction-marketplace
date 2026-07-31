@@ -27,7 +27,7 @@ function createHybridGateway({ primary, secondary, label, allowedModels = [], pr
   const allowSet = new Set(allow);
   const creditMap = modelCredits && typeof modelCredits === "object" && !Array.isArray(modelCredits)
     ? modelCredits
-    : (primary && primary.modelCredits) || {"claude-opus-5":20,"claude-sonnet-5":10,"claude-opus-4-6":20,"claude-opus-4-8":20,"gemini-3.1-pro-preview":12,"gemini-3.5-flash":8,"glm-5.2":8,"seed-2.1-pro":20,"kimi-k2.6":20,"qwen3.7-max":5};
+    : (primary && primary.modelCredits) || {"claude-opus-5":20,"claude-sonnet-5":10,"claude-opus-4-6":20,"claude-opus-4-8":20,"gemini-3.1-pro-preview":12,"gemini-3.5-flash":8,"glm-5.2":8,"seed-2.1-pro":20,"kimi-k2.6":20,"qwen3.7-max":5,"grok-4.5":5};
 
   async function safeList(gateway) {
     try {
