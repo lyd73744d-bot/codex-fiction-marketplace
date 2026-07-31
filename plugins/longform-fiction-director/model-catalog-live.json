@@ -1,15 +1,14 @@
 {
-  "version": "4.2.1",
-  "fullVersion": "4.2.1+codex.20260731170650",
+  "version": "4.2.2",
+  "fullVersion": "4.2.2+codex.20260731175801",
   "gateway": "https://api.nanshanyougui.xyz",
-  "updatedAt": "2026-08-01T01:06:15+08:00",
+  "updatedAt": "2026-08-01T02:01:30+08:00",
   "preferredModel": "claude-opus-4-6",
   "models": [
     { "id": "claude-sonnet-5", "credits": 10, "available": true, "status": "live", "flagship": true },
     { "id": "claude-opus-4-6", "credits": 20, "available": true, "status": "live", "flagship": true },
     { "id": "gemini-3.1-pro-preview", "credits": 12, "available": true, "status": "live", "flagship": true },
     { "id": "gemini-3.5-flash", "credits": 8, "available": true, "status": "live", "flagship": false },
-    { "id": "glm-5.2", "credits": 8, "available": true, "status": "live", "flagship": true },
     { "id": "seed-2.1-pro", "credits": 20, "available": true, "status": "live", "flagship": true },
     { "id": "seed-2.1-turbo", "credits": 10, "available": true, "status": "live", "flagship": false },
     { "id": "kimi-k2.6", "credits": 20, "available": true, "status": "live", "flagship": true },

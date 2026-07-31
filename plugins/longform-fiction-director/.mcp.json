@@ -1,9 +1,12 @@
 {
   "mcpServers": {
     "longform-fiction-director": {
-      "command": "node",
+      "command": "cmd.exe",
       "args": [
-        "./server/mcp-server.js"
+        "/d",
+        "/s",
+        "/c",
+        ".\\bin\\start-mcp.cmd"
       ]
     }
   }

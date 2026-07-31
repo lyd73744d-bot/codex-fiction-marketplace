@@ -46,6 +46,20 @@ function isTimeoutError(error) {
   return false;
 }
 
+function safeNetworkDiagnostics(error) {
+  const chain = [];
+  let current = error;
+  for (let depth = 0; current && depth < 4; depth += 1, current = current.cause) {
+    const item = {};
+    for (const key of ["name", "code", "syscall", "timeoutReason"]) {
+      const value = String(current?.[key] || "").trim();
+      if (/^[A-Za-z0-9_.:-]{1,80}$/u.test(value)) item[key] = value;
+    }
+    if (Object.keys(item).length) chain.push(item);
+  }
+  return chain.length ? { chain } : null;
+}
+
 function toGatewayNetworkError(error, fallbackCode = "SERVER_OFFLINE") {
   if (error instanceof GatewayClientError) return error;
   let mapped;
@@ -57,6 +71,8 @@ function toGatewayNetworkError(error, fallbackCode = "SERVER_OFFLINE") {
   for (const key of ["partialContent", "partialReasoning", "receivedBytes", "finishReason"]) {
     if (error && error[key] !== undefined) mapped[key] = error[key];
   }
+  const networkDiagnostics = error?.networkDiagnostics || safeNetworkDiagnostics(error);
+  if (networkDiagnostics) mapped.networkDiagnostics = networkDiagnostics;
   return mapped;
 }
 
@@ -288,7 +304,9 @@ function createGatewayClient(options = {}) {
       response = await fetcher(`${baseUrl}${pathname}`, { method: init.method || "GET", headers: init.headers || {}, body: init.body, redirect: "error", signal: AbortSignal.timeout(init.timeoutMs || timeoutMs) });
     } catch (error) {
       if (error instanceof GatewayClientError) throw error;
-      throw toGatewayNetworkError(error, "SERVER_OFFLINE");
+      const mapped = toGatewayNetworkError(error, "SERVER_OFFLINE");
+      mapped.request = { method: init.method || "GET", path: pathname, transport: "json" };
+      throw mapped;
     }
     let text;
     try { text = await response.text(); } catch (error) { throw toGatewayNetworkError(error, "RESPONSE_INVALID"); }
@@ -335,7 +353,9 @@ function createGatewayClient(options = {}) {
       });
     } catch (error) {
       if (error instanceof GatewayClientError) throw error;
-      throw toGatewayNetworkError(error, "SERVER_OFFLINE");
+      const mapped = toGatewayNetworkError(error, "SERVER_OFFLINE");
+      mapped.request = { method: init.method || "GET", path: pathname, transport: "raw" };
+      throw mapped;
     }
   }
   async function rawFailure(response) {
@@ -628,5 +648,6 @@ module.exports = {
   effectiveMaxTokens,
   isRetryableGenerationError,
   isTimeoutError,
+  safeNetworkDiagnostics,
   toGatewayNetworkError
 };

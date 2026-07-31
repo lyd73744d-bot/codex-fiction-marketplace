@@ -10,7 +10,6 @@ const DEFAULT_MODEL_CREDITS = Object.freeze({
   "claude-opus-4-6": 20,
   "gemini-3.1-pro-preview": 12,
   "gemini-3.5-flash": 8,
-  "glm-5.2": 8,
   "seed-2.1-pro": 20,
   "seed-2.1-turbo": 10,
   "kimi-k2.6": 20,

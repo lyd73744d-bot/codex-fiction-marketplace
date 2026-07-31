@@ -174,13 +174,17 @@ async function main() {
   }), "UPSTREAM_TIMEOUT");
   assert.strictEqual(localTimeout.generationCalls(), 1, "client timeout resubmitted the long task");
 
-  const offline = clientWithModelFailure(() => { throw new TypeError("fetch failed"); });
-  await expectCode(offline.client.callModels({
+  const socketError = Object.assign(new Error("connect failed"), { code: "ECONNREFUSED", syscall: "connect" });
+  const offline = clientWithModelFailure(() => { throw new TypeError("fetch failed", { cause: socketError }); });
+  const offlineError = await expectCode(offline.client.callModels({
     prompt: "写一章长文",
     modelIds: ["claude-opus-5"],
     streamRetries: 1
   }), "SERVER_OFFLINE");
   assert.strictEqual(offline.generationCalls(), 1, "offline request count mismatch");
+  assert.strictEqual(offlineError.request?.path, "/e/catalog/chat/completions", "failed request path was discarded");
+  assert.strictEqual(offlineError.request?.transport, "raw", "failed request transport was discarded");
+  assert.ok(offlineError.networkDiagnostics?.chain?.some((item) => item.code === "ECONNREFUSED"), "safe socket diagnostic was discarded");
 
   const busy = clientWithModelFailure(() => jsonResponse({ ok: false, message: "upstream temporarily busy" }, 503));
   await expectCode(busy.client.callModels({

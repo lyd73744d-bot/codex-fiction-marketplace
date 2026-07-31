@@ -24,7 +24,17 @@ function response(id, result) { return { jsonrpc: "2.0", id, result }; }
 function error(id, code, message, data) { return { jsonrpc: "2.0", id, error: { code, message, ...(data ? { data } : {}) } }; }
 function safeMcpDiagnostics(cause) {
   const attempts = Array.isArray(cause?.fallbackAttempts) ? cause.fallbackAttempts.slice(-12).map((item) => ({ modelId: item?.modelId || null, errorCode: item?.errorCode || null, errorMessage: String(item?.errorMessage || "").slice(0, 300) })) : [];
-  return { code: cause?.code || cause?.name || "TOOL_FAILED", status: Number.isInteger(cause?.status) ? cause.status : null, requestId: cause?.requestId || null, transport: cause?.transport || null, attempts, recoverable: attempts.length > 0 };
+  const network = cause?.networkDiagnostics && typeof cause.networkDiagnostics === "object"
+    ? JSON.parse(JSON.stringify(cause.networkDiagnostics))
+    : null;
+  const request = cause?.request && typeof cause.request === "object"
+    ? {
+        method: String(cause.request.method || "").slice(0, 12),
+        path: String(cause.request.path || "").slice(0, 160),
+        transport: String(cause.request.transport || "").slice(0, 32)
+      }
+    : null;
+  return { code: cause?.code || cause?.name || "TOOL_FAILED", status: Number.isInteger(cause?.status) ? cause.status : null, requestId: cause?.requestId || null, transport: cause?.transport || null, request, network, attempts, recoverable: attempts.length > 0 };
 }
 function safeMcpError(cause) {
   if (cause?.code === "AUTH_REQUIRED" && cause?.access?.popupOpened) {
@@ -41,7 +51,7 @@ function safeMcpError(cause) {
     INSUFFICIENT_BALANCE: "Insufficient balance.",
     GATEWAY_REQUIRED: "Model gateway is unavailable.",
     GATEWAY_UNAVAILABLE: "Model gateway is unavailable.",
-    SERVER_OFFLINE: "网关不在线或无法访问。",
+    SERVER_OFFLINE: "本机连接网关失败。请重启插件任务后重试；诊断码已保留。",
     UPSTREAM_TIMEOUT: "模型生成超时，本次没有完成。请稍后重试或换一个模型。",
     RATE_LIMITED: "模型线路暂时限流；未收到正文时已有限重试一次，请稍后再试。",
     EMPTY_MODEL_OUTPUT: "模型返回为空，请换模型或重试。",

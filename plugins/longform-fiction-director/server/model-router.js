@@ -26,23 +26,23 @@ const TASK_ROLES = {
 const ROLE_HINTS = {
   explore: {
     label: "探索/脑洞",
-    prefer: ["gemini-3.5-flash", "glm-5.2", "qwen3.7-max", "grok-4.5"],
+    prefer: ["gemini-3.5-flash", "qwen3.7-max", "grok-4.5"],
     avoidHeavy: true,
     why: "要快、要多方向，不值得上最贵模型"
   },
   structure: {
     label: "结构/大纲/细纲",
-    prefer: ["kimi-k2.6", "claude-sonnet-5", "gemini-3.1-pro-preview", "glm-5.2", "grok-4.5"],
+    prefer: ["kimi-k2.6", "claude-sonnet-5", "gemini-3.1-pro-preview", "grok-4.5"],
     why: "要因果与节奏，中档推理足够"
   },
   draft: {
     label: "正文主写",
-    prefer: ["claude-sonnet-5", "kimi-k2.6", "seed-2.1-pro", "glm-5.2", "claude-opus-4-6", "grok-4.5"],
+    prefer: ["claude-sonnet-5", "kimi-k2.6", "seed-2.1-pro", "claude-opus-4-6", "grok-4.5"],
     why: "主写要稳、文风可控；默认中档，作者点名再用旗舰"
   },
   continuity: {
     label: "连续性/台账",
-    prefer: ["claude-sonnet-5", "kimi-k2.6", "glm-5.2", "gemini-3.1-pro-preview"],
+    prefer: ["claude-sonnet-5", "kimi-k2.6", "gemini-3.1-pro-preview"],
     why: "核对人物/时间线/伏笔，重准确不重花活"
   },
   style: {
@@ -57,7 +57,7 @@ const ROLE_HINTS = {
   },
   review: {
     label: "质检审核",
-    prefer: ["claude-sonnet-5", "kimi-k2.6", "gemini-3.1-pro-preview", "glm-5.2"],
+    prefer: ["claude-sonnet-5", "kimi-k2.6", "gemini-3.1-pro-preview"],
     why: "结构化审稿；证据不足再换旗舰复审"
   },
   finalize: {
@@ -70,11 +70,11 @@ const ROLE_HINTS = {
 // Fused from zizhuji workflow-model-policy: soft presets only
 const WRITING_MODE_PRESETS = {
   chapterWrite: {
-    quick: ["glm-5.2", "claude-sonnet-5", "kimi-k2.6", "gemini-3.5-flash"],
+    quick: ["claude-sonnet-5", "kimi-k2.6", "gemini-3.5-flash"],
     deep: ["claude-opus-4-6", "grok-4.5", "claude-sonnet-5", "kimi-k2.6"]
   },
   chapterOptimize: {
-    quick: ["glm-5.2", "claude-sonnet-5", "gemini-3.5-flash"],
+    quick: ["claude-sonnet-5", "gemini-3.5-flash"],
     deep: ["claude-opus-4-6", "grok-4.5", "kimi-k2.6", "claude-sonnet-5"]
   }
 };
@@ -125,7 +125,7 @@ function scoreModel(modelId, role, creditsMap = {}, mode = "quick") {
   if (mode === "deep") {
     if (/opus|pro|kimi|sonnet/.test(lower)) score += 18;
   } else {
-    if (/flash|glm|mini|haiku|turbo/.test(lower)) score += 12;
+    if (/flash|mini|haiku|turbo/.test(lower)) score += 12;
     if (/opus/.test(lower)) score -= 15;
   }
   const credits = Number(creditsMap[id]);
@@ -179,7 +179,7 @@ function buildCoachAdvice(taskId, plans, mode, unpaidNote) {
   }
   lines.push("生成策略：正式请求不先测活；无正文的明确临时故障最多重试一次，超时或部分流不重发；作者确认多个模型时才按顺序换模型。收到的正文全部落盘（.body 纯正文可再喂模型）。");
   lines.push("结果先在「Codex候选/」给作者看，确认前不入正式正文/台账。");
-  if (mode === "quick") lines.push("快速模式：探索用 flash/glm/qwen；正文用 sonnet/kimi/seed；终检再开 deep。");
+  if (mode === "quick") lines.push("快速模式：探索用 flash/qwen；正文用 sonnet/kimi/seed；终检再开 deep。");
   else lines.push("深度模式：主写用稳定模型，终检使用旗舰模型。");
   return lines.join("\n");
 }
