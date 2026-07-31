@@ -6,7 +6,7 @@ const os = require("node:os");
 const path = require("node:path");
 
 async function main() {
-  const { handle, createRuntime, safeMcpError } = require("../server/mcp-server");
+  const { handle, createRuntime, resolveGateway, safeMcpError } = require("../server/mcp-server");
   const pkg = require("../package.json");
   const onboarding = require("../server/onboarding-state");
   assert.match(safeMcpError({ code: "RATE_LIMITED" }), /限流/u, "rate limits need a distinct user-facing error");
@@ -365,11 +365,26 @@ async function main() {
   assert.ok(allDocs.includes("每次调用"), "per-call confirmation rule missing");
 
   const { createGatewayLoginConsole } = require("../server/gateway-login-console");
+  const previousGatewayUrl = process.env.FICTION_DIRECTOR_GATEWAY_URL;
+  process.env.FICTION_DIRECTOR_GATEWAY_URL = "https://stale-model-source.invalid";
+  try {
+    const resolvedGateway = resolveGateway({ gatewayMode: "openai", gatewayApiKey: "sk-ignored-test-key" });
+    assert.strictEqual(resolvedGateway.baseUrl, "https://api.nanshanyougui.xyz", "stale API-key settings must not replace the ZiZiZhuJi account gateway");
+  } finally {
+    if (previousGatewayUrl === undefined) delete process.env.FICTION_DIRECTOR_GATEWAY_URL;
+    else process.env.FICTION_DIRECTOR_GATEWAY_URL = previousGatewayUrl;
+  }
   const loginConsole = createGatewayLoginConsole({ gateway: fakeGateway, keepAlive: true });
   const localPage = await loginConsole.start();
   try {
     const html = await (await fetch(localPage.url)).text();
     assert.ok(html.includes("刷新连接状态"), "simple connection refresh missing");
+    assert.ok(html.includes('id="username"') && html.includes('id="password"'), "account/password login fields missing");
+    assert.ok(html.includes('id="modelListView"'), "dynamic backend model list missing");
+    assert.ok(!html.includes("API 密钥") && !html.includes("第一模型源"), "obsolete API-key gateway UI remains");
+    const dashboard = await (await fetch(new URL("/api/status", localPage.url))).json();
+    assert.ok(Array.isArray(dashboard.models), "login page model catalog missing: " + JSON.stringify(dashboard));
+    assert.deepStrictEqual(dashboard.models.map((item) => item.id), ["claude-sonnet-5", "claude-opus-5"], "login page did not expose the live backend model catalog");
     for (const removedUi of ["modelFilter", "showAllModels", "probeBtn", "完整模型列表"]) {
       assert.ok(!html.includes(removedUi), "obsolete user UI remains: " + removedUi);
     }

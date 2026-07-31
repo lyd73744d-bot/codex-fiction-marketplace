@@ -4,11 +4,8 @@
 
 ## 怎么接入模型
 
-1. 配置网关（二选一）
-   - 字字珠玑账号网关（legacy）
-   - OpenAI 兼容源：%LOCALAPPDATA%\\Zizhuji\\longform-fiction-director\\primary-gateway.json
-     字段：mode=openai, baseUrl, apiKey, allowedModels, modelCredits, preferredModel
-2. MCP 启动后先调 fiction_list_models 看当前真正可用的模型。
+1. 首次明确选择外部模型时，打开字字珠玑登录页，使用账号密码登录。插件不接收模型供应商 API 密钥。
+2. MCP 登录后调用 fiction_list_models，从字字珠玑后台实时读取当前真正可用的模型，不在插件里写死线路。
 3. 再调 fiction_recommend_models，传入任务类型（draft/outline/humanize/review…）。
 4. 写稿时先询问，作者当次选择使用后才以 authorConfirmed=true 调用 fiction_generate_to_file。长文传 background=true，本地核对连续性后用 fiction_generation_status 取回结果，再读候选文件。
 
@@ -33,10 +30,10 @@
 
 ## 传输纪律（重要）
 
-流式 SSE 经常半截断开。本融合版默认：
+长文传输默认：
 
-1. callModels 先走 stream:false 拿完整 JSON
-2. 失败再回退 SSE 一次
+1. callModels 先走流式请求并持续保存已收到内容
+2. 只有成功返回空流时才回退一次非流式协议兼容；超时或已有部分正文不重复提交
 3. 作者当次确认后，业务层用 fiction_generate_to_file（authorConfirmed=true）把全文写 txt
 4. 展示/质检都读文件，不靠聊天窗口里的半截流
 

@@ -1,10 +1,7 @@
 "use strict";
 
 const readline = require("node:readline");
-const { createGatewayClient } = require("./gateway-client");
-const { loadPrimaryGatewayConfig } = require("./gateway-config");
-const { createOpenAiCompatibleGateway } = require("./openai-compatible-gateway");
-const { createHybridGateway } = require("./hybrid-gateway");
+const { createGatewayClient, DEFAULT_GATEWAY } = require("./gateway-client");
 const { createGatewayLoginConsole } = require("./gateway-login-console");
 const { createGatewayGuard } = require("./gateway-guard");
 const { createGatewayMcpTools } = require("./gateway-mcp-tools");
@@ -73,52 +70,11 @@ function safeMcpError(cause) {
 }
 function resolveGateway(options = {}) {
   if (options.gateway) return options.gateway;
-  const primary = loadPrimaryGatewayConfig({
-    mode: options.gatewayMode,
-    baseUrl: options.gatewayUrl || process.env.FICTION_DIRECTOR_GATEWAY_URL,
-    apiKey: options.gatewayApiKey || process.env.FICTION_DIRECTOR_GATEWAY_API_KEY,
-    label: options.gatewayLabel
-  });
   const sessionOptions = options.sessionOptions || options.gatewayOptions?.sessionOptions;
-  const legacy = createGatewayClient({
-    ...(options.gatewayOptions || {}),
-    allowInsecureLoopback: true,
-    sessionOptions
-  });
-  if (primary.mode === "openai" && primary.ready) {
-    const openai = createOpenAiCompatibleGateway({
-      baseUrl: primary.baseUrl,
-      apiKey: primary.apiKey,
-      gptApiKey: primary.gptApiKey,
-      nexaApiKey: primary.nexaApiKey,
-      nexaBaseUrl: primary.nexaBaseUrl,
-      geminiApiKey: primary.geminiApiKey,
-      geminiBaseUrl: primary.geminiBaseUrl,
-      label: primary.label || "平价站第一模型源",
-      preferredModel: primary.preferredModel || "claude-opus-4-6",
-      allowedModels: primary.allowedModels,
-      modelCredits: primary.modelCredits,
-      creditsPerCall: primary.creditsPerCall ?? 10,
-      balance: primary.balance ?? -1,
-      sessionOptions
-    });
-    const useHybrid = options.hybrid === true || process.env.FICTION_DIRECTOR_HYBRID === "1";
-    if (!useHybrid) return openai;
-    return createHybridGateway({
-      primary: openai,
-      secondary: legacy,
-      label: "平价站第一 + Claude扩展",
-      preferredModel: primary.preferredModel || "claude-opus-4-6",
-      allowedModels: primary.allowedModels,
-      modelCredits: primary.modelCredits,
-      creditsPerCall: Number(primary.creditsPerCall ?? 10),
-      balance: Number(primary.balance ?? -1)
-    });
-  }
-  const gatewayUrl = options.gatewayUrl || process.env.FICTION_DIRECTOR_GATEWAY_URL || primary.baseUrl;
+  const gatewayUrl = options.gatewayUrl || DEFAULT_GATEWAY;
   return createGatewayClient({
     ...(options.gatewayOptions || {}),
-    ...(gatewayUrl ? { baseUrl: gatewayUrl } : {}),
+    baseUrl: gatewayUrl,
     allowInsecureLoopback: true,
     sessionOptions
   });

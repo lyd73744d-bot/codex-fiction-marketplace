@@ -62,17 +62,8 @@ function orderModels(models) {
   });
 }
 
-function page({ authMode = "password", sourceLabel = "默认模型源", paymentPortalUrl = "https://catfk.com/shop/ZVZNANU8" } = {}) {
-  const isApiKey = authMode === "api_key";
-  const formHtml = isApiKey
-    ? `
-    <form id="login">
-      <label for="apiKey">API 密钥</label>
-      <input id="apiKey" name="apiKey" type="password" autocomplete="off" required placeholder="sk-...">
-      <p class="hint">密钥写入第一模型源（平价站），不是本地假登录。</p>
-      <button type="submit" id="loginBtn">登录并连接模型</button>
-    </form>`
-    : `
+function page({ sourceLabel = "字字珠玑多模型网关", paymentPortalUrl = "https://catfk.com/shop/ZVZNANU8" } = {}) {
+  const formHtml = `
     <form id="login">
       <label for="username">账号</label>
       <input id="username" name="username" autocomplete="username" required>
@@ -82,9 +73,9 @@ function page({ authMode = "password", sourceLabel = "默认模型源", paymentP
     </form>
     <div class="shop-box">
       <div class="shop-title">积分小店</div>
-      <div class="shop-desc">登录后可调用多模型。小店可买积分；不充值也能用，但效果会差很多。店铺链接后续可替换。</div>
+      <div class="shop-desc">登录后按后台实时模型清单调用。积分可在小店购买或兑换。</div>
       <a class="shop-link" href="${String(paymentPortalUrl || "https://catfk.com/shop/ZVZNANU8")}" target="_blank" rel="noreferrer">打开积分小店</a><div style="margin-top:8px"><a class="shop-link" href="https://api.nanshanyougui.xyz/shop" target="_blank" rel="noreferrer">注册 / 登录 / 兑换积分</a></div>
-    </div>`
+    </div>`;
   return `<!doctype html>
 <html lang="zh-CN">
 <head>
@@ -111,6 +102,12 @@ function page({ authMode = "password", sourceLabel = "默认模型源", paymentP
   .kv { display: grid; grid-template-columns: 72px 1fr; gap: 6px 10px; margin: 0 0 12px; font-size: 13px; }
   .kv b { color: #64748b; font-weight: 600; }
   .hint { margin: 8px 0 0; color: #64748b; font-size: 12px; }
+.model-block { margin-top: 14px; border-top: 1px solid #e2e8f0; padding-top: 12px; }
+.model-block > b { display: block; margin-bottom: 6px; color: #64748b; font-size: 13px; }
+.model-list { display: grid; gap: 6px; }
+.model-row { display: flex; justify-content: space-between; gap: 12px; font-size: 13px; }
+.model-row span:first-child { min-width: 0; overflow-wrap: anywhere; }
+.model-cost { flex: 0 0 auto; color: #64748b; }
 .shop-box{margin-top:14px;padding:12px;border:1px solid #e5e7eb;border-radius:10px;background:#f8fafc}
 .shop-title{font-weight:600;margin-bottom:6px}
 .shop-desc{font-size:13px;color:#475569;margin-bottom:8px;line-height:1.5}
@@ -135,10 +132,13 @@ function page({ authMode = "password", sourceLabel = "默认模型源", paymentP
         <b>模型数</b><span id="modelCountView">-</span>
       </div>
       <button type="button" class="secondary" id="refreshBtn">刷新连接状态</button>
+      <div class="model-block">
+        <b>后台可用模型</b>
+        <div class="model-list" id="modelListView"></div>
+      </div>
     </div>
   </div>
 <script>
-const AUTH_MODE = ${JSON.stringify(isApiKey ? "api_key" : "password")};
 const statusEl = document.getElementById("status");
 const form = document.getElementById("login");
 const panel = document.getElementById("panel");
@@ -161,6 +161,7 @@ function renderDashboard(data) {
     if (sourcePanel) sourcePanel.textContent = data.sourceLabel;
   }
   if (!loggedIn) {
+    document.getElementById("modelListView").replaceChildren();
     setStatus(data.message || "请连接模型。", false);
     return;
   }
@@ -176,6 +177,19 @@ function renderDashboard(data) {
   }
   document.getElementById("connView").textContent = data.online === true ? "在线" : data.online === false ? "离线" : "未知";
   document.getElementById("modelCountView").textContent = String(Array.isArray(data.models) ? data.models.length : 0);
+  const modelListView = document.getElementById("modelListView");
+  modelListView.replaceChildren();
+  for (const model of (Array.isArray(data.models) ? data.models : [])) {
+    const row = document.createElement("div");
+    row.className = "model-row";
+    const name = document.createElement("span");
+    name.textContent = model.label || model.id || "未知模型";
+    const cost = document.createElement("span");
+    cost.className = "model-cost";
+    cost.textContent = model.credits == null ? "" : (model.credits + " 积分");
+    row.append(name, cost);
+    modelListView.append(row);
+  }
   setStatus(data.message || "模型已连接。", true);
 }
 
@@ -197,12 +211,10 @@ async function loadStatus() {
 if (form) form.addEventListener("submit", async (event) => {
   event.preventDefault();
   loginBtn.disabled = true;
-  setStatus(AUTH_MODE === "api_key" ? "正在把密钥写入模型源并连接…" : "正在登录并连接模型…");
+  setStatus("正在登录并连接模型…");
   try {
     const formData = new FormData(form);
-    const body = AUTH_MODE === "api_key"
-      ? { apiKey: formData.get("apiKey"), username: "平价站" }
-      : { username: formData.get("username"), password: formData.get("password") };
+    const body = { username: formData.get("username"), password: formData.get("password") };
     const response = await fetch("/api/login", {
       method: "POST",
       headers: { "content-type": "application/json" },
@@ -254,15 +266,6 @@ function readLogin(req) {
     req.on("end", () => {
       try {
         const value = JSON.parse(body || "{}");
-        const apiKey = typeof value?.apiKey === "string" ? value.apiKey.trim() : "";
-        if (apiKey) {
-          if (apiKey.length < 8 || apiKey.length > 512) throw new Error("Invalid login.");
-          const username = typeof value?.username === "string" && value.username.trim()
-            ? value.username.trim()
-            : "api-key";
-          resolve({ username, apiKey, password: apiKey });
-          return;
-        }
         if (
           typeof value?.username !== "string"
           || typeof value?.password !== "string"
@@ -306,19 +309,16 @@ function formatCredits(user = {}, balance, models = []) {
     const usage = Number.isFinite(Number(used)) && Number.isFinite(Number(quota))
       ? `可用模型 ${quota}，会话内已用 ${used}`
       : "积分由平价站服务端统计";
-    const isApiKeyAccount = accountType === "api_key" || plan.includes("openai");
     return {
       label: "不限（套餐账户）",
-      summary: isApiKeyAccount ? `套餐账户（不限次数）；${usage}` : `套餐不限积分；${usage}`,
+      summary: `套餐不限积分；${usage}`,
       detail: [
-        `套餐：${user.plan || (isApiKeyAccount ? "openai-compatible" : "unlimited")}`,
-        Number.isFinite(Number(quota)) ? (isApiKeyAccount ? `可见模型：${quota}` : `总额度：${quota}`) : null,
+        `套餐：${user.plan || "unlimited"}`,
+        Number.isFinite(Number(quota)) ? `总额度：${quota}` : null,
         Number.isFinite(Number(used)) ? `已用：${used}` : null,
         Number.isFinite(Number(creditsPerCall)) ? `默认每次约：${creditsPerCall}` : null,
         priceLines.length ? ("模型定价：\n" + priceLines.join("\n")) : null,
-        isApiKeyAccount
-          ? "说明：OpenAI 兼容密钥模式以服务端实际扣费为准；本地 balance=-1 表示未返回数字积分。"
-          : "说明：balance=-1 / callsLeft=-1 表示不限，不是欠费。"
+        "说明：balance=-1 / callsLeft=-1 表示不限，不是欠费。"
       ].filter(Boolean).join("\n")
     };
   }
@@ -342,7 +342,7 @@ function formatBalanceText(user, balance) {
   return formatCredits(user, balance).summary;
 }
 
-function createGatewayLoginConsole({ gateway, host = "127.0.0.1", port = 0, keepAlive = false, sourceLabel, authMode, paymentPortalUrl = process.env.FICTION_DIRECTOR_PAYMENT_PORTAL_URL || "https://catfk.com/shop/ZVZNANU8", onLoginSuccess } = {}) {
+function createGatewayLoginConsole({ gateway, host = "127.0.0.1", port = 0, keepAlive = false, sourceLabel, paymentPortalUrl = process.env.FICTION_DIRECTOR_PAYMENT_PORTAL_URL || "https://catfk.com/shop/ZVZNANU8", onLoginSuccess } = {}) {
   const resolvedPaymentPortalUrl = String(paymentPortalUrl || "https://catfk.com/shop/ZVZNANU8");
   if (!gateway || typeof gateway.accountStatus !== "function" || typeof gateway.login !== "function") {
     throw new TypeError("gateway login support is required");
@@ -350,27 +350,10 @@ function createGatewayLoginConsole({ gateway, host = "127.0.0.1", port = 0, keep
   if (host !== "127.0.0.1") throw new Error("gateway login console must bind to loopback");
   let server = null;
   let origin = null;
-  const resolvedAuthMode = authMode
-    || (gateway?.kind === "openai-compatible" || gateway?.kind === "hybrid" ? "api_key" : "password");
+  const resolvedAuthMode = "password";
   const resolvedSourceLabel = sourceLabel
     || gateway?.label
-    || (resolvedAuthMode === "api_key" ? "平价站第一模型源" : "默认模型源");
-  async function persistPrimaryKey(login) {
-    if (resolvedAuthMode !== "api_key") return;
-    const apiKey = String(login.apiKey || login.password || "").trim();
-    if (!apiKey) return;
-    try {
-      const { savePrimaryGatewayConfig } = require("./gateway-config");
-      await savePrimaryGatewayConfig({
-        mode: "openai",
-        label: resolvedSourceLabel,
-        baseUrl: gateway.baseUrl,
-        apiKey
-      });
-    } catch {
-      // keep login usable even if config write fails
-    }
-  }
+    || "字字珠玑多模型网关";
 
   async function connection() {
     if (typeof gateway.connectionStatus !== "function") return { online: null };
@@ -472,7 +455,7 @@ function createGatewayLoginConsole({ gateway, host = "127.0.0.1", port = 0, keep
         online: conn.online,
         authMode: resolvedAuthMode,
         sourceLabel: resolvedSourceLabel,
-        message: resolvedAuthMode === "api_key" ? "请输入 API 密钥连接平价站第一模型源。" : "请登录以连接模型。",
+        message: "请使用字字珠玑账号密码登录。",
         models: [],
         probe: null
       };
@@ -528,7 +511,7 @@ function createGatewayLoginConsole({ gateway, host = "127.0.0.1", port = 0, keep
     const requestUrl = new URL(req.url || "/", origin || "http://127.0.0.1");
     try {
       if (requestUrl.pathname === "/" && req.method === "GET") {
-        const html = page({ authMode: resolvedAuthMode, sourceLabel: resolvedSourceLabel, paymentPortalUrl: resolvedPaymentPortalUrl });
+        const html = page({ sourceLabel: resolvedSourceLabel, paymentPortalUrl: resolvedPaymentPortalUrl });
         if (res.writableEnded) return;
         if (!res.headersSent) {
           res.writeHead(200, {
@@ -553,7 +536,6 @@ function createGatewayLoginConsole({ gateway, host = "127.0.0.1", port = 0, keep
         }
         const login = await readLogin(req);
         await gateway.login(login);
-        await persistPrimaryKey(login);
         const current = await dashboard({ probe: true });
         if (current.loggedIn) {
           try {
@@ -572,7 +554,7 @@ function createGatewayLoginConsole({ gateway, host = "127.0.0.1", port = 0, keep
             shopUrl: resolvedPaymentPortalUrl,
             message: current.loggedIn
               ? ((current.message || "登录成功。") + " 之后不会再乱弹登录窗，掉线才会提醒。")
-              : (resolvedAuthMode === "api_key" ? "连接失败，请检查 API 密钥。" : "登录失败，请检查账号密码。")
+              : "登录失败，请检查账号密码。"
           }
         );
       }
