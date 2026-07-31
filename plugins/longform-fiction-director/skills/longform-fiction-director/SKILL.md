@@ -271,6 +271,8 @@ description: "Use as the built-in Chinese fiction lead-editor/director skill (MC
 - 起点排行榜：<https://www.qidian.com/rank/>。在页面内对照总榜、畅销、新书、飙升与分类榜。
 - 番茄小说排行榜：<https://fanqienovel.com/rank>。在页面内对照热门、畅销、飙升、新书与分类榜。
 
+需要结构化扫榜时改用同插件技能 `ranking-research`：`fiction_rank_sources` 查当前可用分类，`fiction_scan_rankings` 抓取并按需保存 Markdown + JSON，`fiction_compare_rank_snapshots` 比较两次快照。扫榜不调用写作模型；单次榜单只能描述当次可见分布，不能冒充趋势。
+
 每次研究记录检索词、来源 URL、访问日期，以及可迁移的事实或限制；禁止搬运榜单作品的具体剧情与表达。研究并不替代脑洞，Codex 把资料转化为可继续追问的可能性、动作、条件、资源变化、信息误差或反作用。
 
 按问题决定材料的数量和形式。默认不把脑洞收束成章节、卷数或细纲；作者要求时再转入剧情、细纲或正文。外部模型的脑洞只作为候选池；Codex 去掉同义方案、指出每条方向的代价与长期发动机，再让作者决定，不把模型输出整包塞给新手。
@@ -343,6 +345,7 @@ description: "Use as the built-in Chinese fiction lead-editor/director skill (MC
 ## 样书 / 脑洞 / 核验（继续补齐）
 
 - 脑洞：Codex 先在对话里陪聊；收束前建议一次可选外部发散，作者同意才调用；Codex 整理后由作者定方向，再更新 `辅助文档/00_使用说明与当前状态.md` 或 `辅助文档/01_全书大纲.md`
+- 番茄样书下载：只有作者明确确认拥有作品、作品属于公版或已经获得下载许可时，才调用 `fiction_download_book`。传项目目录及准确书名或 bookId；下载结果保留来源记录并自动进入 `样书/`，但不自动学习，也不把它变成正文限制。扫榜时绝不顺手下载榜上正文。
 - 样书入库后学习：Codex 直接读样书正文，把可迁移手法写进 `样书/*/00_手法学习笔记.md`
 - 本书写法：Codex 维护 `辅助文档/06_风格与写作要求.md`
 - 联网后回填：Codex 必须先用内置浏览器真实检索，再把来源 / 事实 / 禁写写进 `联网核验/` 与 `辅助文档/08_事实库_防OOC.md`

@@ -9,6 +9,8 @@ const { createGatewayLoginConsole } = require("./gateway-login-console");
 const { createGatewayGuard } = require("./gateway-guard");
 const { createGatewayMcpTools } = require("./gateway-mcp-tools");
 const { createLocalCoreTools } = require("./local-core-tools");
+const { createRankingMcpTools } = require("./ranking-mcp-tools");
+const { createDownloadMcpTools } = require("./download-mcp-tools");
 const onboardingState = require("./onboarding-state");
 const packageInfo = require("../package.json");
 
@@ -49,6 +51,22 @@ function safeMcpError(cause) {
     HARD_GATE_FAILED: "候选未通过硬门禁，请检查 blockers 后重写。"
     , AUTHOR_CONFIRMATION_REQUIRED: "本次模型调用尚未获得作者确认。请先询问作者是否使用这个模型。",
     JOB_NOT_FOUND: "后台任务不存在，可能来自已重启的插件进程。请先查看 Codex候选 是否已有结果。"
+    , SOURCE_UNAVAILABLE: "公开榜单当前无法读取，请稍后再试或用内置浏览器核验。"
+    , SOURCE_TIMEOUT: "公开榜单读取超时，请稍后再试。"
+    , SOURCE_FORMAT_CHANGED: "公开榜单页面结构已经变化，扫描器没有伪造结果；需要更新适配。"
+    , SOURCE_RESPONSE_TOO_LARGE: "公开榜单响应异常过大，已停止读取。"
+    , SOURCE_NOT_AUTHORIZED: "下载前需要你明确确认：你拥有该书、作品属于公版，或你已获得下载许可。"
+    , DOWNLOAD_BINARY_MISSING: "内置番茄下载器缺失，请重新安装完整插件。"
+    , DOWNLOAD_BINARY_INVALID: "内置番茄下载器文件无效，请重新安装完整插件。"
+    , DOWNLOAD_START_TIMEOUT: "内置番茄下载器启动超时。"
+    , DOWNLOAD_START_FAILED: "内置番茄下载器启动失败。"
+    , BOOK_NOT_FOUND: "没有找到这本书，请核对书名或改用番茄 bookId。"
+    , BOOK_SELECTION_REQUIRED: "书名搜索结果不唯一，请改用番茄 bookId。"
+    , PROVIDER_REQUEST_FAILED: "本机番茄下载服务请求失败。"
+    , PROVIDER_HTTP_ERROR: "本机番茄下载服务返回错误。"
+    , PROVIDER_JOB_FAILED: "番茄下载任务失败。"
+    , PROVIDER_JOB_TIMEOUT: "番茄下载任务等待超时。"
+    , DOWNLOAD_RESULT_INVALID: "番茄下载结果路径无效，已停止导入。"
   };
   if (cause?.code === "SERVER_ERROR" && SAFE_GATEWAY_DIAGNOSTICS.has(cause?.publicMessage)) return cause.publicMessage;
   return messages[cause?.code] || "Tool call failed.";
@@ -77,7 +95,7 @@ function resolveGateway(options = {}) {
       geminiApiKey: primary.geminiApiKey,
       geminiBaseUrl: primary.geminiBaseUrl,
       label: primary.label || "平价站第一模型源",
-      preferredModel: primary.preferredModel || "claude-opus-5",
+      preferredModel: primary.preferredModel || "claude-opus-4-6",
       allowedModels: primary.allowedModels,
       modelCredits: primary.modelCredits,
       creditsPerCall: primary.creditsPerCall ?? 10,
@@ -90,7 +108,7 @@ function resolveGateway(options = {}) {
       primary: openai,
       secondary: legacy,
       label: "平价站第一 + Claude扩展",
-      preferredModel: primary.preferredModel || "claude-opus-5",
+      preferredModel: primary.preferredModel || "claude-opus-4-6",
       allowedModels: primary.allowedModels,
       modelCredits: primary.modelCredits,
       creditsPerCall: Number(primary.creditsPerCall ?? 10),
@@ -118,11 +136,17 @@ function createRuntime(options = {}) {
   const tools = options.tools || (() => {
     const gatewayTools = createGatewayMcpTools({ gateway, gatewayGuard, openLoginPage });
     const localTools = options.localTools || createLocalCoreTools(options.localCoreOptions || {});
+    const rankingTools = options.rankingTools || createRankingMcpTools(options.rankingOptions || {});
+    const downloadTools = options.downloadTools || createDownloadMcpTools(options.downloadOptions || {});
     return Object.freeze({
-      list: () => [...gatewayTools.list(), ...localTools.list()],
-      call: (name, input) => localTools.has(name)
-        ? localTools.call(name, input)
-        : gatewayTools.call(name, input)
+      list: () => [...gatewayTools.list(), ...localTools.list(), ...rankingTools.list(), ...downloadTools.list()],
+      call: (name, input) => {
+        if (localTools.has(name)) return localTools.call(name, input);
+        if (rankingTools.has(name)) return rankingTools.call(name, input);
+        if (downloadTools.has(name)) return downloadTools.call(name, input);
+        return gatewayTools.call(name, input);
+      },
+      close: () => downloadTools.close()
     });
   })();
   return {
@@ -131,7 +155,11 @@ function createRuntime(options = {}) {
     openLoginPage,
     paymentPortalUrl,
     getLoginConsole: () => loginConsole,
-    tools
+    tools,
+    close: async () => {
+      if (typeof tools.close === "function") await tools.close();
+      if (loginConsole && typeof loginConsole.stop === "function") await loginConsole.stop();
+    }
   };
 }
 async function handle(message, dependencies = {}) {
@@ -195,14 +223,18 @@ async function handle(message, dependencies = {}) {
 async function runStdio() {
   const runtime = createRuntime();
   const input = readline.createInterface({ input: process.stdin, crlfDelay: Infinity });
-  for await (const line of input) {
-    if (!line.trim()) continue;
-    try {
-      const reply = await handle(JSON.parse(line), runtime);
-      if (reply) process.stdout.write(`${JSON.stringify(reply)}\n`);
-    } catch {
-      process.stdout.write(`${JSON.stringify(error(null, -32700, "Invalid JSON"))}\n`);
+  try {
+    for await (const line of input) {
+      if (!line.trim()) continue;
+      try {
+        const reply = await handle(JSON.parse(line), runtime);
+        if (reply) process.stdout.write(`${JSON.stringify(reply)}\n`);
+      } catch {
+        process.stdout.write(`${JSON.stringify(error(null, -32700, "Invalid JSON"))}\n`);
+      }
     }
+  } finally {
+    await runtime.close();
   }
 }
 if (require.main === module) runStdio().catch(() => { process.exitCode = 1; });

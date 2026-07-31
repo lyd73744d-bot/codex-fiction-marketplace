@@ -109,12 +109,12 @@ async function waitFor(check, description) {
 }
 
 async function main() {
-  assert.strictEqual(effectiveMaxTokens("claude-opus-5", 18000), 16000, "Opus 5 output cap was not applied");
-  assert.strictEqual(effectiveMaxTokens("claude-opus-5", 8000), 8000, "valid Opus 5 token request was changed");
+  assert.strictEqual(effectiveMaxTokens("claude-opus-4-6", 18000), 18000, "valid Opus 4.6 token request was capped");
+  assert.strictEqual(effectiveMaxTokens("claude-opus-4-6", 8000), 8000, "valid Opus 4.6 token request was changed");
   assert.strictEqual(effectiveMaxTokens("grok-4.5", 18000), 18000, "unrelated model token request was capped");
   assert.strictEqual(isClashFakeIpv4("198.18.0.223"), true, "Clash fake IPv4 range was not detected");
   assert.strictEqual(isClashFakeIpv4("198.19.255.254"), true, "upper Clash fake IPv4 range was not detected");
-  assert.strictEqual(isClashFakeIpv4("64.83.20.231"), false, "public gateway address was mislabeled as fake");
+  assert.strictEqual(isClashFakeIpv4("203.0.113.42"), false, "public gateway address was mislabeled as fake");
   assert.strictEqual(selectPhysicalIpv4({
     Clash: [{ family: "IPv4", internal: false, address: "198.18.0.1" }],
     Docker: [{ family: "IPv4", internal: false, address: "172.20.0.1" }],
@@ -126,10 +126,10 @@ async function main() {
   const fakeAware = createFakeIpAwareFetch({
     baseFetch: async () => { baseFetchCalls += 1; return jsonResponse({ ok: true }); },
     lookup: async () => [{ address: "198.18.0.223", family: 4 }],
-    resolveAddress: async () => "64.83.20.231",
+    resolveAddress: async () => "203.0.113.42",
     directFetch: async (_input, _init, route) => {
       directFetchCalls += 1;
-      assert.strictEqual(route.address, "64.83.20.231", "resolved real gateway address was not used");
+      assert.strictEqual(route.address, "203.0.113.42", "resolved real gateway address was not used");
       assert.strictEqual(route.localAddress, "192.168.1.16", "physical interface was not bound");
       return jsonResponse({ ok: true });
     },
@@ -141,7 +141,7 @@ async function main() {
 
   const normalAware = createFakeIpAwareFetch({
     baseFetch: async () => { baseFetchCalls += 1; return jsonResponse({ ok: true }); },
-    lookup: async () => [{ address: "64.83.20.231", family: 4 }],
+    lookup: async () => [{ address: "203.0.113.42", family: 4 }],
     directFetch: async () => { throw new Error("normal DNS unexpectedly used direct route"); }
   });
   await normalAware("https://api.nanshanyougui.xyz/healthz");
@@ -261,7 +261,7 @@ async function main() {
   assert.strictEqual(fallbackBodies.length, 2, "empty SSE fallback request count mismatch");
   assert.strictEqual(fallbackBodies[0].stream, true);
   assert.strictEqual(fallbackBodies[1].stream, false);
-  assert.strictEqual(fallbackBodies[0].max_tokens, 16000, "Opus 5 token cap was not sent upstream");
+  assert.strictEqual(fallbackBodies[0].max_tokens, 18000, "requested token budget was not sent upstream");
   assert.strictEqual(fallbackRequestIds[0], fallbackRequestIds[1], "stream fallback did not reuse the idempotency key");
   assert.strictEqual(
     joinContinuationText("他把回文交给驿卒，文书发出后的第三天", "文书发出后的第三天，县衙来了客人。"),

@@ -93,12 +93,13 @@ async function main() {
     assert.ok(updatedVoice.includes("允许回避和半答"), "partial voice-anchor updates must preserve dialogue");
     assert.ok(updatedVoice.includes("长短段跟着人物注意力变化"));
 
-    for (const removed of [
+    for (const bundled of [
       path.join(pluginRoot, "bin", "tomato-novel-downloader.exe"),
+      path.join(pluginRoot, "bin", "tomato-novel-downloader-LICENSE"),
       path.join(pluginRoot, "server", "download-provider.js"),
       path.join(pluginRoot, "server", "managed-download-provider.js"),
       path.join(pluginRoot, "server", "fanqie-charset.json")
-    ]) assert.ok(!fs.existsSync(removed), `removed downloader component returned: ${removed}`);
+    ]) assert.ok(fs.existsSync(bundled), `bundled downloader component missing: ${bundled}`);
   } finally {
     fs.rmSync(tempRoot, { recursive: true, force: true });
   }

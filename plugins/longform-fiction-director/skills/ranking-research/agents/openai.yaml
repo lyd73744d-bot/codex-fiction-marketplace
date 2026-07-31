@@ -1,0 +1,4 @@
+interface:
+  display_name: "番茄与起点扫榜"
+  short_description: "读取公开榜单并保存对比快照"
+  default_prompt: "扫描番茄或起点的公开榜单，保留来源与时间，并把事实和责编判断分开。"

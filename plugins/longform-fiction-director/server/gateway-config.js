@@ -6,16 +6,16 @@ const os = require("node:os");
 const path = require("node:path");
 
 const DEFAULT_MODEL_CREDITS = Object.freeze({
-  "claude-opus-5": 20,
   "claude-sonnet-5": 10,
   "claude-opus-4-6": 20,
-  "claude-opus-4-8": 20,
   "gemini-3.1-pro-preview": 12,
   "gemini-3.5-flash": 8,
   "glm-5.2": 8,
   "seed-2.1-pro": 20,
+  "seed-2.1-turbo": 10,
   "kimi-k2.6": 20,
   "qwen3.7-max": 5,
+  "gpt-image-2": 50,
   "grok-4.5": 5
 });
 const DEFAULT_MODELS = Object.freeze(Object.keys(DEFAULT_MODEL_CREDITS));
@@ -117,12 +117,12 @@ function loadPrimaryGatewayConfig(options = {}) {
         reason: "OpenAI-compatible primary gateway needs baseUrl and apiKey."
       };
     }
-    const preferredModel = String(options.preferredModel || process.env.FICTION_DIRECTOR_PREFERRED_MODEL || file.preferredModel || "claude-opus-5").trim();
+    const preferredModel = String(options.preferredModel || process.env.FICTION_DIRECTOR_PREFERRED_MODEL || file.preferredModel || "claude-opus-4-6").trim();
     const allowedModels = normalizeModelList(
       options.allowedModels
       || (process.env.FICTION_DIRECTOR_ALLOWED_MODELS ? String(process.env.FICTION_DIRECTOR_ALLOWED_MODELS).split(/[,\s]+/) : null)
       || file.allowedModels
-      || [preferredModel || "claude-opus-5", "claude-opus-4-6", "claude-sonnet-5"]
+      || [preferredModel || "claude-opus-4-6", "claude-sonnet-5"]
     );
     const allowed = allowedModels.length ? allowedModels : [...DEFAULT_MODELS];
     const modelCredits = normalizeModelCredits(options.modelCredits || file.modelCredits, allowed);
@@ -140,7 +140,7 @@ function loadPrimaryGatewayConfig(options = {}) {
       nexaBaseUrl: (() => { try { return normalizeOpenAiBaseUrl(nexaBaseUrlRaw); } catch { return "https://api.nexagw.org"; } })(),
       geminiApiKey: String(geminiApiKey || "").trim(),
       geminiBaseUrl: (() => { try { return normalizeOpenAiBaseUrl(geminiBaseUrlRaw); } catch { return "https://byteclaude.io"; } })(),
-      preferredModel: preferredModel || "claude-opus-5",
+      preferredModel: preferredModel || "claude-opus-4-6",
       allowedModels: allowed,
       modelCredits,
       creditsPerCall: Number.isFinite(creditsPerCall) ? creditsPerCall : 10,
@@ -166,9 +166,9 @@ async function savePrimaryGatewayConfig(input = {}, options = {}) {
     mode,
     label: String(input.label || "平价站第一模型源").slice(0, 80),
     baseUrl: mode === "openai" ? normalizeOpenAiBaseUrl(input.baseUrl) : String(input.baseUrl || "").trim(),
-    preferredModel: String(input.preferredModel || "claude-opus-5").trim() || "claude-opus-4-6",
+    preferredModel: String(input.preferredModel || "claude-opus-4-6").trim() || "claude-opus-4-6",
     allowedModels: normalizeModelList(input.allowedModels || DEFAULT_MODELS),
-    modelCredits: normalizeModelCredits(input.modelCredits, input.allowedModels || ["claude-opus-4-8", "claude-opus-4-6", "claude-sonnet-5"]),
+    modelCredits: normalizeModelCredits(input.modelCredits, input.allowedModels || ["claude-opus-4-6", "claude-sonnet-5"]),
     creditsPerCall: Number(input.creditsPerCall ?? 10),
     balance: Number(input.balance ?? -1),
     updatedAt: new Date().toISOString()

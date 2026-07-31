@@ -21,4 +21,5 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 Third-party components retain their own licenses:
+- bin/tomato-novel-downloader.exe - MIT (bin/tomato-novel-downloader-LICENSE)
 - skills/humanizer-zh - MIT (skills/humanizer-zh/LICENSE)

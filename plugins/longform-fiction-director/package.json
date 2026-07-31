@@ -8,14 +8,16 @@
     ".mcp.json",
     "package.json",
     "assets",
+    "bin",
     "skills",
     "server",
     "scripts"
   ],
   "scripts": {
-    "test": "node scripts/selftest-gateway-core.js && node scripts/selftest-gateway-reliability.js && node scripts/selftest-editor-profiles.js && node scripts/selftest-editor-model-division.js && node scripts/selftest-narrative-restraint.js && node scripts/selftest-local-core.js",
+    "test": "node scripts/selftest-gateway-core.js && node scripts/selftest-gateway-reliability.js && node scripts/selftest-editor-profiles.js && node scripts/selftest-editor-model-division.js && node scripts/selftest-narrative-restraint.js && node scripts/selftest-local-core.js && node scripts/selftest-guided-onboarding.js && node scripts/selftest-download.js && node scripts/selftest-rankings.js",
     "login": "node scripts/open-login-now.js",
-    "smoke": "node scripts/smoke-live-gateway.js"
+    "smoke": "node scripts/smoke-live-gateway.js",
+    "smoke:downloader": "node scripts/smoke-bundled-downloader.js"
   },
-  "description": "Chinese longform fiction lead-editor plugin with local project, research, sample-book and fact-ledger services plus a consent-gated external writing-model gateway."
+  "description": "Chinese longform fiction lead-editor plugin with local project, authorized Fanqie sample download, sample-book, public ranking and fact-ledger services plus a consent-gated external writing-model gateway."
 }

@@ -4,15 +4,16 @@ const path = require("node:path");
 const fsp = require("node:fs/promises");
 const os = require("node:os");
 const { generateToArtifact, readArtifact } = require("./artifact-pipeline");
-const { optimizeWithModels } = require("./multi-model-optimize");
 const { recommendModels } = require("./model-router");
+const { buildDraftSystem, prepareDraftPrompt } = require("./draft-prompt-lib");
 const onboarding = require("./onboarding-state");
 
 /**
  * Live multi-model smoke after user login.
- * Proves: list models -> stream/txt generate -> optimize -> readable .body.txt
+ * Proves: list models -> one approved stream/txt generation -> readable .body.txt.
+ * Optimization is deliberately separate because it requires a new author confirmation.
  */
-async function smokeLiveGateway({ gateway, projectDir = "", title = "live-smoke", statePath = undefined, markOnboarding = true } = {}) {
+async function smokeLiveGateway({ gateway, projectDir = "", title = "live-smoke", modelIds = [], statePath = undefined, markOnboarding = true } = {}) {
   if (!gateway || typeof gateway.accountStatus !== "function") {
     throw new Error("gateway required");
   }
@@ -62,9 +63,11 @@ async function smokeLiveGateway({ gateway, projectDir = "", title = "live-smoke"
   }
 
   const draftRec = recommendModels({ task: "draft", availableModels: available, maxPerRole: 1 });
-  const styleRec = recommendModels({ task: "humanize", availableModels: available, maxPerRole: 1 });
-  const draftIds = draftRec.modelIds.slice(0, 1);
-  const styleIds = styleRec.modelIds.slice(0, 1);
+  const availableIds = new Set(available.map((item) => item && item.id).filter(Boolean));
+  const requestedIds = Array.isArray(modelIds)
+    ? [...new Set(modelIds.map((item) => String(item || "").trim()).filter((id) => availableIds.has(id)))]
+    : [];
+  const draftIds = (requestedIds.length ? requestedIds : draftRec.modelIds).slice(0, 1);
   if (!draftIds.length) {
     return { ok: false, stage: "recommend", message: "没有可推荐的正文模型。" };
   }
@@ -83,6 +86,10 @@ async function smokeLiveGateway({ gateway, projectDir = "", title = "live-smoke"
 
   let generated;
   try {
+    const draftSystem = buildDraftSystem({ kind: "draft", taskLabel: "live-smoke" });
+    const preparedPrompt = prepareDraftPrompt({
+      prompt: "写一小段完整的历史小说候选。雨夜辕门，主角拿着一份被人压了三天的军报，追问守门校尉。对方只答了一半，主角从他的停顿和动作里察觉还有人在场。不要替人物把动机和结论说完。"
+    });
     generated = await generateToArtifact({
       gateway,
       projectDir: root,
@@ -90,18 +97,14 @@ async function smokeLiveGateway({ gateway, projectDir = "", title = "live-smoke"
       title,
       chapterNo: "0",
       modelIds: draftIds,
-      system: "你是中文网文主笔。只输出标题行和短正文，不要自检。",
-      prompt: [
-        "写一段不超过 400 字的开场。",
-        "第一行：标题：冒烟开场",
-        "第二行起正文。",
-        "场景：雨夜辕门，主角追问谁压了军报。",
-        "不要解释腔，不要“这意味着”。"
-      ].join("\n"),
+      system: draftSystem.system,
+      prompt: preparedPrompt.prompt,
       taskLabel: "live-smoke",
       fallbackChain: true,
       applyHardGates: true,
-      minChars: 40
+      minChars: 40,
+      requestPolicyVersion: draftSystem.policyVersion,
+      contextSanitization: preparedPrompt.contextSanitization
     });
   } catch (error) {
     return {
@@ -118,29 +121,6 @@ async function smokeLiveGateway({ gateway, projectDir = "", title = "live-smoke"
     return { ok: false, stage: "read_body", message: "生成 txt 不可读或过短", artifact: generated.artifact };
   }
 
-  let optimized = null;
-  if (styleIds.length) {
-    try {
-      optimized = await optimizeWithModels({
-        gateway,
-        projectDir: root,
-        draftText: bodyRead.content,
-        title,
-        chapterNo: "0",
-        modelIds: styleIds,
-        mode: "humanize",
-        focus: "dialogue",
-        instruction: "去解释腔，保留冲突。",
-        autoRecommend: false
-      });
-    } catch (error) {
-      optimized = {
-        ok: false,
-        message: "优化失败（草稿已成功）：" + String(error && (error.message || error))
-      };
-    }
-  }
-
   return {
     ok: true,
     stage: "done",
@@ -151,7 +131,6 @@ async function smokeLiveGateway({ gateway, projectDir = "", title = "live-smoke"
     },
     modelsAvailable: available.length,
     draftModelIds: draftIds,
-    styleModelIds: styleIds,
     draft: {
       artifact: generated.artifact,
       transport: generated.transport,
@@ -160,8 +139,9 @@ async function smokeLiveGateway({ gateway, projectDir = "", title = "live-smoke"
       preview: String(bodyRead.content).slice(0, 280),
       modelReadable: true
     },
-    optimize: optimized,
-    coach: "实网冒烟通过：模型列表 → 流式/回退写 txt → 可读 .body → 可选优化。作者确认前仍不入正式正文。"
+    optimize: null,
+    nextStep: "如需优化，重新推荐模型并询问作者后，再调用 fiction_optimize_with_models。",
+    coach: "实网冒烟通过：模型列表 → 一次已授权生成 → 候选 txt 与可读 .body。作者确认前不入正式正文。"
   };
 }
 

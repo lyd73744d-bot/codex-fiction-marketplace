@@ -9,9 +9,6 @@ const DEFAULT_GATEWAY = "https://api.nanshanyougui.xyz";
 const DEFAULT_MAX_RESPONSE_BYTES = 16 * 1024 * 1024;
 const DEFAULT_STREAM_IDLE_TIMEOUT_MS = 15 * 60_000;
 const DEFAULT_STREAM_TOTAL_TIMEOUT_MS = 90 * 60_000;
-const MODEL_MAX_OUTPUT_TOKENS = Object.freeze({
-  "claude-opus-5": 16_000
-});
 const SENSITIVE_KEY_PATTERN = /(?:api|key|secret|token|password|credential|cookie)/u;
 const ERROR_MESSAGES = Object.freeze({
   AUTH_REQUIRED: "Please log in first.",
@@ -143,8 +140,7 @@ function isRetryableGenerationError(error) {
 function effectiveMaxTokens(modelId, requested, fallback = 24_000) {
   const numeric = Number(requested);
   const base = Number.isSafeInteger(numeric) && numeric >= 256 ? numeric : fallback;
-  const cap = MODEL_MAX_OUTPUT_TOKENS[String(modelId || "").toLowerCase()] || 65_536;
-  return Math.max(256, Math.min(base, cap));
+  return Math.max(256, Math.min(base, 65_536));
 }
 
 function shouldUseNonStreamFallback(error) {

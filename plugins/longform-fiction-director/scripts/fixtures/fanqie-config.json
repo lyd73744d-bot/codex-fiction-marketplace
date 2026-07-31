@@ -1,0 +1,10 @@
+{
+  "data": {
+    "list": [
+      { "group": ["male"], "name": "历史古代", "id": "273" },
+      { "group": ["female"], "name": "古风世情", "id": "1139" }
+    ]
+  },
+  "code": 0,
+  "message": "success"
+}

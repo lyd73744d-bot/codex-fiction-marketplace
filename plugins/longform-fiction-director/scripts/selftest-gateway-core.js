@@ -181,9 +181,16 @@ async function main() {
     "fiction_project", "fiction_sample_book", "fiction_research",
     "fiction_facts", "fiction_voice_anchor"
   ];
-  assert.strictEqual(names.length, expected.length + expectedLocal.length, "tool count " + names.length);
+  const expectedRankings = [
+    "fiction_rank_sources", "fiction_scan_rankings", "fiction_compare_rank_snapshots"
+  ];
+  const expectedDownloads = ["fiction_download_book"];
+  assert.strictEqual(names.length, expected.length + expectedLocal.length + expectedRankings.length + expectedDownloads.length, "tool count " + names.length);
   for (const name of expected) assert.ok(names.includes(name), "missing tool " + name);
   for (const name of expectedLocal) assert.ok(names.includes(name), "missing local core tool " + name);
+  for (const name of expectedRankings) assert.ok(names.includes(name), "missing ranking tool " + name);
+  for (const name of expectedDownloads) assert.ok(names.includes(name), "missing download tool " + name);
+  assert.deepStrictEqual(definitions.get("fiction_download_book").inputSchema.required, ["projectDir", "authorized"]);
   assert.deepStrictEqual(definitions.get("fiction_generate_to_file").inputSchema.required, ["projectDir", "prompt", "modelIds", "authorConfirmed"]);
   assert.strictEqual(definitions.get("fiction_generate_to_file").inputSchema.properties.modelIds.type, "array");
   assert.strictEqual(definitions.get("fiction_generate_to_file").inputSchema.properties.fallbackChain.type, "boolean");
@@ -370,7 +377,7 @@ async function main() {
     await loginConsole.stop();
   }
 
-  console.log("PASS selftest-gateway-core: " + expected.length + " gateway + " + expectedLocal.length + " local tools OK, version " + pkg.version);
+  console.log("PASS selftest-gateway-core: " + expected.length + " gateway + " + expectedLocal.length + " local + " + expectedRankings.length + " ranking + " + expectedDownloads.length + " download tools OK, version " + pkg.version);
 }
 
 main().catch((error) => {

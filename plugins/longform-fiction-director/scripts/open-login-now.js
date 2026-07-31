@@ -7,6 +7,7 @@ const http = require("node:http");
 
 const WAIT_MS = Number(process.env.FICTION_LOGIN_WAIT_MS || 20 * 60 * 1000);
 const POLL_MS = Number(process.env.FICTION_LOGIN_POLL_MS || 2000);
+const OPEN_BROWSER = process.env.FICTION_LOGIN_OPEN_BROWSER !== "0";
 
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -148,7 +149,7 @@ async function main() {
   const result = await runtime.gatewayGuard.ensureAccess({
     force: true,
     reason: "open_gateway_login",
-    openBrowser: true
+    openBrowser: OPEN_BROWSER
   });
   const payload = {
     ok: result.ok,

@@ -1,53 +1,26 @@
 {
   "version": "4.2.0",
-  "fullVersion": "4.2.0",
-  "gateway": "https://nanshanyougui.xyz",
-  "updatedAt": "2026-07-31T15:30:00+08:00",
-  "preferredModel": "claude-opus-5",
+  "fullVersion": "4.2.0+codex.20260731140804",
+  "gateway": "https://api.nanshanyougui.xyz",
+  "updatedAt": "2026-07-31T22:08:04+08:00",
+  "preferredModel": "claude-opus-4-6",
   "models": [
-    {
-      "id": "claude-opus-5",
-      "credits": 20,
-      "available": true,
-      "status": "live",
-      "flagship": true
-    },
-    {
-      "id": "claude-sonnet-5",
-      "credits": 10,
-      "available": true,
-      "status": "live",
-      "flagship": true
-    },
-    {
-      "id": "claude-opus-4-6",
-      "credits": 20,
-      "available": true,
-      "status": "live",
-      "flagship": true
-    },
-    {
-      "id": "claude-opus-4-8",
-      "credits": 20,
-      "available": true,
-      "status": "live",
-      "flagship": true
-    },
-    {
-      "id": "claude-sonnet-4-6",
-      "credits": 10,
-      "available": true,
-      "status": "live",
-      "flagship": false
-    }
+    { "id": "claude-sonnet-5", "credits": 10, "available": true, "status": "live", "flagship": true },
+    { "id": "claude-opus-4-6", "credits": 20, "available": true, "status": "live", "flagship": true },
+    { "id": "gemini-3.1-pro-preview", "credits": 12, "available": true, "status": "live", "flagship": true },
+    { "id": "gemini-3.5-flash", "credits": 8, "available": true, "status": "live", "flagship": false },
+    { "id": "glm-5.2", "credits": 8, "available": true, "status": "live", "flagship": true },
+    { "id": "seed-2.1-pro", "credits": 20, "available": true, "status": "live", "flagship": true },
+    { "id": "seed-2.1-turbo", "credits": 10, "available": true, "status": "live", "flagship": false },
+    { "id": "kimi-k2.6", "credits": 20, "available": true, "status": "live", "flagship": true },
+    { "id": "qwen3.7-max", "credits": 5, "available": true, "status": "live", "flagship": true },
+    { "id": "gpt-image-2", "credits": 50, "available": true, "status": "live", "flagship": false, "isCover": true },
+    { "id": "grok-4.5", "credits": 5, "available": true, "status": "live", "flagship": true }
   ],
   "notes": {
-    "must_show": [
-      "claude-opus-5",
-      "claude-sonnet-5"
-    ],
-    "primary_route": "https://nanshanyougui.xyz/v1",
-    "gateway_role": "OpenAI-compatible primary route for the installed plugin",
-    "request_concurrency": "unlimited"
+    "primary_route": "https://api.nanshanyougui.xyz",
+    "gateway_role": "ZiZiZhuJi account gateway with login, credit shop, redemption, and live model catalog.",
+    "request_concurrency": "unlimited",
+    "catalog_source": "server displayModels"
   }
 }

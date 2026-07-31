@@ -1,0 +1,33 @@
+{
+  "data": {
+    "book_list": [
+      {
+        "abstract": "末，封始查。",
+        "author": "飞凌",
+        "bookId": "7641892074563832894",
+        "bookName": "科举：陛！科状元惹！",
+        "currentPos": 1,
+        "rankPosDiff": 4,
+        "read_count": "111177",
+        "wordNumber": "290823",
+        "lastChapterTitle": "第138章 苗疆叛乱",
+        "lastChapterUpdateTime": "1785421280"
+      },
+      {
+        "abstract": "城消息。",
+        "author": "测试者",
+        "bookId": "7000000000000000002",
+        "bookName": "云",
+        "currentPos": 2,
+        "rankPosDiff": -1,
+        "read_count": "90000",
+        "wordNumber": "180000"
+      }
+    ],
+    "rankTypeText": "新书榜",
+    "rankVersion": "1785497400",
+    "total_num": 100
+  },
+  "code": 0,
+  "message": "success"
+}

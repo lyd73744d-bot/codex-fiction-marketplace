@@ -85,7 +85,7 @@ function createGatewayMcpTools({ gateway, gatewayGuard, openLoginPage, generatio
     { name: "fiction_list_artifacts", description: "List candidate artifacts under project Codex候选.", annotations: safetyAnnotations(true), inputSchema: { type: "object", additionalProperties: false, required: ["projectDir"], properties: { projectDir: { type: "string", maxLength: 512 }, limit: { type: "number" } } } },
     { name: "fiction_optimize_with_models", description: "Optimize only after the author confirms this specific call. authorConfirmed=true is required every time. Set background=true for long revisions; poll fiction_generation_status afterward.", annotations: safetyAnnotations(false), inputSchema: { type: "object", additionalProperties: false, required: ["projectDir", "draftText", "authorConfirmed"], properties: { projectDir: { type: "string", maxLength: 512 }, draftText: { type: "string", maxLength: 400000 }, authorConfirmed: { type: "boolean" }, background: { type: "boolean" }, title: { type: "string", maxLength: 120 }, chapterNo: { type: "string", maxLength: 32 }, modelIds: { type: "array", items: { type: "string" }, maxItems: 8 }, mode: { type: "string", maxLength: 32 }, focus: { type: "string", maxLength: 32 }, instruction: { type: "string", maxLength: 4000 }, autoRecommend: { type: "boolean" }, maxTokens: { type: "number", minimum: 256, maximum: 65536 } } } },
     { name: "fiction_compare_style", description: "Compare draft against voice anchors and sample-book notes; write report artifact.", annotations: safetyAnnotations(false), inputSchema: { type: "object", additionalProperties: false, required: ["projectDir"], properties: { projectDir: { type: "string", maxLength: 512 }, draftText: { type: "string", maxLength: 400000 }, draftPath: { type: "string", maxLength: 1024 }, title: { type: "string", maxLength: 120 } } } },
-    { name: "fiction_smoke_live_gateway", description: "Run a paid live generate/optimize smoke only after the author confirms this specific call. authorConfirmed=true is required every time.", annotations: safetyAnnotations(false), inputSchema: { type: "object", additionalProperties: false, required: ["authorConfirmed"], properties: { authorConfirmed: { type: "boolean" }, projectDir: { type: "string", maxLength: 512 }, title: { type: "string", maxLength: 80 } } } }
+    { name: "fiction_smoke_live_gateway", description: "Run exactly one paid live generation smoke after the author confirms this specific call. It does not optimize; optimization requires a separate confirmation and fiction_optimize_with_models call.", annotations: safetyAnnotations(false), inputSchema: { type: "object", additionalProperties: false, required: ["authorConfirmed"], properties: { authorConfirmed: { type: "boolean" }, projectDir: { type: "string", maxLength: 512 }, title: { type: "string", maxLength: 80 }, modelIds: { type: "array", items: { type: "string" }, minItems: 1, maxItems: 1 } } } }
   ];
   async function call(name, input = {}) {
     switch (name) {
@@ -404,7 +404,8 @@ function createGatewayMcpTools({ gateway, gatewayGuard, openLoginPage, generatio
         return toolResult(await smokeLiveGateway({
           gateway,
           projectDir: String(input.projectDir || ""),
-          title: String(input.title || "live-smoke")
+          title: String(input.title || "live-smoke"),
+          modelIds: input.modelIds
         }));
       }
       default: { const error = new Error(`Unknown gateway tool: ${name}`); error.code = "TOOL_NOT_FOUND"; throw error; }
