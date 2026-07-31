@@ -21,7 +21,7 @@ async function readIf(p, max = 4000) {
 async function collectOptimizeContext(projectDir) {
   const aux = path.join(projectDir, "辅助文档");
   const voice = await readIf(path.join(aux, "08_文风锚点.md"), 1500);
-  const brief = await readIf(path.join(projectDir, "细纲", "01_当前章细纲.md"), 1500);
+  const brief = await readIf(path.join(projectDir, "细纲", "01_当前章细纲.md"), 2400);
   const facts = await readIf(path.join(aux, "12_事实库_防OOC.md"), 1800);
   let cards = "";
   const charDir = path.join(aux, "人物卡");
@@ -45,7 +45,9 @@ async function optimizeWithModels({
   focus = "full",
   instruction = "",
   autoRecommend = true,
-  recommendMode = "quick"
+  recommendMode = "quick",
+  maxTokens = 16000,
+  onProgress
 } = {}) {
   if (!gateway || typeof gateway.callModels !== "function") throw new Error("gateway.callModels required");
   if (!projectDir) throw new Error("projectDir required");
@@ -72,6 +74,7 @@ async function optimizeWithModels({
   const system = buildOptimizeSystem({ mode, focus: normalizedFocus });
   const runs = [];
   let current = String(draftText).trim();
+  const sourceChars = inspectChapter(current).chars;
 
   for (const modelId of ids) {
     const prompt = buildOptimizePrompt({
@@ -92,7 +95,17 @@ async function optimizeWithModels({
       prompt,
       taskLabel: "optimize-" + mode,
       streamRetries: 2,
-      outerAttempts: 1
+      outerAttempts: 1,
+      minChars: mode === "review" ? 0 : Math.floor(sourceChars * 0.8),
+      maxTokens,
+      onProgress: typeof onProgress === "function"
+        ? (progress) => onProgress({
+            ...progress,
+            optimizeModelId: modelId,
+            optimizeStep: runs.length + 1,
+            optimizeSteps: ids.length
+          })
+        : undefined
     });
     if (mode !== "review" && result?.artifact?.plainPath) {
       current = await fsp.readFile(result.artifact.plainPath, "utf8");

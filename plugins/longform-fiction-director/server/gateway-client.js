@@ -9,6 +9,9 @@ const DEFAULT_GATEWAY = "https://api.nanshanyougui.xyz";
 const DEFAULT_MAX_RESPONSE_BYTES = 16 * 1024 * 1024;
 const DEFAULT_STREAM_IDLE_TIMEOUT_MS = 15 * 60_000;
 const DEFAULT_STREAM_TOTAL_TIMEOUT_MS = 90 * 60_000;
+const MODEL_MAX_OUTPUT_TOKENS = Object.freeze({
+  "claude-opus-5": 16_000
+});
 const SENSITIVE_KEY_PATTERN = /(?:api|key|secret|token|password|credential|cookie)/u;
 const ERROR_MESSAGES = Object.freeze({
   AUTH_REQUIRED: "Please log in first.",
@@ -18,6 +21,7 @@ const ERROR_MESSAGES = Object.freeze({
   EMPTY_MODEL_OUTPUT: "Model returned no usable text.",
   SERVER_OFFLINE: "Gateway is offline.",
   UPSTREAM_TIMEOUT: "Model response timed out.",
+  RATE_LIMITED: "Model route is rate limited.",
   SERVER_ERROR: "Gateway request failed.",
   CONFLICT: "Request conflicts with an existing record.",
   INSUFFICIENT_BALANCE: "Insufficient balance.",
@@ -116,7 +120,7 @@ function responseError(status, payload) {
   if (status === 402 || serverCode === "INSUFFICIENT_BALANCE") return new GatewayClientError("INSUFFICIENT_BALANCE", ERROR_MESSAGES.INSUFFICIENT_BALANCE, status);
   if (status === 409) return new GatewayClientError("CONFLICT", ERROR_MESSAGES.CONFLICT, status);
   if (status === 408) return new GatewayClientError("UPSTREAM_TIMEOUT", ERROR_MESSAGES.UPSTREAM_TIMEOUT, status, "网关上游请求超时。");
-  if (status === 429) return new GatewayClientError("SERVER_ERROR", ERROR_MESSAGES.SERVER_ERROR, status, "网关上游繁忙或触发限流。");
+  if (status === 429) return new GatewayClientError("RATE_LIMITED", ERROR_MESSAGES.RATE_LIMITED, status, "模型线路暂时限流；未收到正文时只会有限重试一次。");
   if (status >= 500) {
     const publicMessage = upstreamPublicMessage(payload);
     if (publicMessage === "网关上游请求超时。") return new GatewayClientError("UPSTREAM_TIMEOUT", ERROR_MESSAGES.UPSTREAM_TIMEOUT, status, publicMessage);
@@ -132,7 +136,21 @@ function isRetryableGenerationError(error) {
   // A 502 commonly arrives only after the upstream has spent minutes generating.
   // Replaying it risks duplicate work and only repeats the same proxy timeout.
   if (status === 502) return false;
-  return error.code === "SERVER_ERROR" && (status === 0 || status === 408 || status === 409 || status === 425 || status === 429 || status >= 500);
+  return ["SERVER_ERROR", "RATE_LIMITED"].includes(error.code)
+    && (status === 0 || status === 408 || status === 409 || status === 425 || status === 429 || status >= 500);
+}
+
+function effectiveMaxTokens(modelId, requested, fallback = 24_000) {
+  const numeric = Number(requested);
+  const base = Number.isSafeInteger(numeric) && numeric >= 256 ? numeric : fallback;
+  const cap = MODEL_MAX_OUTPUT_TOKENS[String(modelId || "").toLowerCase()] || 65_536;
+  return Math.max(256, Math.min(base, cap));
+}
+
+function shouldUseNonStreamFallback(error) {
+  if (error?.streamUnsupported === true) return true;
+  return ["RESPONSE_INVALID", "EMPTY_MODEL_OUTPUT"].includes(String(error?.code || ""))
+    && !String(error?.partialContent || "").trim();
 }
 
 function createActivityDeadline({ idleTimeoutMs = DEFAULT_STREAM_IDLE_TIMEOUT_MS, maxTotalTimeoutMs = DEFAULT_STREAM_TOTAL_TIMEOUT_MS } = {}) {
@@ -242,7 +260,12 @@ async function collectOpenAiStream(response, onDelta, { maxResponseBytes = DEFAU
     if (cause && typeof cause === "object") Object.assign(cause, { partialContent: cause.partialContent ?? content, partialReasoning: cause.partialReasoning ?? reasoning, receivedBytes, maxResponseBytes });
     throw cause;
   }
-  if (!content.trim()) throw new GatewayClientError("RESPONSE_INVALID");
+  if (!content.trim()) {
+    const error = new GatewayClientError("RESPONSE_INVALID");
+    error.partialReasoning = reasoning;
+    error.receivedBytes = receivedBytes;
+    throw error;
+  }
   if (!done && !finishReason) throw incompleteStreamError("Model stream closed without [DONE] or finish reason.", { partialContent: content, partialReasoning: reasoning, receivedBytes, maxResponseBytes });
   return { content, reasoning, usage, finishReason, complete: true, receivedBytes, transport: "sse" };
 }
@@ -429,7 +452,7 @@ function createGatewayClient(options = {}) {
           const response = await authenticatedRawRequest("/e/catalog/chat/completions", {
             method: "POST",
             headers: { "content-type": "application/json", "x-workflow-operation": String(input.taskLabel || "fiction").slice(0, 32), "idempotency-key": requestId },
-            body: JSON.stringify({ model, messages, temperature: 0.7, max_tokens: input.maxTokens || 24_000, stream: true }),
+            body: JSON.stringify({ model, messages, temperature: 0.7, max_tokens: effectiveMaxTokens(model, input.maxTokens), stream: true }),
             timeoutMs: streamTimeoutMs,
             signal: deadline.signal
           });
@@ -454,7 +477,7 @@ function createGatewayClient(options = {}) {
             break;
           }
           lastError = toGatewayNetworkError(error, "SERVER_ERROR");
-          allowNonStreamFallback = allowNonStreamFallback || error?.streamUnsupported === true;
+          allowNonStreamFallback = allowNonStreamFallback || shouldUseNonStreamFallback(error) || shouldUseNonStreamFallback(lastError);
           if (!isRetryableGenerationError(lastError) || attempt >= maxStreamAttempts) break;
           await wait(generationRetryBaseDelayMs * attempt);
         } finally {
@@ -468,7 +491,7 @@ function createGatewayClient(options = {}) {
           const response = await authenticatedRawRequest("/e/catalog/chat/completions", {
             method: "POST",
             headers: { "content-type": "application/json", "x-workflow-operation": String(input.taskLabel || "fiction").slice(0, 32), "idempotency-key": requestId },
-            body: JSON.stringify({ model, messages, temperature: 0.7, max_tokens: input.maxTokens || 24_000, stream: false }),
+            body: JSON.stringify({ model, messages, temperature: 0.7, max_tokens: effectiveMaxTokens(model, input.maxTokens), stream: false }),
             timeoutMs: streamTimeoutMs,
             signal: deadline.signal
           });
@@ -606,6 +629,7 @@ module.exports = {
   completionParts,
   createActivityDeadline,
   createGatewayClient,
+  effectiveMaxTokens,
   isRetryableGenerationError,
   isTimeoutError,
   toGatewayNetworkError

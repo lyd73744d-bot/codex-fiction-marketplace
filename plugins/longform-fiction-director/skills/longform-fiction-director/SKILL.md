@@ -166,7 +166,7 @@ description: "Use as the built-in Chinese fiction lead-editor/director skill (MC
 5. **方法论备忘**：`references/prompt-lessons-from-peers.md`。
 
 阶段提示词要求：
-- 细纲：用自然段记承接、人物状态和不能写错的事实；不写完整正文，不套固定节拍
+- 细纲：作者只要章概时可以短；明确要可供动笔的细纲时，按 `references/chapter-control-card.md` 用自然段讲清事件推进、人物选择、相关人物反应、直接结果与尚未说透的信息。重要章节可以写得更充分，但不写完整正文，不套固定栏目、场景数或节拍
 - 正文：把章节笔记当背景而非逐项任务；候选落盘；对话不自我解释，叙述不替读者翻译潜台词
 - 去AI味：先定级再改；不改剧情；删除说满的动机、情绪和关系结论，但保留必要事实与因果
 - 质检：设定一致性 + 网文专项清单 + 是否可入台账

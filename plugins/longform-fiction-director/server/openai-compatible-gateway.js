@@ -10,6 +10,7 @@ const {
   completionContent,
   completionParts,
   createActivityDeadline,
+  effectiveMaxTokens,
   isRetryableGenerationError,
   toGatewayNetworkError
 } = require("./gateway-client");
@@ -389,7 +390,7 @@ async function callModels(input = {}) {
               model,
               messages,
               temperature: 0.7,
-              max_tokens: input.maxTokens || 24_000,
+              max_tokens: effectiveMaxTokens(model, input.maxTokens),
               stream: !!stream
             }),
             redirect: "error",
@@ -401,6 +402,14 @@ async function callModels(input = {}) {
             try { text = await response.text(); } catch {}
             if (response.status === 401 || response.status === 403) throw new GatewayClientError("AUTH_FAILED");
             if (response.status === 402) throw new GatewayClientError("INSUFFICIENT_BALANCE");
+            if (response.status === 429) {
+              const error = new GatewayClientError("RATE_LIMITED", undefined, response.status, "模型线路暂时限流；未收到正文时只会有限重试一次。");
+              const retryAfterSeconds = Number(response.headers?.get?.("retry-after"));
+              if (Number.isFinite(retryAfterSeconds) && retryAfterSeconds > 0) {
+                error.retryAfterMs = Math.min(Math.round(retryAfterSeconds * 1000), 30_000);
+              }
+              throw error;
+            }
             const error = new GatewayClientError("SERVER_ERROR", undefined, response.status);
             error.streamUnsupported = [400, 404, 405, 422, 501].includes(Number(response.status))
               && /stream|event-stream|unsupported|not support|unrecognized|unknown parameter|invalid.*stream/iu.test(text);
@@ -445,9 +454,12 @@ async function callModels(input = {}) {
             break;
           }
           lastError = toGatewayNetworkError(error, "SERVER_ERROR");
-          allowNonStreamFallback = allowNonStreamFallback || error?.streamUnsupported === true;
+          allowNonStreamFallback = allowNonStreamFallback
+            || error?.streamUnsupported === true
+            || (["RESPONSE_INVALID", "EMPTY_MODEL_OUTPUT"].includes(String(error?.code || ""))
+              && !String(error?.partialContent || "").trim());
           if (!isRetryableGenerationError(lastError) || attempt >= maxStreamAttempts) break;
-          await wait(generationRetryBaseDelayMs * attempt);
+          await wait(Math.max(generationRetryBaseDelayMs * attempt, Number(lastError?.retryAfterMs) || 0));
         }
       }
 

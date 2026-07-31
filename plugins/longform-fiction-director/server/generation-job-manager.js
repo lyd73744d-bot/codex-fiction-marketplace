@@ -21,6 +21,7 @@ function publicJob(job) {
     startedAt: job.startedAt,
     completedAt: job.completedAt,
     metadata: job.metadata,
+    progress: job.progress,
     ...(job.status === "completed" ? { result: job.result } : {}),
     ...(job.status === "failed" ? { error: job.error } : {})
   };
@@ -50,6 +51,7 @@ function createGenerationJobManager({ maxJobs = 40 } = {}) {
       startedAt: null,
       completedAt: null,
       metadata: { ...(metadata || {}) },
+      progress: null,
       result: null,
       error: null
     };
@@ -59,7 +61,12 @@ function createGenerationJobManager({ maxJobs = 40 } = {}) {
       job.status = "running";
       job.startedAt = new Date().toISOString();
       try {
-        job.result = await run();
+        job.result = await run({
+          updateProgress(next) {
+            if (!next || typeof next !== "object" || Array.isArray(next)) return;
+            job.progress = { ...next };
+          }
+        });
         job.status = "completed";
       } catch (error) {
         job.error = safeError(error);

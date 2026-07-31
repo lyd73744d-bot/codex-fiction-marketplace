@@ -6,9 +6,10 @@ const os = require("node:os");
 const path = require("node:path");
 
 async function main() {
-  const { handle, createRuntime } = require("../server/mcp-server");
+  const { handle, createRuntime, safeMcpError } = require("../server/mcp-server");
   const pkg = require("../package.json");
   const onboarding = require("../server/onboarding-state");
+  assert.match(safeMcpError({ code: "RATE_LIMITED" }), /限流/u, "rate limits need a distinct user-facing error");
 
   const onboardingDir = fs.mkdtempSync(path.join(os.tmpdir(), "zizhuji-onboarding-"));
   const onboardingPath = path.join(onboardingDir, "state.json");
@@ -131,6 +132,9 @@ async function main() {
     async callModels(input) {
       lastGatewayCallInput = { ...input };
       if (input.taskLabel === "background-test") {
+        if (typeof input.onDelta === "function") {
+          await input.onDelta("后台流式正文已经返回一段。\n\n");
+        }
         await new Promise((resolve) => setTimeout(resolve, 40));
       }
       const model = input.modelIds[0];
@@ -169,7 +173,7 @@ async function main() {
   const expected = [
     "fiction_ensure_gateway", "fiction_open_gateway_login", "fiction_account_status",
     "fiction_list_models", "fiction_recommend_models", "fiction_list_model_tasks",
-    "fiction_generate_to_file", "fiction_generation_status", "fiction_write_artifact", "fiction_write_local_candidate",
+    "fiction_generate_to_file", "fiction_continue_artifact", "fiction_generation_status", "fiction_write_artifact", "fiction_write_local_candidate",
     "fiction_read_artifact", "fiction_list_artifacts",
     "fiction_optimize_with_models", "fiction_compare_style", "fiction_smoke_live_gateway"
   ];
@@ -187,6 +191,8 @@ async function main() {
   assert.strictEqual(definitions.get("fiction_generate_to_file").inputSchema.properties.authorConfirmed.type, "boolean");
   assert.strictEqual(definitions.get("fiction_generate_to_file").inputSchema.properties.background.type, "boolean");
   assert.strictEqual(definitions.get("fiction_generate_to_file").inputSchema.properties.minChars.type, "number");
+  assert.deepStrictEqual(definitions.get("fiction_continue_artifact").inputSchema.required, ["projectDir", "sourcePath", "modelIds", "authorConfirmed"]);
+  assert.strictEqual(definitions.get("fiction_continue_artifact").inputSchema.properties.background.type, "boolean");
   assert.deepStrictEqual(definitions.get("fiction_generation_status").inputSchema.required, ["jobId"]);
   assert.ok(!definitions.get("fiction_optimize_with_models").inputSchema.properties.modelId, "optimize must not expose singular modelId");
   assert.strictEqual(definitions.get("fiction_optimize_with_models").inputSchema.properties.modelIds.type, "array");
@@ -292,6 +298,8 @@ async function main() {
     }
     assert.strictEqual(backgroundStatus.status, "completed", "background generation did not complete");
     assert.ok(fs.existsSync(backgroundStatus.result.artifact.path), "background artifact txt missing");
+    assert.ok(backgroundStatus.progress && backgroundStatus.progress.state === "completed", "background generation progress was not exposed");
+    assert.ok(backgroundStatus.progress.chars > 0, "background article inspection did not report chars");
 
     const modelRecordBeforeLocal = fs.readFileSync(gen.artifact.memoryRecord.path, "utf8");
     const local = await callTool("fiction_write_local_candidate", { projectDir, content: "本地候选正文。", title: "本地" });

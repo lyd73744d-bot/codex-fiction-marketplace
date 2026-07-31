@@ -44,6 +44,7 @@ function safeMcpError(cause) {
     GATEWAY_UNAVAILABLE: "Model gateway is unavailable.",
     SERVER_OFFLINE: "网关不在线或无法访问。",
     UPSTREAM_TIMEOUT: "模型生成超时，本次没有完成。请稍后重试或换一个模型。",
+    RATE_LIMITED: "模型线路暂时限流；未收到正文时已有限重试一次，请稍后再试。",
     EMPTY_MODEL_OUTPUT: "模型返回为空，请换模型或重试。",
     HARD_GATE_FAILED: "候选未通过硬门禁，请检查 blockers 后重写。"
     , AUTHOR_CONFIRMATION_REQUIRED: "本次模型调用尚未获得作者确认。请先询问作者是否使用这个模型。",
@@ -83,7 +84,7 @@ function resolveGateway(options = {}) {
       balance: primary.balance ?? -1,
       sessionOptions
     });
-    const useHybrid = options.hybrid !== false && process.env.FICTION_DIRECTOR_HYBRID !== "0";
+    const useHybrid = options.hybrid === true || process.env.FICTION_DIRECTOR_HYBRID === "1";
     if (!useHybrid) return openai;
     return createHybridGateway({
       primary: openai,

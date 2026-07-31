@@ -1,9 +1,8 @@
 {
   "version": "4.2.0",
-  "fullVersion": "4.2.0+codex.20260731025927",
-  "gateway": "https://api.nanshanyougui.xyz",
-  "relay": "https://api.ssycai.com",
-  "updatedAt": "2026-07-31T10:59:27+08:00",
+  "fullVersion": "4.2.0",
+  "gateway": "https://nanshanyougui.xyz",
+  "updatedAt": "2026-07-31T15:30:00+08:00",
   "preferredModel": "claude-opus-5",
   "models": [
     {
@@ -35,53 +34,11 @@
       "flagship": true
     },
     {
-      "id": "gemini-3.1-pro-preview",
-      "credits": 12,
+      "id": "claude-sonnet-4-6",
+      "credits": 10,
       "available": true,
       "status": "live",
       "flagship": false
-    },
-    {
-      "id": "gemini-3.5-flash",
-      "credits": 8,
-      "available": true,
-      "status": "live",
-      "flagship": false
-    },
-    {
-      "id": "glm-5.2",
-      "credits": 8,
-      "available": true,
-      "status": "live",
-      "flagship": false
-    },
-    {
-      "id": "seed-2.1-pro",
-      "credits": 20,
-      "available": true,
-      "status": "live",
-      "flagship": false
-    },
-    {
-      "id": "kimi-k2.6",
-      "credits": 20,
-      "available": true,
-      "status": "live",
-      "flagship": false
-    },
-    {
-      "id": "qwen3.7-max",
-      "credits": 5,
-      "available": true,
-      "status": "live",
-      "flagship": false
-    },
-    {
-      "id": "grok-4.5",
-      "credits": 5,
-      "available": true,
-      "status": "live",
-      "flagship": true
     }
   ],
   "notes": {
@@ -89,9 +46,8 @@
       "claude-opus-5",
       "claude-sonnet-5"
     ],
-    "claude_relay": "https://api.ssycai.com",
-    "grok_relay": "https://nanshanyougui.xyz/v1",
-    "gateway_role": "api.nanshanyougui.xyz keeps plugin accounts, credits and exact one-route-per-model routing",
+    "primary_route": "https://nanshanyougui.xyz/v1",
+    "gateway_role": "OpenAI-compatible primary route for the installed plugin",
     "request_concurrency": "unlimited"
   }
 }

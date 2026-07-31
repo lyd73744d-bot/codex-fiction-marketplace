@@ -1,6 +1,6 @@
 {
   "name": "longform-fiction-director",
-  "version": "4.2.0+codex.20260731025927",
+  "version": "4.2.0+codex.20260731073113",
   "description": "\u603b\u8d23\u7f16\u578b\u4e2d\u6587\u957f\u7bc7\u5199\u4f5c\u63d2\u4ef6\uff1aCodex \u8d1f\u8d23\u5f15\u5bfc\u3001\u8111\u6d1e\u3001\u7814\u7a76\u3001\u9879\u76ee\u5efa\u6863\u3001\u6837\u4e66\u5b66\u4e60\u3001\u4e8b\u5b9e\u53f0\u8d26\u3001\u6587\u98ce\u951a\u70b9\u4e0e\u5ba1\u7a3f\uff1b\u5916\u90e8\u5199\u4f5c\u6a21\u578b\u7ecf\u4f5c\u8005\u5f53\u6b21\u540c\u610f\u540e\u8d1f\u8d23\u6b63\u6587\u521d\u7a3f\u548c\u4f18\u5316\uff1bMCP \u540c\u65f6\u63d0\u4f9b\u672c\u5730\u6838\u5fc3\u670d\u52a1\u548c\u7f51\u5173\u8c03\u7528\u3002",
   "author": {
     "name": "\u5199\u5c0f\u8bf4\u771f\u7684\u592a\u7b80\u5355\u4e86"
@@ -16,7 +16,7 @@
       "Codex lead-editor role; external models write prose",
       "Chat-first writing coach",
       "Stream-first multi-model generate-to-txt",
-      "20 MCP tools: 15 gateway and 5 local core",
+      "21 MCP tools: 16 gateway and 5 local core",
       "Local project scaffolding and fact ledger",
       "Authorized sample-book import with sourced long-form excerpts",
       "Plot, dialogue and narrative-voice comparison",

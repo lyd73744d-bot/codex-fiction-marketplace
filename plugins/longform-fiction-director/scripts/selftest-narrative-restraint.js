@@ -50,9 +50,14 @@ assert.ok(FOCUS_HINTS.narration.includes("不替读者翻译潜台词"), "narrat
 assert.ok(main.includes("非施工单") && main.includes("流程腔"), "draft handoff misses whole-chapter anti-checklist rule");
 assert.ok(humanizer.includes("整章专项：拆除细纲验收流程"), "humanizer misses whole-chapter process-voice diagnosis");
 assert.ok(deslop.includes("细纲验收流程腔"), "deslop self-check does not detect brief-driven narration");
-assert.ok(chapterCard.includes("不要要求模型逐条兑现笔记"), "chapter notes still behave like executable instructions");
+assert.ok(chapterCard.includes("不要要求模型逐条兑现细纲"), "chapter notes still behave like executable instructions");
 assert.ok(chapterCard.includes("从什么状态走向什么状态") && chapterCard.includes("先做 A、再做 B、最后发现 C"), "chapter note policy still permits action-order briefs");
-assert.ok(chapterTemplate.includes("人物、关系或局势") && chapterTemplate.includes("动作顺序"), "chapter note template still asks for a miniature scene list");
+assert.ok(chapterCard.includes("重要章节可以更充分") && chapterCard.includes("过渡章节可以更短") && chapterCard.includes("不是达标线"), "chapter note policy still collapses detailed briefs into summaries");
+assert.ok(chapterCard.includes("相关人物") && chapterCard.includes("暂时没有说透"), "chapter note policy misses character response or information restraint");
+assert.ok(chapterCard.includes("不强制七项字段") && chapterCard.includes("不固定两到四个场景") && chapterCard.includes("不规定影响后续几章"), "chapter note policy copied a rigid checklist");
+assert.ok(chapterTemplate.includes("相关人物出于各自处境") && chapterTemplate.includes("施工顺序"), "chapter note template lacks natural causal density");
+assert.ok(chapterTemplate.startsWith("# 当前章细纲"), "chapter note template still uses the old ambiguous title");
+assert.ok(!chapterTemplate.includes("## 从哪里接着写") && !chapterTemplate.includes("## 别写错"), "chapter note template still presents a fill-in form");
 assert.ok(hookChecklist.includes("不要为了证明“能抓人”另造事件") && hookChecklist.includes("不强制悬念"), "optional platform review still rewards formulaic urgency");
 assert.ok(gates.includes("逐项展示和验收设定"), "quality gate misses brief-driven process voice");
 assert.ok(scenarios.some((item) => item.id === 10 && item.expected.includes("细纲栏目")), "whole-chapter process-voice regression scenario missing");
