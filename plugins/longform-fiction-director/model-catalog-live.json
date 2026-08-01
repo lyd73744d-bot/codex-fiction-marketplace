@@ -1,6 +1,6 @@
 {
-  "version": "4.2.5",
-  "fullVersion": "4.2.5+codex.20260801143053",
+  "version": "4.3",
+  "fullVersion": "4.3.0",
   "gateway": "https://api.nanshanyougui.xyz",
   "updatedAt": "2026-08-01T22:31:06+08:00",
   "preferredModel": "claude-opus-4-6",

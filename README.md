@@ -29,7 +29,7 @@ codex plugin add longform-fiction-director@zizhuji-fiction
 
 **写小说真的太简单了 / longform-fiction-director**
 
-- 版本：`4.2.5`（安装包使用时间戳缓存版本）
+- 版本：`4.3`（后续按 `4.4`、`4.5` 递增）
 - 对话前台责编教练
 - 5 个本地核心工具：项目建档、样书学习、研究、事实库、文风锚点
 - 16 个网关与候选稿工具；每次调用外部模型前由作者确认
