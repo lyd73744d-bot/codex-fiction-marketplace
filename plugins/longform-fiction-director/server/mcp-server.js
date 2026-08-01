@@ -53,7 +53,7 @@ function safeMcpError(cause) {
     GATEWAY_UNAVAILABLE: "Model gateway is unavailable.",
     SERVER_OFFLINE: "本机连接网关失败。请重启插件任务后重试；诊断码已保留。",
     UPSTREAM_TIMEOUT: "模型生成超时，本次没有完成。请稍后重试或换一个模型。",
-    RATE_LIMITED: "模型线路暂时限流；未收到正文时已有限重试一次，请稍后再试。",
+    RATE_LIMITED: "模型线路暂时限流；本次没有自动重试，请稍后由作者决定是否重新提交。",
     EMPTY_MODEL_OUTPUT: "模型返回为空，请换模型或重试。",
     HARD_GATE_FAILED: "候选未通过硬门禁，请检查 blockers 后重写。"
     , AUTHOR_CONFIRMATION_REQUIRED: "本次模型调用尚未获得作者确认。请先询问作者是否使用这个模型。",

@@ -34,13 +34,16 @@ async function main() {
   const skill = fs.readFileSync(path.join(pluginRoot, "skills", "longform-fiction-director", "SKILL.md"), "utf8");
   const modelIds = catalog.models.map((item) => item.id);
 
-  assert.strictEqual(modelIds.length, 9, "shipped catalog must match the 9 retained live models");
+  assert.strictEqual(modelIds.length, 12, "shipped catalog must match the 12 retained live models");
   assert.strictEqual(catalog.preferredModel, "claude-opus-4-6");
   assert.ok(modelIds.includes("glm-5.2"), "verified GLM route is missing from the shipped catalog");
   assert.ok(modelIds.includes("minimax-m3"), "verified MiniMax route is missing from the shipped catalog");
   assert.ok(modelIds.includes("kimi-k3"), "verified Kimi K3 route is missing from the shipped catalog");
   assert.ok(modelIds.includes("gemini-3.5-flash"), "verified Gemini Flash route is missing from the shipped catalog");
-  assert.ok(!modelIds.includes("deepseek-v4-pro") && !modelIds.includes("seed-2.1-pro") && !modelIds.includes("grok-4.5"));
+  assert.ok(modelIds.includes("seed-2.1-pro") && modelIds.includes("seed-2.1-turbo"), "verified LDW Seed routes are missing from the shipped catalog");
+  assert.ok(modelIds.includes("grok-4.5"), "verified Grok backup route is missing from the shipped catalog");
+  assert.strictEqual(catalog.models.find((item) => item.id === "grok-4.5")?.credits, 5, "Grok backup route must cost 5 credits");
+  assert.ok(!modelIds.includes("deepseek-v4-pro"));
   assert.ok(!modelIds.includes("claude-opus-5") && !modelIds.includes("claude-opus-4-8"));
   assert.ok(manifest.interface.defaultPrompt.some((line) => line.includes("直接问我是开新书还是接着写旧书")));
   assert.ok(manifest.interface.defaultPrompt.some((line) => line.includes("每次调用其他模型前都问我是否使用")));
@@ -91,9 +94,31 @@ async function main() {
   const recommendation = decode(await tools.call("fiction_recommend_models", { task: "draft", mode: "deep", maxPerRole: 1 }));
   assert.ok(recommendation.primaryModelId, "writing guidance did not recommend a model");
   assert.ok(modelIds.includes(recommendation.primaryModelId), "guidance recommended a removed model");
+  assert.ok(!JSON.stringify(recommendation).includes("grok-4.5"), "slow backup model must not be recommended automatically");
   assert.ok(!JSON.stringify(recommendation).includes('"credits"'), "writing guidance exposed credits");
   assert.strictEqual(popupCalls, 0, "model recommendation opened login");
   assert.strictEqual(modelCalls, 0, "model recommendation generated prose");
+
+  const deepLong = decode(await tools.call("fiction_recommend_models", {
+    task: "draft", mode: "deep", targetChars: 5000, maxPerRole: 1
+  }));
+  assert.strictEqual(deepLong.primaryModelId, "claude-opus-4-6", "deep long-form routing ignored verified prose quality");
+  assert.strictEqual(deepLong.transport.streamRetries, 1, "router advertised hidden retries");
+  assert.strictEqual(deepLong.transport.nonStreamFallback, false, "router advertised a second transport submission");
+
+  const quickLong = decode(await tools.call("fiction_recommend_models", {
+    task: "draft", mode: "quick", targetChars: 5000, maxPerRole: 1
+  }));
+  assert.strictEqual(quickLong.primaryModelId, "gemini-3.5-flash", "quick long-form routing ignored verified fast model");
+  assert.ok(!JSON.stringify(quickLong).includes("gpt-image-2"), "image model leaked into writing recommendations");
+
+  const manualGrok = decode(await tools.call("fiction_recommend_models", {
+    task: "draft",
+    mode: "quick",
+    maxPerRole: 1,
+    authorPrefer: ["grok-4.5"]
+  }));
+  assert.strictEqual(manualGrok.primaryModelId, "grok-4.5", "explicit Grok selection was not preserved");
 
   const projectDir = path.join(tempRoot, "guided-novel");
   const localTools = createLocalCoreTools();

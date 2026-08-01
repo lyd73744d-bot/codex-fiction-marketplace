@@ -186,13 +186,125 @@ function repeatedParagraphCount(text) {
   return repeats;
 }
 
+const LEDGER_SPECS = Object.freeze([
+  { key: "characters", label: "人物台账", files: ["02_人物台账.md"] },
+  { key: "timeline", label: "时间线", files: ["04_时间线.md"] },
+  { key: "foreshadowing", label: "伏笔管理", files: ["05_伏笔管理.md"] },
+  { key: "facts", label: "事实库", files: ["08_事实库_防OOC.md", "12_事实库_防OOC.md"] }
+]);
+
+const TEMPLATE_GUIDANCE = [
+  /^重要人物都记录在这里/u,
+  /^时间不需要精确到日期/u,
+  /^伏笔不是待办剧情/u,
+  /^这里只记录/u,
+  /^只记录已核验/u
+];
+
+function markdownRows(text) {
+  const rows = [];
+  for (const line of String(text || "").split(/\r?\n/u)) {
+    const trimmed = line.trim();
+    if (!trimmed.startsWith("|") || !trimmed.endsWith("|")) continue;
+    const cells = trimmed.slice(1, -1).split("|").map((cell) => cell.trim());
+    if (!cells.some(Boolean)) continue;
+    if (cells.every((cell) => !cell || /^:?-{3,}:?$/u.test(cell))) continue;
+    const joined = cells.join(" ");
+    if (["名字", "时间/相对顺序", "线索"].includes(cells[0] || "")) continue;
+    if (/已出现\s*\/\s*推进中\s*\/\s*已回收\s*\/\s*作废/u.test(joined)
+      && cells.filter(Boolean).length === 1) continue;
+    rows.push(cells);
+  }
+  return rows;
+}
+
+function markdownEntries(text) {
+  const entries = markdownRows(text).map((cells) => cells.filter(Boolean).join(" | "));
+  for (const line of String(text || "").split(/\r?\n/u)) {
+    const trimmed = line.trim();
+    if (!trimmed || /^#{1,6}\s/u.test(trimmed) || /^>/u.test(trimmed) || /^\|/u.test(trimmed)) continue;
+    const bullet = trimmed.match(/^[-*+]\s+(.+)$/u);
+    const value = (bullet ? bullet[1] : trimmed).trim();
+    if (!value || value === "-" || TEMPLATE_GUIDANCE.some((pattern) => pattern.test(value))) continue;
+    entries.push(value);
+  }
+  return [...new Set(entries)].slice(0, 200);
+}
+
+function cleanLedgerName(value) {
+  const name = String(value || "").replace(/[*_`]/gu, "").trim();
+  if (!name || name.length > 40 || /^(名字|人物|角色|时间|线索|待确认|未确认|已核验)/u.test(name)) return "";
+  return name;
+}
+
+async function readLedgerSummary(projectDir, spec, recentText) {
+  const auxiliaryDir = path.join(projectDir, "辅助文档");
+  let selectedPath = null;
+  for (const file of spec.files) {
+    const candidate = path.join(auxiliaryDir, file);
+    try {
+      if ((await fsp.stat(candidate)).isFile()) { selectedPath = candidate; break; }
+    } catch {}
+  }
+  if (!selectedPath) {
+    return { key: spec.key, label: spec.label, status: "missing", path: null, entryCount: 0 };
+  }
+
+  try {
+    const raw = await fsp.readFile(selectedPath, "utf8");
+    const rows = markdownRows(raw);
+    const entries = markdownEntries(raw);
+    const summary = {
+      key: spec.key,
+      label: spec.label,
+      status: entries.length ? "populated" : "empty",
+      path: selectedPath,
+      relativePath: projectRelative(projectDir, selectedPath),
+      entryCount: entries.length
+    };
+
+    if (spec.key === "characters") {
+      const headingNames = [...raw.matchAll(/^##+\s+(.+)$/gmu)].map((match) => cleanLedgerName(match[1]));
+      const names = [...new Set([...rows.map((row) => cleanLedgerName(row[0])), ...headingNames].filter(Boolean))].slice(0, 80);
+      summary.names = names;
+      summary.mentionedInRecentWriting = names.filter((name) => recentText.includes(name));
+    } else if (spec.key === "timeline") {
+      const anchors = [...new Set(rows.map((row) => String(row[0] || "").trim()).filter(Boolean))].slice(0, 80);
+      summary.anchors = anchors;
+      summary.mentionedInRecentWriting = anchors.filter((anchor) => anchor.length >= 2 && recentText.includes(anchor));
+    } else if (spec.key === "foreshadowing") {
+      const active = rows.filter((row) => !/已回收|作废/u.test(row.join(" ")))
+        .map((row) => String(row[0] || "").trim()).filter(Boolean).slice(0, 80);
+      summary.activeEntries = active;
+      summary.activeCount = active.length;
+    } else if (spec.key === "facts") {
+      const unresolved = entries.filter((entry) => /待核验|待确认|未知|未定|存疑|TODO|\?{2,}|？{2,}/iu.test(entry));
+      summary.unresolvedCount = unresolved.length;
+      summary.unresolvedEntries = unresolved.slice(0, 40);
+    }
+    return summary;
+  } catch (error) {
+    return {
+      key: spec.key,
+      label: spec.label,
+      status: "error",
+      path: selectedPath,
+      relativePath: projectRelative(projectDir, selectedPath),
+      entryCount: 0,
+      error: publicProgressError(error)
+    };
+  }
+}
+
 async function inspectExistingWriting(projectDir, reportPath) {
   const files = await collectExistingWritingFiles(projectDir);
   const results = [];
+  const recentTextParts = [];
   for (const item of files) {
     try {
       const raw = await fsp.readFile(item.path, "utf8");
       const text = raw.length > 1_000_000 ? raw.slice(-1_000_000) : raw;
+      recentTextParts.push(text);
       const inspection = inspectChapter(text, { minChars: 0 });
       results.push({
         path: item.path,
@@ -212,13 +324,27 @@ async function inspectExistingWriting(projectDir, reportPath) {
       });
     }
   }
+  const recentText = recentTextParts.join("\n").slice(-2_000_000);
+  const ledgerItems = [];
+  for (const spec of LEDGER_SPECS) ledgerItems.push(await readLedgerSummary(projectDir, spec, recentText));
+  const ledgerStatus = {
+    checked: ledgerItems.length,
+    populated: ledgerItems.filter((item) => item.status === "populated").length,
+    empty: ledgerItems.filter((item) => item.status === "empty").length,
+    missing: ledgerItems.filter((item) => item.status === "missing").length,
+    errors: ledgerItems.filter((item) => item.status === "error").length
+  };
   const report = {
     checkedAt: new Date().toISOString(),
     projectDir,
     filesChecked: results.length,
     filesWithIssues: results.filter((item) => item.error || item.abruptEnding || item.repeatedParagraphs > 0 || item.issues?.length).length,
     results,
-    note: "等待模型返回期间的本地只读检查；未调用额外模型，未修改正式正文或事实台账。"
+    ledgers: {
+      ...ledgerStatus,
+      items: ledgerItems
+    },
+    note: "等待模型返回期间的本地只读检查；台账结果只表示文件状态与文字覆盖，不据此擅自判定事实矛盾。未调用额外模型，未修改正式正文或事实台账。"
   };
   await writeTextAtomic(reportPath, JSON.stringify(report, null, 2) + "\n");
   return report;
@@ -301,7 +427,14 @@ async function createStreamCheckpoint({
       state: "completed",
       reportPath: waitingReviewPath,
       filesChecked: report.filesChecked,
-      filesWithIssues: report.filesWithIssues
+      filesWithIssues: report.filesWithIssues,
+      ledgersChecked: report.ledgers.checked,
+      ledgerStatus: {
+        populated: report.ledgers.populated,
+        empty: report.ledgers.empty,
+        missing: report.ledgers.missing,
+        errors: report.ledgers.errors
+      }
     };
     await publish(currentState).catch(() => {});
   }).catch(async (error) => {
@@ -510,7 +643,7 @@ async function listArtifacts(projectDir, { limit = 30 } = {}) {
 }
 
 /**
- * Stream-first generation with gateway retries, then non-stream fallback inside gateway.
+ * Stream-first generation with one upstream submission per explicit author authorization.
  * Always persists complete text to Codex候选/*.txt (+ .body.txt plain for model reread).
  */
 async function generateToArtifact({
@@ -524,7 +657,7 @@ async function generateToArtifact({
   prompt = "",
   taskLabel = "fiction",
   previewChars = 800,
-  streamRetries = 2,
+  streamRetries = 1,
   outerAttempts = 1,
   fallbackChain = false,
   minChars = 0,
@@ -555,7 +688,7 @@ async function generateToArtifact({
   let activeCheckpoint = null;
   let lastProgressPath = null;
   const attempts = 1;
-  const retries = Math.max(1, Math.min(Number(streamRetries) || 1, 2));
+  const retries = 1;
   const useFallback = fallbackChain === true && ids.length > 1;
 
   async function callOne(modelId) {
@@ -634,7 +767,7 @@ async function generateToArtifact({
         degraded = fb.degraded;
         fallbackAttempts = fb.attempts;
       } else {
-        // single model or explicit multi-pass: still call first id with stream retries inside gateway
+        // Single model: one stream submission. A later continuation needs new author authorization.
         content = await callOne(ids[0]);
         modelId = ids[0];
       }
@@ -753,7 +886,7 @@ async function continueArtifactToFile({
   chapterNo = "",
   minAdditionalChars = 0,
   maxTokens = 32000,
-  streamRetries = 2,
+  streamRetries = 1,
   fallbackChain = false,
   onProgress
 } = {}) {
@@ -835,5 +968,6 @@ module.exports = {
   extractModelPayload,
   hasAbruptProseEnding,
   joinContinuationText,
-  renameWithRetry
+  renameWithRetry,
+  inspectExistingWriting
 };

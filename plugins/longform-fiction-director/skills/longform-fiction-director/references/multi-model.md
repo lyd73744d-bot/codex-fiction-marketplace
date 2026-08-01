@@ -13,12 +13,14 @@
 
 | 任务 | 角色 | 默认倾向 |
 |---|---|---|
-| 脑洞/市场 | 探索 | minimax-m3 / qwen3.7-max / gemini-3.5-flash / glm-5.2 |
-| 大纲/细纲/章节构思 | Codex 总责编默认本地完成；需要第二意见才调用 | glm-5.2 / claude-sonnet-5 / gemini-3.1-pro-preview / kimi-k3 |
-| 正文候选 | 主写 | claude-sonnet-5 / glm-5.2 / kimi-k3 / minimax-m3；需要旗舰时再选 claude-opus-4-6 |
-| 去AI味 | 风格 | claude-sonnet-5 / glm-5.2 / kimi-k3 |
+| 脑洞/市场 | 探索 | seed-2.1-turbo / minimax-m3 / qwen3.7-max / gemini-3.5-flash / glm-5.2 |
+| 大纲/细纲/章节构思 | Codex 总责编默认本地完成；需要第二意见才调用 | glm-5.2 / claude-sonnet-5 / seed-2.1-pro / gemini-3.1-pro-preview / kimi-k3 |
+| 正文候选 | 主写 | claude-sonnet-5 / seed-2.1-pro / glm-5.2 / kimi-k3 / minimax-m3；需要旗舰时再选 claude-opus-4-6 |
+| 去AI味 | 风格 | claude-sonnet-5 / seed-2.1-pro / glm-5.2 / kimi-k3 |
 | 质检 | 审核+连续 | claude-sonnet-5 / glm-5.2 / gemini-3.1-pro-preview；硬伤再上 Claude Opus |
 | 定稿 | 成稿 | claude-opus-4-6（作者确认前） |
+
+`grok-4.5` 是 5 积分的慢速备用线路。仅在作者明确点名时手动调用，不进入默认推荐，也不自动替换其他失败模型。
 
 ## Codex 对作者的说话方式
 
@@ -33,7 +35,7 @@
 长文传输默认：
 
 1. callModels 先走流式请求并持续保存已收到内容
-2. 只有成功返回空流时才回退一次非流式协议兼容；超时或已有部分正文不重复提交
+2. 空流也不切换非流式协议重发；网络、限流、5xx、超时或已有部分正文均不重复提交
 3. 作者当次确认后，业务层用 fiction_generate_to_file（authorConfirmed=true）把全文写 txt
 4. 展示/质检都读文件，不靠聊天窗口里的半截流
 
@@ -50,7 +52,7 @@
 ## 传输策略（单次流式 + 完整落盘）
 
 1. 长文只提交一次流式请求
-2. 未收到正文时遇到明确网络/限流/5xx 故障，最多自动重试一次；超时或已有部分正文不重发
+2. 网络、限流、空流、5xx、超时或部分正文都不自动重发；任何重试或续写都重新征得作者确认
 3. 只有成功返回空流时才尝试一次非流式协议兼容
 4. 写入 Codex候选/*.txt（含 .body.txt）
 5. txt 可被模型再次读取做质检/去AI味/文风对比

@@ -94,7 +94,7 @@ async function optimizeWithModels({
       system,
       prompt,
       taskLabel: "optimize-" + mode,
-      streamRetries: 2,
+      streamRetries: 1,
       outerAttempts: 1,
       minChars: mode === "review" ? 0 : Math.floor(sourceChars * 0.8),
       maxTokens,

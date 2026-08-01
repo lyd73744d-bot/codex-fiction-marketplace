@@ -63,7 +63,7 @@ async function main() {
           system: "只返回小说正文，不解释测试，不列提纲。",
           modelIds: [task.model],
           taskLabel: `stress-${task.index}`,
-          streamRetries: 2,
+          streamRetries: 1,
           maxTokens
         });
         const content = String(response.content || "");

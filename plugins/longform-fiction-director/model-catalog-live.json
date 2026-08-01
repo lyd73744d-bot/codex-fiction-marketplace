@@ -1,24 +1,29 @@
 {
   "version": "4.2.5",
-  "fullVersion": "4.2.5+codex.20260801041522",
+  "fullVersion": "4.2.5+codex.20260801143053",
   "gateway": "https://api.nanshanyougui.xyz",
-  "updatedAt": "2026-08-01T12:15:22+08:00",
+  "updatedAt": "2026-08-01T22:31:06+08:00",
   "preferredModel": "claude-opus-4-6",
   "models": [
-    { "id": "claude-sonnet-5", "credits": 10, "available": true, "status": "live", "flagship": true },
-    { "id": "claude-opus-4-6", "credits": 20, "available": true, "status": "live", "flagship": true },
-    { "id": "gemini-3.1-pro-preview", "credits": 10, "available": true, "status": "live", "flagship": true },
-    { "id": "glm-5.2", "credits": 10, "available": true, "status": "live", "flagship": true },
-    { "id": "kimi-k3", "credits": 10, "available": true, "status": "live", "flagship": true },
-    { "id": "minimax-m3", "credits": 5, "available": true, "status": "live", "flagship": false },
-    { "id": "gemini-3.5-flash", "credits": 5, "available": true, "status": "live", "flagship": false },
-    { "id": "qwen3.7-max", "credits": 5, "available": true, "status": "live", "flagship": true },
-    { "id": "gpt-image-2", "credits": 50, "available": true, "status": "live", "flagship": false, "isCover": true }
+    { "id": "claude-sonnet-5", "credits": 10, "available": true, "status": "live", "flagship": true, "longForm": "variable" },
+    { "id": "claude-opus-4-6", "credits": 20, "available": true, "status": "live", "flagship": true, "longForm": "verified" },
+    { "id": "seed-2.1-pro", "credits": 20, "available": true, "status": "live", "flagship": true, "longForm": "unverified" },
+    { "id": "seed-2.1-turbo", "credits": 10, "available": true, "status": "live", "flagship": false, "longForm": "unverified" },
+    { "id": "gemini-3.1-pro-preview", "credits": 10, "available": true, "status": "live", "flagship": true, "longForm": "verified" },
+    { "id": "glm-5.2", "credits": 10, "available": true, "status": "live", "flagship": true, "longForm": "verified" },
+    { "id": "kimi-k3", "credits": 10, "available": true, "status": "live", "flagship": true, "longForm": "variable" },
+    { "id": "minimax-m3", "credits": 5, "available": true, "status": "live", "flagship": false, "longForm": "variable" },
+    { "id": "gemini-3.5-flash", "credits": 5, "available": true, "status": "live", "flagship": false, "longForm": "verified" },
+    { "id": "qwen3.7-max", "credits": 5, "available": true, "status": "live", "flagship": true, "longForm": "variable" },
+    { "id": "grok-4.5", "credits": 5, "available": true, "status": "live", "flagship": false, "backupOnly": true, "longForm": "manual-only" },
+    { "id": "gpt-image-2", "credits": 50, "available": true, "status": "live", "flagship": false, "isCover": true, "longForm": "not-applicable" }
   ],
   "notes": {
     "primary_route": "https://api.nanshanyougui.xyz",
     "gateway_role": "ZiZiZhuJi account gateway with login, credit shop, redemption, and live model catalog.",
     "request_concurrency": "unlimited",
-    "catalog_source": "server displayModels"
+    "catalog_source": "server displayModels",
+    "seed_route": "LDW exact-model routes; no cross-model fallback",
+    "grok_route": "Exact-model slow backup route; manual selection only"
   }
 }

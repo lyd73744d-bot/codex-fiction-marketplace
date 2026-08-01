@@ -11,6 +11,7 @@ const {
   selectPhysicalIpv4
 } = require("../server/fake-ip-aware-fetch");
 const { createOpenAiCompatibleGateway } = require("../server/openai-compatible-gateway");
+const { createHybridGateway } = require("../server/hybrid-gateway");
 const { generateToArtifact, continueArtifactToFile, joinContinuationText, writeArtifact, renameWithRetry } = require("../server/artifact-pipeline");
 
 function jsonResponse(payload, status = 200) {
@@ -207,7 +208,7 @@ async function main() {
     modelIds: ["claude-opus-5"],
     streamRetries: 4
   }), "SERVER_ERROR");
-  assert.strictEqual(busy.generationCalls(), 2, "clear pre-output 503 did not receive one bounded retry");
+  assert.strictEqual(busy.generationCalls(), 1, "clear pre-output 503 was resubmitted without author approval");
 
   const rateLimited = clientWithModelFailure(() => jsonResponse({ ok: false, message: "too many requests" }, 429));
   const rateLimitedError = await expectCode(rateLimited.client.callModels({
@@ -216,7 +217,33 @@ async function main() {
     streamRetries: 4
   }), "RATE_LIMITED");
   assert.match(rateLimitedError.publicMessage, /限流/u, "rate-limit error did not provide a usable public message");
-  assert.strictEqual(rateLimited.generationCalls(), 2, "rate-limited pre-output request did not use one bounded retry");
+  assert.strictEqual(rateLimited.generationCalls(), 1, "rate-limited request was resubmitted without author approval");
+
+  const unauthorized = clientWithModelFailure(() => jsonResponse({ ok: false, message: "expired" }, 401));
+  await expectCode(unauthorized.client.callModels({
+    prompt: "写一章长文",
+    modelIds: ["claude-opus-5"],
+    streamRetries: 4
+  }), "AUTH_REQUIRED");
+  assert.strictEqual(unauthorized.generationCalls(), 1, "401 generation was silently refreshed and resubmitted");
+
+  let primaryCalls = 0;
+  let secondaryCalls = 0;
+  const hybrid = createHybridGateway({
+    primary: {
+      allowedModels: ["claude-opus-4-6"],
+      async listModels() { return { models: [{ id: "claude-opus-4-6" }] }; },
+      async callModels() { primaryCalls += 1; throw Object.assign(new Error("primary failed"), { code: "SERVER_ERROR" }); }
+    },
+    secondary: {
+      allowedModels: ["claude-opus-4-6"],
+      async listModels() { return { models: [{ id: "claude-opus-4-6" }] }; },
+      async callModels() { secondaryCalls += 1; return { content: "不应到达备用线路" }; }
+    }
+  });
+  await expectCode(hybrid.callModels({ prompt: "写一章", modelIds: ["claude-opus-4-6"] }), "SERVER_ERROR");
+  assert.strictEqual(primaryCalls, 1, "hybrid primary request count mismatch");
+  assert.strictEqual(secondaryCalls, 0, "hybrid silently resubmitted through another gateway");
 
   const partial = clientWithModelFailure(() => sseResponse("雨打在辕门上。军报只剩半页。", { failAfterContent: true }));
   const partialResult = await partial.client.callModels({
@@ -299,18 +326,16 @@ async function main() {
       return jsonResponse({ choices: [{ message: { content: "空流回退后，正文终于完整返回。" }, finish_reason: "stop" }] });
     }
   });
-  const emptyStreamResult = await emptyStreamDirect.callModels({
+  await expectCode(emptyStreamDirect.callModels({
     prompt: "写一段正文",
     modelIds: ["claude-opus-5"],
     maxTokens: 18000,
     streamRetries: 1
-  });
-  assert.strictEqual(emptyStreamResult.outputs[0].transport, "non_stream_fallback", "empty SSE did not use non-stream fallback");
-  assert.strictEqual(fallbackBodies.length, 2, "empty SSE fallback request count mismatch");
+  }), "RESPONSE_INVALID");
+  assert.strictEqual(fallbackBodies.length, 1, "empty SSE triggered a hidden second request");
   assert.strictEqual(fallbackBodies[0].stream, true);
-  assert.strictEqual(fallbackBodies[1].stream, false);
   assert.strictEqual(fallbackBodies[0].max_tokens, 18000, "requested token budget was not sent upstream");
-  assert.strictEqual(fallbackRequestIds[0], fallbackRequestIds[1], "stream fallback did not reuse the idempotency key");
+  assert.ok(fallbackRequestIds[0], "stream request did not carry an idempotency key");
   assert.strictEqual(
     joinContinuationText("他把回文交给驿卒，文书发出后的第三天", "文书发出后的第三天，县衙来了客人。"),
     "他把回文交给驿卒，文书发出后的第三天，县衙来了客人。",
@@ -334,6 +359,12 @@ async function main() {
   const projectDir = fs.mkdtempSync(path.join(os.tmpdir(), "zizhuji-reliability-"));
   const forwarded = [];
   try {
+    const auxiliaryDir = path.join(projectDir, "辅助文档");
+    fs.mkdirSync(auxiliaryDir, { recursive: true });
+    fs.writeFileSync(path.join(auxiliaryDir, "02_人物台账.md"), "# 人物台账\n\n| 名字 | 身份 |\n|---|---|\n| 卢象升 | 督臣 |\n", "utf8");
+    fs.writeFileSync(path.join(auxiliaryDir, "04_时间线.md"), "# 时间线\n\n| 时间/相对顺序 | 发生的事 |\n|---|---|\n| 崇祯十一年 | 巨鹿行军 |\n", "utf8");
+    fs.writeFileSync(path.join(auxiliaryDir, "05_伏笔管理.md"), "# 伏笔管理\n\n| 线索 | 现在状态 |\n|---|---|\n| 未拆的军报 | 推进中 |\n", "utf8");
+    fs.writeFileSync(path.join(auxiliaryDir, "08_事实库_防OOC.md"), "# 事实库\n\n- 待核验：营地位置。\n", "utf8");
     const result = await generateToArtifact({
       gateway: {
         async callModels(input) {
@@ -352,7 +383,7 @@ async function main() {
     assert.strictEqual(result.ok, true);
     assert.strictEqual(forwarded.length, 1, "artifact pipeline duplicated a successful request");
     assert.strictEqual(forwarded[0].maxTokens, 4096, "maxTokens was not forwarded");
-    assert.strictEqual(forwarded[0].streamRetries, 2, "stream retry clamp mismatch");
+    assert.strictEqual(forwarded[0].streamRetries, 1, "generation did not enforce one submission");
     assert.ok(fs.readFileSync(result.artifact.path, "utf8").includes("\n---\n\n灯亮着"), "artifact header separator is not readable");
     assert.ok(result.progressPath && fs.existsSync(result.progressPath), "stream progress report was not preserved");
     const completedProgress = JSON.parse(fs.readFileSync(result.progressPath, "utf8"));
@@ -362,6 +393,13 @@ async function main() {
       const progress = JSON.parse(fs.readFileSync(result.progressPath, "utf8"));
       return progress.state === "completed" && progress.waitingReview?.state === "completed";
     }, "waiting-period review");
+    const waitingReportPath = JSON.parse(fs.readFileSync(result.progressPath, "utf8")).waitingReview.reportPath;
+    const waitingReport = JSON.parse(fs.readFileSync(waitingReportPath, "utf8"));
+    assert.strictEqual(waitingReport.ledgers.checked, 4, "waiting-period review did not inspect all ledgers");
+    assert.strictEqual(waitingReport.ledgers.populated, 4, "populated ledgers were not recognized");
+    assert.ok(waitingReport.ledgers.items.find((item) => item.key === "characters")?.names.includes("卢象升"), "character ledger names were not summarized");
+    assert.strictEqual(waitingReport.ledgers.items.find((item) => item.key === "foreshadowing")?.activeCount, 1, "active foreshadowing was not summarized");
+    assert.strictEqual(waitingReport.ledgers.items.find((item) => item.key === "facts")?.unresolvedCount, 1, "unresolved fact marker was not summarized");
 
     const progressEvents = [];
     const streamed = await generateToArtifact({
@@ -535,7 +573,7 @@ async function main() {
     fs.rmSync(projectDir, { recursive: true, force: true });
   }
 
-  console.log("PASS selftest-gateway-reliability: no health precheck, bounded retry, partial preservation, txt persistence");
+  console.log("PASS selftest-gateway-reliability: one submission, partial preservation, ledger review, txt persistence");
 }
 
 main().catch((error) => {

@@ -46,7 +46,7 @@ function createOpenAiCompatibleGateway(options = {}) {
   const displayCallsLeft = displayBalance < 0 ? -1 : 999;
   const modelCredits = options.modelCredits && typeof options.modelCredits === "object" && !Array.isArray(options.modelCredits)
     ? options.modelCredits
-    : {"claude-sonnet-5":10,"claude-opus-4-6":20,"gemini-3.1-pro-preview":10,"glm-5.2":10,"kimi-k3":10,"minimax-m3":5,"gemini-3.5-flash":5,"qwen3.7-max":5,"gpt-image-2":50};
+    : {"claude-sonnet-5":10,"claude-opus-4-6":20,"seed-2.1-pro":20,"seed-2.1-turbo":10,"gemini-3.1-pro-preview":10,"glm-5.2":10,"kimi-k3":10,"minimax-m3":5,"gemini-3.5-flash":5,"qwen3.7-max":5,"grok-4.5":5,"gpt-image-2":50};
   const timeoutMs = Number.isSafeInteger(options.timeoutMs) && options.timeoutMs > 0 ? options.timeoutMs : 120_000;
   const streamTimeoutMs = Number.isSafeInteger(options.streamTimeoutMs) && options.streamTimeoutMs > 0 ? options.streamTimeoutMs : DEFAULT_STREAM_TOTAL_TIMEOUT_MS;
   const streamIdleTimeoutMs = Number.isSafeInteger(options.streamIdleTimeoutMs) && options.streamIdleTimeoutMs > 0 ? options.streamIdleTimeoutMs : DEFAULT_STREAM_IDLE_TIMEOUT_MS;
@@ -367,14 +367,13 @@ async function callModels(input = {}) {
         messages.push({ role: "user", content: "Review the previous version and return a complete improved version." });
       }
 
-      const maxStreamAttempts = Number.isSafeInteger(input.streamRetries) ? Math.max(1, Math.min(input.streamRetries, 2)) : 2;
+      const maxStreamAttempts = 1;
       const requestId = input.requestId || crypto.randomUUID();
       let next = "";
       let usage = null;
       let finishReason = null;
       let transport = "none";
       let lastError = null;
-      let allowNonStreamFallback = false;
 
       async function postOnce(stream) {
         const key = await requireApiKey(model);
@@ -404,7 +403,7 @@ async function callModels(input = {}) {
             if (response.status === 401 || response.status === 403) throw new GatewayClientError("AUTH_FAILED");
             if (response.status === 402) throw new GatewayClientError("INSUFFICIENT_BALANCE");
             if (response.status === 429) {
-              const error = new GatewayClientError("RATE_LIMITED", undefined, response.status, "模型线路暂时限流；未收到正文时只会有限重试一次。");
+            const error = new GatewayClientError("RATE_LIMITED", undefined, response.status, "模型线路暂时限流；本次未自动重试，请稍后由作者决定是否重新提交。");
               const retryAfterSeconds = Number(response.headers?.get?.("retry-after"));
               if (Number.isFinite(retryAfterSeconds) && retryAfterSeconds > 0) {
                 error.retryAfterMs = Math.min(Math.round(retryAfterSeconds * 1000), 30_000);
@@ -445,7 +444,6 @@ async function callModels(input = {}) {
             break;
           }
           lastError = new GatewayClientError("EMPTY_MODEL_OUTPUT");
-          allowNonStreamFallback = true;
         } catch (error) {
           const partial = String(error?.partialContent || "").trim();
           if (partial) {
@@ -455,31 +453,7 @@ async function callModels(input = {}) {
             break;
           }
           lastError = toGatewayNetworkError(error, "SERVER_ERROR");
-          allowNonStreamFallback = allowNonStreamFallback
-            || error?.streamUnsupported === true
-            || (["RESPONSE_INVALID", "EMPTY_MODEL_OUTPUT"].includes(String(error?.code || ""))
-              && !String(error?.partialContent || "").trim());
-          if (!isRetryableGenerationError(lastError) || attempt >= maxStreamAttempts) break;
-          await wait(Math.max(generationRetryBaseDelayMs * attempt, Number(lastError?.retryAfterMs) || 0));
-        }
-      }
-
-      if (!(typeof next === "string" && next.trim()) && allowNonStreamFallback) {
-        try {
-          const payload = await postOnce(false);
-          next = payload.content;
-          usage = payload.usage;
-          finishReason = payload.finishReason || null;
-          if (typeof next === "string" && next.trim()) transport = "non_stream_fallback";
-        } catch (error) {
-          const partial = String(error?.partialContent || "").trim();
-          if (partial) {
-            next = partial;
-            finishReason = error?.finishReason || null;
-            transport = "partial_non_stream_fallback";
-          } else {
-            lastError = toGatewayNetworkError(error, "SERVER_ERROR");
-          }
+          break;
         }
       }
 

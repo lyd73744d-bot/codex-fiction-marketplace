@@ -26,18 +26,18 @@ const TASK_ROLES = {
 const ROLE_HINTS = {
   explore: {
     label: "探索/脑洞",
-    prefer: ["minimax-m3", "qwen3.7-max", "gemini-3.5-flash", "glm-5.2"],
+    prefer: ["seed-2.1-turbo", "minimax-m3", "qwen3.7-max", "gemini-3.5-flash", "glm-5.2"],
     avoidHeavy: true,
     why: "要快、要多方向，不值得上最贵模型"
   },
   structure: {
     label: "结构/大纲/细纲",
-    prefer: ["glm-5.2", "claude-sonnet-5", "gemini-3.1-pro-preview", "kimi-k3"],
+    prefer: ["glm-5.2", "claude-sonnet-5", "seed-2.1-pro", "gemini-3.1-pro-preview", "kimi-k3"],
     why: "要因果与节奏，中档推理足够"
   },
   draft: {
     label: "正文主写",
-    prefer: ["claude-sonnet-5", "glm-5.2", "kimi-k3", "minimax-m3", "claude-opus-4-6"],
+    prefer: ["claude-sonnet-5", "seed-2.1-pro", "glm-5.2", "kimi-k3", "minimax-m3", "claude-opus-4-6"],
     why: "主写要稳、文风可控；默认中档，作者点名再用旗舰"
   },
   continuity: {
@@ -47,7 +47,7 @@ const ROLE_HINTS = {
   },
   style: {
     label: "去AI味/润色",
-    prefer: ["claude-sonnet-5", "glm-5.2", "kimi-k3", "claude-opus-4-6"],
+    prefer: ["claude-sonnet-5", "seed-2.1-pro", "glm-5.2", "kimi-k3", "claude-opus-4-6"],
     why: "改味不改剧情，中档写手模型更合适"
   },
   adversary: {
@@ -70,14 +70,37 @@ const ROLE_HINTS = {
 // Fused from zizhuji workflow-model-policy: soft presets only
 const WRITING_MODE_PRESETS = {
   chapterWrite: {
-    quick: ["claude-sonnet-5", "glm-5.2", "kimi-k3", "minimax-m3"],
-    deep: ["claude-opus-4-6", "claude-sonnet-5", "glm-5.2", "kimi-k3"]
+    quick: ["claude-sonnet-5", "seed-2.1-turbo", "glm-5.2", "kimi-k3", "minimax-m3"],
+    deep: ["claude-opus-4-6", "claude-sonnet-5", "seed-2.1-pro", "glm-5.2", "kimi-k3"]
   },
   chapterOptimize: {
-    quick: ["claude-sonnet-5", "glm-5.2"],
-    deep: ["claude-opus-4-6", "claude-sonnet-5", "glm-5.2", "kimi-k3"]
+    quick: ["claude-sonnet-5", "seed-2.1-turbo", "glm-5.2"],
+    deep: ["claude-opus-4-6", "claude-sonnet-5", "seed-2.1-pro", "glm-5.2", "kimi-k3"]
   }
 };
+
+const MANUAL_ONLY_MODELS = new Set(["grok-4.5"]);
+const NON_WRITING_MODELS = new Set(["gpt-image-2"]);
+
+const MODEL_CAPABILITY_PROFILES = Object.freeze({
+  "claude-opus-4-6": { longForm: "verified", note: "长文质量稳定，适合深度正文与定稿" },
+  "gemini-3.1-pro-preview": { longForm: "verified", note: "已验证可返回较长正文" },
+  "glm-5.2": { longForm: "verified", note: "已验证长文能力，速度偏慢" },
+  "gemini-3.5-flash": { longForm: "verified", note: "已验证长文能力，返回较快" },
+  "claude-sonnet-5": { longForm: "variable", note: "文风可用，但实测篇幅有时提前收束" },
+  "kimi-k3": { longForm: "variable", note: "可写正文，但实测篇幅与速度波动" },
+  "minimax-m3": { longForm: "variable", note: "适合中短正文或局部改写" },
+  "qwen3.7-max": { longForm: "variable", note: "适合中短正文或结构任务" },
+  "seed-2.1-pro": { longForm: "unverified", note: "当前线路尚未完成长文实测" },
+  "seed-2.1-turbo": { longForm: "unverified", note: "当前线路仅完成短请求验证" },
+  "grok-4.5": { longForm: "manual-only", note: "慢速备用，只在作者点名时使用" },
+  "gpt-image-2": { longForm: "not-applicable", note: "封面图片模型，不参与文字推荐" }
+});
+
+const LONG_FORM_PRESETS = Object.freeze({
+  deep: ["claude-opus-4-6", "gemini-3.1-pro-preview", "glm-5.2", "gemini-3.5-flash"],
+  quick: ["gemini-3.5-flash", "glm-5.2", "gemini-3.1-pro-preview"]
+});
 
 function normalizeTask(task) {
   const raw = String(task || "draft").trim().toLowerCase().replace(/[\s-]+/g, "_");
@@ -108,7 +131,14 @@ function normalizeMode(mode) {
   return "quick";
 }
 
-function scoreModel(modelId, role, creditsMap = {}, mode = "quick") {
+function modelCapability(modelId) {
+  return MODEL_CAPABILITY_PROFILES[String(modelId || "").toLowerCase()] || {
+    longForm: "unverified",
+    note: "尚无本地长文实测记录"
+  };
+}
+
+function scoreModel(modelId, role, creditsMap = {}, mode = "quick", targetChars = 0) {
   const id = String(modelId || "");
   const prefer = ROLE_HINTS[role]?.prefer || [];
   let score = 0;
@@ -133,10 +163,16 @@ function scoreModel(modelId, role, creditsMap = {}, mode = "quick") {
     // cheaper models slightly preferred when scores close
     score += Math.max(0, 12 - Math.min(credits, 12));
   }
+  if (Number(targetChars) >= 4000) {
+    const capability = modelCapability(id).longForm;
+    if (capability === "verified") score += 140;
+    if (capability === "variable") score -= 25;
+    if (capability === "unverified") score -= 55;
+  }
   return score;
 }
 
-function pickForRole(role, availableModels, creditsMap = {}, limit = 2, mode = "quick") {
+function pickForRole(role, availableModels, creditsMap = {}, limit = 2, mode = "quick", targetChars = 0) {
   const list = (availableModels || []).map((m) => {
     if (typeof m === "string") return { id: m, label: m, credits: creditsMap[m] || null };
     return {
@@ -144,14 +180,17 @@ function pickForRole(role, availableModels, creditsMap = {}, limit = 2, mode = "
       label: m.label || m.name || m.id,
       credits: Number(m.credits ?? creditsMap[m.id] ?? 0) || null
     };
-  }).filter((m) => m.id);
+  }).filter((m) => m.id
+    && !MANUAL_ONLY_MODELS.has(String(m.id).toLowerCase())
+    && !NON_WRITING_MODELS.has(String(m.id).toLowerCase()));
 
   return list
     .map((m) => ({
       id: m.id,
       label: m.label || m.id,
       credits: m.credits,
-      score: scoreModel(m.id, role, creditsMap, mode)
+      score: scoreModel(m.id, role, creditsMap, mode, targetChars),
+      capability: modelCapability(m.id)
     }))
     .sort((a, b) => b.score - a.score || String(a.id).localeCompare(String(b.id)))
     .slice(0, Math.max(1, limit));
@@ -167,7 +206,7 @@ function writingPresetFor(taskId, mode) {
   return null;
 }
 
-function buildCoachAdvice(taskId, plans, mode, unpaidNote) {
+function buildCoachAdvice(taskId, plans, mode, unpaidNote, targetChars = 0) {
   const lines = [
     "Codex 在总责编位调度，本次外部模型负责对应的写作 A 位；先选够用的模型，不为了面子堆旗舰。",
     "当前任务：" + taskId + "；模式：" + (mode === "deep" ? "深度/高配" : "快速/轻量") + "。",
@@ -177,7 +216,8 @@ function buildCoachAdvice(taskId, plans, mode, unpaidNote) {
     const ids = plan.models.map((m) => m.id).join(" / ") || "暂无可用模型";
     lines.push("- " + plan.label + "：优先 " + ids + "。" + plan.why);
   }
-  lines.push("生成策略：正式请求不先测活；无正文的明确临时故障最多重试一次，超时或部分流不重发；作者确认多个模型时才按顺序换模型。收到的正文全部落盘（.body 纯正文可再喂模型）。");
+  if (Number(targetChars) >= 4000) lines.push("本次按长文目标排序；优先使用已有长文实测依据的模型，但篇幅仍由上游实际返回决定。");
+  lines.push("生成策略：一次授权只提交一次；不先测活、不自动重试、不自动改传输方式、不跨线路换模型。收到的正文或中断前片段全部落盘（.body 纯正文可续写）。");
   lines.push("结果先在「Codex候选/」给作者看，确认前不入正式正文/台账。");
   if (mode === "quick") lines.push("快速模式：探索用 flash/qwen；正文用 sonnet/kimi/seed；终检再开 deep。");
   else lines.push("深度模式：主写用稳定模型，终检使用旗舰模型。");
@@ -191,16 +231,22 @@ function recommendModels({
   maxPerRole = 2,
   authorPrefer = [],
   mode = "quick",
-  unpaid = false
+  unpaid = false,
+  targetChars = 0
 } = {}) {
   const taskId = normalizeTask(task);
   const modeId = normalizeMode(mode);
   const roles = TASK_ROLES[taskId] || ["draft"];
-  const preferred = Array.isArray(authorPrefer) ? authorPrefer.map(String) : [];
-  const preset = writingPresetFor(taskId, modeId) || [];
+  const target = Math.max(0, Math.floor(Number(targetChars) || 0));
+  const preferred = Array.isArray(authorPrefer)
+    ? authorPrefer.map(String).filter((id) => !NON_WRITING_MODELS.has(id.toLowerCase()))
+    : [];
+  const preset = target >= 4000
+    ? LONG_FORM_PRESETS[modeId]
+    : (writingPresetFor(taskId, modeId) || []);
 
   const plans = roles.map((role) => {
-    let picks = pickForRole(role, availableModels, creditsMap, maxPerRole, modeId);
+    let picks = pickForRole(role, availableModels, creditsMap, maxPerRole, modeId, target);
     // boost preset order if available
     if (preset.length) {
       const avail = new Set((availableModels || []).map((m) => (typeof m === "string" ? m : m.id)));
@@ -209,7 +255,8 @@ function recommendModels({
         label: id,
         credits: creditsMap[id] || null,
         score: 900,
-        fromPreset: true
+        fromPreset: true,
+        capability: modelCapability(id)
       }));
       if (presetHits.length) {
         picks = [...presetHits, ...picks.filter((p) => !preset.includes(p.id))].slice(0, maxPerRole);
@@ -222,7 +269,8 @@ function recommendModels({
         label: id,
         credits: creditsMap[id] || null,
         score: 999,
-        forced: true
+        forced: true,
+        capability: modelCapability(id)
       }));
       if (forced.length) {
         picks = [...forced, ...picks.filter((p) => !preferred.includes(p.id))].slice(0, maxPerRole);
@@ -250,6 +298,7 @@ function recommendModels({
     externalWritingModels: true,
     task: taskId,
     mode: modeId,
+    targetChars: target,
     writingPreset: preset,
     primaryModelId: primary,
     modelIds,
@@ -260,20 +309,21 @@ function recommendModels({
       taskId,
       plans,
       modeId,
-      unpaid ? "当前未登录：作者当次确认使用后再完成登录；未确认则继续把这一章想清楚，或由作者明确选择临时候选。" : ""
+      unpaid ? "当前未登录：作者当次确认使用后再完成登录；未确认则继续把这一章想清楚，或由作者明确选择临时候选。" : "",
+      target
     ),
     transport: {
       mode: "stream_first_to_txt",
-      streamRetries: 2,
+      streamRetries: 1,
       outerAttempts: 1,
-      nonStreamFallback: "empty_stream_only",
+      nonStreamFallback: false,
       multiModelFallback: false,
-      note: "正式生成不先测活，也不自动换模型；无正文的明确临时故障最多重试一次，超时或部分流不重复提交。已收到文本写入 Codex候选 txt（含 .body 纯正文），再读取。"
+      note: "正式生成不先测活，不自动重试、改传输方式或换线路；已收到文本写入 Codex候选 txt（含 .body 纯正文）。"
     },
     usageTips: [
       "脑洞/探索：快模型",
       "大纲/细纲：中档结构模型",
-      "正文：中档稳写 + 回退链",
+      "正文：按目标篇幅选择已有实测依据的模型",
       "去AI味：中档写手模型，可多模型顺序打磨",
       "定稿/找硬伤：才上旗舰"
     ]
@@ -292,6 +342,8 @@ module.exports = {
   TASK_ROLES,
   ROLE_HINTS,
   WRITING_MODE_PRESETS,
+  MODEL_CAPABILITY_PROFILES,
+  LONG_FORM_PRESETS,
   normalizeTask,
   normalizeMode,
   recommendModels,

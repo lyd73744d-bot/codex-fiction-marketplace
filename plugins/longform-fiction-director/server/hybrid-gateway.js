@@ -27,7 +27,7 @@ function createHybridGateway({ primary, secondary, label, allowedModels = [], pr
   const allowSet = new Set(allow);
   const creditMap = modelCredits && typeof modelCredits === "object" && !Array.isArray(modelCredits)
     ? modelCredits
-    : (primary && primary.modelCredits) || {"claude-sonnet-5":10,"claude-opus-4-6":20,"gemini-3.1-pro-preview":10,"glm-5.2":10,"kimi-k3":10,"minimax-m3":5,"gemini-3.5-flash":5,"qwen3.7-max":5,"gpt-image-2":50};
+    : (primary && primary.modelCredits) || {"claude-sonnet-5":10,"claude-opus-4-6":20,"seed-2.1-pro":20,"seed-2.1-turbo":10,"gemini-3.1-pro-preview":10,"glm-5.2":10,"kimi-k3":10,"minimax-m3":5,"gemini-3.5-flash":5,"qwen3.7-max":5,"grok-4.5":5,"gpt-image-2":50};
 
   async function safeList(gateway) {
     try {
@@ -71,14 +71,7 @@ function createHybridGateway({ primary, secondary, label, allowedModels = [], pr
 
   async function callModels(input) {
     const preferred = await pickGateway(input && input.modelIds);
-    try {
-      return await preferred.callModels(input);
-    } catch (error) {
-      if (String(error?.partialContent || "").trim() || error?.code === "UPSTREAM_TIMEOUT") throw error;
-      const other = preferred === primary ? secondary : primary;
-      if (other === preferred) throw error;
-      return other.callModels(input);
-    }
+    return preferred.callModels(input);
   }
 
   async function generateImage(input) {

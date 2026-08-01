@@ -9,7 +9,40 @@ async function main() {
   const { handle, createRuntime, resolveGateway, safeMcpError } = require("../server/mcp-server");
   const pkg = require("../package.json");
   const onboarding = require("../server/onboarding-state");
+  const { createGenerationJobManager } = require("../server/generation-job-manager");
   assert.match(safeMcpError({ code: "RATE_LIMITED" }), /限流/u, "rate limits need a distinct user-facing error");
+
+  const jobStateDir = fs.mkdtempSync(path.join(os.tmpdir(), "zizhuji-job-state-"));
+  let releaseJob;
+  let finishJob;
+  const jobFinished = new Promise((resolve) => { finishJob = resolve; });
+  try {
+    const manager = createGenerationJobManager({ stateDir: jobStateDir });
+    const started = manager.start({
+      type: "generation",
+      metadata: { projectDir: "C:\\novel" },
+      async run({ updateProgress }) {
+        updateProgress({ state: "streaming", checkpointPath: "C:\\novel\\Codex候选\\draft.in-progress.body.txt", chars: 320 });
+        await new Promise((resolve) => { releaseJob = resolve; });
+        finishJob();
+        return { ok: true, artifact: { plainPath: "C:\\novel\\Codex候选\\draft.body.txt" } };
+      }
+    });
+    await new Promise((resolve) => setImmediate(resolve));
+    const recovered = createGenerationJobManager({ stateDir: jobStateDir }).get(started.jobId);
+    assert.strictEqual(recovered.status, "interrupted", "restarted manager did not expose an interrupted durable job");
+    assert.strictEqual(recovered.recovered, true, "durable job was not marked recovered");
+    assert.strictEqual(recovered.progress.chars, 320, "durable job lost its saved progress");
+    assert.match(recovered.error.message, /检查点/u, "recovered job did not explain checkpoint recovery");
+    releaseJob();
+    await jobFinished;
+    await new Promise((resolve) => setImmediate(resolve));
+    const completed = createGenerationJobManager({ stateDir: jobStateDir }).get(started.jobId);
+    assert.strictEqual(completed.status, "completed", "completed durable job was not readable after manager restart");
+  } finally {
+    if (typeof releaseJob === "function") releaseJob();
+    fs.rmSync(jobStateDir, { recursive: true, force: true });
+  }
 
   const onboardingDir = fs.mkdtempSync(path.join(os.tmpdir(), "zizhuji-onboarding-"));
   const onboardingPath = path.join(onboardingDir, "state.json");
@@ -194,6 +227,7 @@ async function main() {
   assert.deepStrictEqual(definitions.get("fiction_generate_to_file").inputSchema.required, ["projectDir", "prompt", "modelIds", "authorConfirmed"]);
   assert.strictEqual(definitions.get("fiction_generate_to_file").inputSchema.properties.modelIds.type, "array");
   assert.strictEqual(definitions.get("fiction_generate_to_file").inputSchema.properties.fallbackChain.type, "boolean");
+  assert.strictEqual(definitions.get("fiction_recommend_models").inputSchema.properties.targetChars.type, "number");
   assert.strictEqual(definitions.get("fiction_generate_to_file").inputSchema.properties.projectContext.type, "string");
   assert.strictEqual(definitions.get("fiction_generate_to_file").inputSchema.properties.authorConfirmed.type, "boolean");
   assert.strictEqual(definitions.get("fiction_generate_to_file").inputSchema.properties.background.type, "boolean");

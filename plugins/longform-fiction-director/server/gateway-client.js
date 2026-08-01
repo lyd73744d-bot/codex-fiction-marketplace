@@ -135,7 +135,7 @@ function responseError(status, payload) {
   if (status === 402 || serverCode === "INSUFFICIENT_BALANCE") return new GatewayClientError("INSUFFICIENT_BALANCE", ERROR_MESSAGES.INSUFFICIENT_BALANCE, status);
   if (status === 409) return new GatewayClientError("CONFLICT", ERROR_MESSAGES.CONFLICT, status);
   if (status === 408) return new GatewayClientError("UPSTREAM_TIMEOUT", ERROR_MESSAGES.UPSTREAM_TIMEOUT, status, "网关上游请求超时。");
-  if (status === 429) return new GatewayClientError("RATE_LIMITED", ERROR_MESSAGES.RATE_LIMITED, status, "模型线路暂时限流；未收到正文时只会有限重试一次。");
+  if (status === 429) return new GatewayClientError("RATE_LIMITED", ERROR_MESSAGES.RATE_LIMITED, status, "模型线路暂时限流；本次未自动重试，请稍后由作者决定是否重新提交。");
   if (status >= 500) {
     const publicMessage = upstreamPublicMessage(payload);
     if (publicMessage === "网关上游请求超时。") return new GatewayClientError("UPSTREAM_TIMEOUT", ERROR_MESSAGES.UPSTREAM_TIMEOUT, status, publicMessage);
@@ -455,15 +455,14 @@ function createGatewayClient(options = {}) {
       messages.push({ role: "user", content: input.prompt });
       if (content) messages.push({ role: "assistant", content }, { role: "user", content: "Review the previous version and return a complete improved version." });
 
-      // Retry only failures that returned no prose. Timeouts and partial streams are never resubmitted.
-      const maxStreamAttempts = Number.isSafeInteger(input.streamRetries) ? Math.max(1, Math.min(input.streamRetries, 2)) : 2;
+      // One author authorization means one upstream submission. Recovery is an explicit later call.
+      const maxStreamAttempts = 1;
       const requestId = input.requestId || crypto.randomUUID();
       let next = "";
       let usage = null;
       let finishReason = null;
       let transport = "none";
       let lastError = null;
-      let allowNonStreamFallback = false;
 
       for (let attempt = 1; attempt <= maxStreamAttempts; attempt += 1) {
         const deadline = createActivityDeadline({ idleTimeoutMs: streamIdleTimeoutMs, maxTotalTimeoutMs: streamTimeoutMs });
@@ -474,7 +473,7 @@ function createGatewayClient(options = {}) {
             body: JSON.stringify({ model, messages, temperature: 0.7, max_tokens: effectiveMaxTokens(model, input.maxTokens), stream: true }),
             timeoutMs: streamTimeoutMs,
             signal: deadline.signal
-          });
+          }, false);
           deadline.touch();
           const payload = await collectOpenAiStream(response, input.onDelta, { maxResponseBytes, onActivity: deadline.touch });
           if (String(payload.finishReason || "").toLowerCase() === "length") throw incompleteStreamError("Model output reached its token limit.", { partialContent: payload.content, partialReasoning: payload.reasoning || "", finishReason: payload.finishReason });
@@ -486,7 +485,6 @@ function createGatewayClient(options = {}) {
             break;
           }
           lastError = new GatewayClientError("EMPTY_MODEL_OUTPUT");
-          allowNonStreamFallback = true;
         } catch (error) {
           const partial = String(error?.partialContent || "").trim();
           if (partial) {
@@ -496,43 +494,7 @@ function createGatewayClient(options = {}) {
             break;
           }
           lastError = toGatewayNetworkError(error, "SERVER_ERROR");
-          allowNonStreamFallback = allowNonStreamFallback || shouldUseNonStreamFallback(error) || shouldUseNonStreamFallback(lastError);
-          if (!isRetryableGenerationError(lastError) || attempt >= maxStreamAttempts) break;
-          await wait(generationRetryBaseDelayMs * attempt);
-        } finally {
-          deadline.dispose();
-        }
-      }
-
-      if (!(typeof next === "string" && next.trim()) && allowNonStreamFallback) {
-        const deadline = createActivityDeadline({ idleTimeoutMs: streamIdleTimeoutMs, maxTotalTimeoutMs: streamTimeoutMs });
-        try {
-          const response = await authenticatedRawRequest("/e/catalog/chat/completions", {
-            method: "POST",
-            headers: { "content-type": "application/json", "x-workflow-operation": String(input.taskLabel || "fiction").slice(0, 32), "idempotency-key": requestId },
-            body: JSON.stringify({ model, messages, temperature: 0.7, max_tokens: effectiveMaxTokens(model, input.maxTokens), stream: false }),
-            timeoutMs: streamTimeoutMs,
-            signal: deadline.signal
-          });
-          deadline.touch();
-          const text = await response.text();
-          if (Buffer.byteLength(text, "utf8") > maxResponseBytes) throw new GatewayClientError("RESPONSE_TOO_LARGE");
-          const payload = JSON.parse(text);
-          const parts = completionParts(payload);
-          if (String(parts.finishReason || "").toLowerCase() === "length") throw incompleteStreamError("Model output reached its token limit.", { partialContent: parts.content, partialReasoning: parts.reasoning || "", finishReason: parts.finishReason });
-          next = parts.content;
-          usage = parts.usage;
-          finishReason = parts.finishReason || null;
-          if (typeof next === "string" && next.trim()) transport = "non_stream_fallback";
-        } catch (error) {
-          const partial = String(error?.partialContent || "").trim();
-          if (partial) {
-            next = partial;
-            finishReason = error?.finishReason || null;
-            transport = "partial_non_stream_fallback";
-          } else {
-            lastError = toGatewayNetworkError(error, "SERVER_ERROR");
-          }
+          break;
         } finally {
           deadline.dispose();
         }

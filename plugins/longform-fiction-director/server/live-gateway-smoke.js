@@ -100,7 +100,7 @@ async function smokeLiveGateway({ gateway, projectDir = "", title = "live-smoke"
       system: draftSystem.system,
       prompt: preparedPrompt.prompt,
       taskLabel: "live-smoke",
-      fallbackChain: true,
+      fallbackChain: false,
       applyHardGates: true,
       minChars: 40,
       requestPolicyVersion: draftSystem.policyVersion,
