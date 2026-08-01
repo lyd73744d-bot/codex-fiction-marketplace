@@ -34,9 +34,13 @@ async function main() {
   const skill = fs.readFileSync(path.join(pluginRoot, "skills", "longform-fiction-director", "SKILL.md"), "utf8");
   const modelIds = catalog.models.map((item) => item.id);
 
-  assert.strictEqual(modelIds.length, 10, "shipped catalog must match the 10 retained live models");
+  assert.strictEqual(modelIds.length, 9, "shipped catalog must match the 9 retained live models");
   assert.strictEqual(catalog.preferredModel, "claude-opus-4-6");
-  assert.ok(!modelIds.includes("glm-5.2"), "unstable GLM route must not return to the shipped catalog");
+  assert.ok(modelIds.includes("glm-5.2"), "verified GLM route is missing from the shipped catalog");
+  assert.ok(modelIds.includes("minimax-m3"), "verified MiniMax route is missing from the shipped catalog");
+  assert.ok(modelIds.includes("kimi-k3"), "verified Kimi K3 route is missing from the shipped catalog");
+  assert.ok(modelIds.includes("gemini-3.5-flash"), "verified Gemini Flash route is missing from the shipped catalog");
+  assert.ok(!modelIds.includes("deepseek-v4-pro") && !modelIds.includes("seed-2.1-pro") && !modelIds.includes("grok-4.5"));
   assert.ok(!modelIds.includes("claude-opus-5") && !modelIds.includes("claude-opus-4-8"));
   assert.ok(manifest.interface.defaultPrompt.some((line) => line.includes("直接问我是开新书还是接着写旧书")));
   assert.ok(manifest.interface.defaultPrompt.some((line) => line.includes("每次调用其他模型前都问我是否使用")));

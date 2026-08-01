@@ -4,14 +4,14 @@ const assert = require("node:assert");
 const fs = require("node:fs");
 const os = require("node:os");
 const path = require("node:path");
-const { createGatewayClient, effectiveMaxTokens } = require("../server/gateway-client");
+const { createGatewayClient, effectiveMaxTokens, MAX_PROMPT_CHARS, MAX_SYSTEM_CHARS } = require("../server/gateway-client");
 const {
   createFakeIpAwareFetch,
   isClashFakeIpv4,
   selectPhysicalIpv4
 } = require("../server/fake-ip-aware-fetch");
 const { createOpenAiCompatibleGateway } = require("../server/openai-compatible-gateway");
-const { generateToArtifact, continueArtifactToFile, joinContinuationText, writeArtifact } = require("../server/artifact-pipeline");
+const { generateToArtifact, continueArtifactToFile, joinContinuationText, writeArtifact, renameWithRetry } = require("../server/artifact-pipeline");
 
 function jsonResponse(payload, status = 200) {
   return new Response(JSON.stringify(payload), {
@@ -109,9 +109,24 @@ async function waitFor(check, description) {
 }
 
 async function main() {
+  let renameAttempts = 0;
+  await renameWithRetry("source.tmp", "target.txt", {
+    rename: async () => {
+      renameAttempts += 1;
+      if (renameAttempts < 3) throw Object.assign(new Error("temporarily locked"), { code: "EPERM" });
+    },
+    wait: async () => {}
+  });
+  assert.strictEqual(renameAttempts, 3, "transient Windows file lock was not retried");
+
   assert.strictEqual(effectiveMaxTokens("claude-opus-4-6", 18000), 18000, "valid Opus 4.6 token request was capped");
   assert.strictEqual(effectiveMaxTokens("claude-opus-4-6", 8000), 8000, "valid Opus 4.6 token request was changed");
-  assert.strictEqual(effectiveMaxTokens("grok-4.5", 18000), 18000, "unrelated model token request was capped");
+  assert.strictEqual(effectiveMaxTokens("qwen3.7-max", 18000), 18000, "unrelated model token request was capped");
+  assert.strictEqual(effectiveMaxTokens("glm-5.2", 2048), 8192, "GLM reasoning budget was allowed to consume the entire response");
+  assert.strictEqual(effectiveMaxTokens("glm-5.2", 8192), 8192, "valid GLM token request was changed");
+  assert.strictEqual(effectiveMaxTokens("glm-5.2", 18000), 18000, "long GLM token request was capped");
+  assert.strictEqual(MAX_PROMPT_CHARS, 1_000_000, "gateway prompt capacity is too small");
+  assert.strictEqual(MAX_SYSTEM_CHARS, 200_000, "gateway system capacity is too small");
   assert.strictEqual(isClashFakeIpv4("198.18.0.223"), true, "Clash fake IPv4 range was not detected");
   assert.strictEqual(isClashFakeIpv4("198.19.255.254"), true, "upper Clash fake IPv4 range was not detected");
   assert.strictEqual(isClashFakeIpv4("203.0.113.42"), false, "public gateway address was mislabeled as fake");
@@ -238,6 +253,35 @@ async function main() {
   assert.strictEqual(directResult.outputs[0].finishReason, "stop", "direct gateway discarded upstream finish reason");
   assert.strictEqual(directCatalogCalls, 0, "direct model catalog blocked generation");
   assert.strictEqual(directGenerationCalls, 1, "direct generation request count mismatch");
+
+  let largeRequestBody = null;
+  const largeDirect = createOpenAiCompatibleGateway({
+    baseUrl: "http://127.0.0.1:43214",
+    apiKey: "test-direct-key",
+    allowedModels: ["claude-opus-4-6"],
+    generationRetryBaseDelayMs: 0,
+    fetch: async (_url, init) => {
+      largeRequestBody = JSON.parse(init.body);
+      return jsonResponse({ choices: [{ message: { content: "长上下文已收到。" }, finish_reason: "stop" }] });
+    }
+  });
+  const largePrompt = "正文资料".repeat(249_000) + "[PROMPT-END]";
+  const largeSystem = "约束".repeat(99_000) + "[SYSTEM-END]";
+  await largeDirect.callModels({
+    prompt: largePrompt,
+    system: largeSystem,
+    modelIds: ["claude-opus-4-6"],
+    maxTokens: 32_000,
+    streamRetries: 1
+  });
+  assert.ok(largeRequestBody.messages[0].content.endsWith("[SYSTEM-END]"), "large system tail was truncated");
+  assert.ok(largeRequestBody.messages[1].content.endsWith("[PROMPT-END]"), "large prompt tail was truncated");
+  assert.strictEqual(largeRequestBody.max_tokens, 32_000, "large request output budget was changed");
+  await expectCode(largeDirect.callModels({
+    prompt: "正文",
+    system: "约".repeat(200_001),
+    modelIds: ["claude-opus-4-6"]
+  }), "INVALID_REQUEST");
 
   const fallbackBodies = [];
   const fallbackRequestIds = [];

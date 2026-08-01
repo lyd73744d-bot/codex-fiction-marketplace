@@ -26,43 +26,43 @@ const TASK_ROLES = {
 const ROLE_HINTS = {
   explore: {
     label: "探索/脑洞",
-    prefer: ["gemini-3.5-flash", "qwen3.7-max", "grok-4.5"],
+    prefer: ["minimax-m3", "qwen3.7-max", "gemini-3.5-flash", "glm-5.2"],
     avoidHeavy: true,
     why: "要快、要多方向，不值得上最贵模型"
   },
   structure: {
     label: "结构/大纲/细纲",
-    prefer: ["kimi-k2.6", "claude-sonnet-5", "gemini-3.1-pro-preview", "grok-4.5"],
+    prefer: ["glm-5.2", "claude-sonnet-5", "gemini-3.1-pro-preview", "kimi-k3"],
     why: "要因果与节奏，中档推理足够"
   },
   draft: {
     label: "正文主写",
-    prefer: ["claude-sonnet-5", "kimi-k2.6", "seed-2.1-pro", "claude-opus-4-6", "grok-4.5"],
+    prefer: ["claude-sonnet-5", "glm-5.2", "kimi-k3", "minimax-m3", "claude-opus-4-6"],
     why: "主写要稳、文风可控；默认中档，作者点名再用旗舰"
   },
   continuity: {
     label: "连续性/台账",
-    prefer: ["claude-sonnet-5", "kimi-k2.6", "gemini-3.1-pro-preview"],
+    prefer: ["glm-5.2", "claude-sonnet-5", "gemini-3.1-pro-preview"],
     why: "核对人物/时间线/伏笔，重准确不重花活"
   },
   style: {
     label: "去AI味/润色",
-    prefer: ["claude-sonnet-5", "kimi-k2.6", "seed-2.1-pro", "claude-opus-4-6"],
+    prefer: ["claude-sonnet-5", "glm-5.2", "kimi-k3", "claude-opus-4-6"],
     why: "改味不改剧情，中档写手模型更合适"
   },
   adversary: {
     label: "反方/找硬伤",
-    prefer: ["claude-opus-4-6", "grok-4.5", "gemini-3.1-pro-preview", "qwen3.7-max"],
+    prefer: ["claude-opus-4-6", "glm-5.2", "gemini-3.1-pro-preview", "qwen3.7-max"],
     why: "专门挑弃读点与逻辑崩，可短上下文上旗舰"
   },
   review: {
     label: "质检审核",
-    prefer: ["claude-sonnet-5", "kimi-k2.6", "gemini-3.1-pro-preview"],
+    prefer: ["claude-sonnet-5", "glm-5.2", "gemini-3.1-pro-preview"],
     why: "结构化审稿；证据不足再换旗舰复审"
   },
   finalize: {
     label: "定稿成稿",
-    prefer: ["claude-opus-4-6", "grok-4.5", "claude-sonnet-5", "gemini-3.1-pro-preview"],
+    prefer: ["claude-opus-4-6", "claude-sonnet-5", "glm-5.2", "gemini-3.1-pro-preview"],
     why: "作者确认前最后一轮，才考虑高积分模型"
   }
 };
@@ -70,12 +70,12 @@ const ROLE_HINTS = {
 // Fused from zizhuji workflow-model-policy: soft presets only
 const WRITING_MODE_PRESETS = {
   chapterWrite: {
-    quick: ["claude-sonnet-5", "kimi-k2.6", "gemini-3.5-flash"],
-    deep: ["claude-opus-4-6", "grok-4.5", "claude-sonnet-5", "kimi-k2.6"]
+    quick: ["claude-sonnet-5", "glm-5.2", "kimi-k3", "minimax-m3"],
+    deep: ["claude-opus-4-6", "claude-sonnet-5", "glm-5.2", "kimi-k3"]
   },
   chapterOptimize: {
-    quick: ["claude-sonnet-5", "gemini-3.5-flash"],
-    deep: ["claude-opus-4-6", "grok-4.5", "kimi-k2.6", "claude-sonnet-5"]
+    quick: ["claude-sonnet-5", "glm-5.2"],
+    deep: ["claude-opus-4-6", "claude-sonnet-5", "glm-5.2", "kimi-k3"]
   }
 };
 
@@ -238,11 +238,12 @@ function recommendModels({
 
   const primary = plans[0]?.models?.[0]?.id || null;
   const availableIds = new Set((availableModels || []).map((m) => (typeof m === "string" ? m : m.id)).filter(Boolean));
-  // fallback chain for generate_to_file: only models that actually exist for this account
-  const modelIds = [...new Set([
+  const recommendedIds = [...new Set([
     ...plans.flatMap((p) => p.models.map((m) => m.id)),
     ...preset.filter((id) => availableIds.has(id))
   ].filter(Boolean))].slice(0, 4);
+  const modelIds = primary ? [primary] : [];
+  const alternativeModelIds = recommendedIds.filter((id) => id !== primary);
 
   return {
     leadEditorRouter: true,
@@ -252,7 +253,8 @@ function recommendModels({
     writingPreset: preset,
     primaryModelId: primary,
     modelIds,
-    fallbackChain: modelIds,
+    alternativeModelIds,
+    fallbackChain: false,
     plans,
     coachAdvice: buildCoachAdvice(
       taskId,
@@ -265,8 +267,8 @@ function recommendModels({
       streamRetries: 2,
       outerAttempts: 1,
       nonStreamFallback: "empty_stream_only",
-      multiModelFallback: true,
-      note: "正式生成不先测活；无正文的明确临时故障最多重试一次，超时或部分流不重复提交。已收到文本写入 Codex候选 txt（含 .body 纯正文），再读取。"
+      multiModelFallback: false,
+      note: "正式生成不先测活，也不自动换模型；无正文的明确临时故障最多重试一次，超时或部分流不重复提交。已收到文本写入 Codex候选 txt（含 .body 纯正文），再读取。"
     },
     usageTips: [
       "脑洞/探索：快模型",

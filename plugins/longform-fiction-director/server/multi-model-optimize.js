@@ -20,15 +20,15 @@ async function readIf(p, max = 4000) {
 
 async function collectOptimizeContext(projectDir) {
   const aux = path.join(projectDir, "辅助文档");
-  const voice = await readIf(path.join(aux, "08_文风锚点.md"), 1500);
-  const brief = await readIf(path.join(projectDir, "细纲", "01_当前章细纲.md"), 2400);
-  const facts = await readIf(path.join(aux, "12_事实库_防OOC.md"), 1800);
+  const voice = await readIf(path.join(aux, "08_文风锚点.md"), 12_000);
+  const brief = await readIf(path.join(projectDir, "细纲", "01_当前章细纲.md"), 20_000);
+  const facts = await readIf(path.join(aux, "12_事实库_防OOC.md"), 30_000);
   let cards = "";
   const charDir = path.join(aux, "人物卡");
   if (fs.existsSync(charDir)) {
-    const names = (await fsp.readdir(charDir)).filter((n) => n.endsWith(".md") && n !== "README.md").slice(0, 3);
+    const names = (await fsp.readdir(charDir)).filter((n) => n.endsWith(".md") && n !== "README.md").slice(0, 8);
     for (const name of names) {
-      cards += "\n\n## " + name + "\n" + await readIf(path.join(charDir, name), 800);
+      cards += "\n\n## " + name + "\n" + await readIf(path.join(charDir, name), 5000);
     }
   }
   return { voice, brief, cards, facts };
@@ -46,7 +46,7 @@ async function optimizeWithModels({
   instruction = "",
   autoRecommend = true,
   recommendMode = "quick",
-  maxTokens = 16000,
+  maxTokens = 32000,
   onProgress
 } = {}) {
   if (!gateway || typeof gateway.callModels !== "function") throw new Error("gateway.callModels required");

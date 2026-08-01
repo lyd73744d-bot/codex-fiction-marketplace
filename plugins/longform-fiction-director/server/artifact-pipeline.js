@@ -112,11 +112,28 @@ async function ensureDir(dir) {
   return dir;
 }
 
+async function renameWithRetry(sourcePath, targetPath, {
+  rename = fsp.rename,
+  wait = (delayMs) => new Promise((resolve) => setTimeout(resolve, delayMs)),
+  retries = 5
+} = {}) {
+  for (let attempt = 0; ; attempt += 1) {
+    try {
+      await rename(sourcePath, targetPath);
+      return;
+    } catch (error) {
+      const retryable = ["EPERM", "EACCES", "EBUSY"].includes(String(error?.code || ""));
+      if (!retryable || attempt >= retries) throw error;
+      await wait(25 * (2 ** attempt));
+    }
+  }
+}
+
 async function writeTextAtomic(filePath, content) {
   const tempPath = filePath + ".tmp-" + process.pid + "-" + Math.random().toString(16).slice(2);
   try {
     await fsp.writeFile(tempPath, content, "utf8");
-    await fsp.rename(tempPath, filePath);
+    await renameWithRetry(tempPath, filePath);
   } finally {
     await fsp.unlink(tempPath).catch(() => {});
   }
@@ -175,7 +192,7 @@ async function inspectExistingWriting(projectDir, reportPath) {
   for (const item of files) {
     try {
       const raw = await fsp.readFile(item.path, "utf8");
-      const text = raw.length > 240_000 ? raw.slice(-240_000) : raw;
+      const text = raw.length > 1_000_000 ? raw.slice(-1_000_000) : raw;
       const inspection = inspectChapter(text, { minChars: 0 });
       results.push({
         path: item.path,
@@ -447,7 +464,7 @@ async function writeArtifact({ projectDir, kind = "draft", title = "", chapterNo
   };
 }
 
-async function readArtifact(filePath, { maxChars = 200000 } = {}) {
+async function readArtifact(filePath, { maxChars = 1000000 } = {}) {
   const abs = path.resolve(String(filePath || ""));
   // Prefer .body. plain file if paired header file is given
   let target = abs;
@@ -509,7 +526,7 @@ async function generateToArtifact({
   previewChars = 800,
   streamRetries = 2,
   outerAttempts = 1,
-  fallbackChain = true,
+  fallbackChain = false,
   minChars = 0,
   applyHardGates = true,
   maxTokens,
@@ -539,7 +556,7 @@ async function generateToArtifact({
   let lastProgressPath = null;
   const attempts = 1;
   const retries = Math.max(1, Math.min(Number(streamRetries) || 1, 2));
-  const useFallback = fallbackChain !== false && ids.length > 1;
+  const useFallback = fallbackChain === true && ids.length > 1;
 
   async function callOne(modelId) {
     const checkpoint = await createStreamCheckpoint({
@@ -589,10 +606,10 @@ async function generateToArtifact({
       throw error;
     }
     if (applyHardGates) {
-      const check = isAcceptableCandidate(extracted.content, { minChars: Number(minChars) || 0 });
+      const check = isAcceptableCandidate(extracted.content, { minChars: Number(minChars) || 0, requestText: String(prompt) });
       lastGate = check.gate;
     } else {
-      lastGate = inspectChapter(extracted.content, { minChars: Number(minChars) || 0 });
+      lastGate = inspectChapter(extracted.content, { minChars: Number(minChars) || 0, requestText: String(prompt) });
     }
     lastBelowMinChars = Number(minChars) > 0 && Number(lastGate?.chars || 0) < Number(minChars);
     lastAbruptEnding = Number(minChars) > 0 && hasAbruptProseEnding(extracted.content);
@@ -735,7 +752,7 @@ async function continueArtifactToFile({
   title = "",
   chapterNo = "",
   minAdditionalChars = 0,
-  maxTokens = 16000,
+  maxTokens = 32000,
   streamRetries = 2,
   fallbackChain = false,
   onProgress
@@ -817,5 +834,6 @@ module.exports = {
   modelWritingRecordPath,
   extractModelPayload,
   hasAbruptProseEnding,
-  joinContinuationText
+  joinContinuationText,
+  renameWithRetry
 };

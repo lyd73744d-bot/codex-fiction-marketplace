@@ -31,12 +31,12 @@ function createOpenAiCompatibleGateway(options = {}) {
   const nexaBaseUrl = String(options.nexaBaseUrl || "https://api.nexagw.org").replace(/\/+$/u, "");
   const nexaModels = new Set(Array.isArray(options.nexaModels) && options.nexaModels.length
     ? options.nexaModels.map((item) => String(item || "").trim()).filter(Boolean)
-    : ["seed-2.1-pro", "kimi-k2.6", "qwen3.7-max"]);
+    : ["glm-5.2"]);
   const geminiApiKey = typeof options.geminiApiKey === "string" ? options.geminiApiKey.trim() : "";
   const geminiBaseUrl = String(options.geminiBaseUrl || "https://byteclaude.io").replace(/\/+$/u, "");
   const geminiModels = new Set(Array.isArray(options.geminiModels) && options.geminiModels.length
     ? options.geminiModels.map((item) => String(item || "").trim()).filter(Boolean)
-    : ["gemini-3.1-pro-preview","gemini-3.5-flash"]);
+    : ["gemini-3.1-pro-preview", "gemini-3.5-flash"]);
   const preferredModel = typeof options.preferredModel === "string" ? options.preferredModel.trim() : "";
   const allowedModels = Array.isArray(options.allowedModels)
     ? [...new Set(options.allowedModels.map((item) => String(item || "").trim()).filter(Boolean))]
@@ -46,7 +46,7 @@ function createOpenAiCompatibleGateway(options = {}) {
   const displayCallsLeft = displayBalance < 0 ? -1 : 999;
   const modelCredits = options.modelCredits && typeof options.modelCredits === "object" && !Array.isArray(options.modelCredits)
     ? options.modelCredits
-    : {"claude-sonnet-5":10,"claude-opus-4-6":20,"gemini-3.1-pro-preview":12,"gemini-3.5-flash":8,"seed-2.1-pro":20,"seed-2.1-turbo":10,"kimi-k2.6":20,"qwen3.7-max":5,"gpt-image-2":50,"grok-4.5":5};
+    : {"claude-sonnet-5":10,"claude-opus-4-6":20,"gemini-3.1-pro-preview":10,"glm-5.2":10,"kimi-k3":10,"minimax-m3":5,"gemini-3.5-flash":5,"qwen3.7-max":5,"gpt-image-2":50};
   const timeoutMs = Number.isSafeInteger(options.timeoutMs) && options.timeoutMs > 0 ? options.timeoutMs : 120_000;
   const streamTimeoutMs = Number.isSafeInteger(options.streamTimeoutMs) && options.streamTimeoutMs > 0 ? options.streamTimeoutMs : DEFAULT_STREAM_TOTAL_TIMEOUT_MS;
   const streamIdleTimeoutMs = Number.isSafeInteger(options.streamIdleTimeoutMs) && options.streamIdleTimeoutMs > 0 ? options.streamIdleTimeoutMs : DEFAULT_STREAM_IDLE_TIMEOUT_MS;
@@ -347,7 +347,8 @@ async function callModels(input = {}) {
     if (!input || typeof input !== "object" || Array.isArray(input)) throw new GatewayClientError("INVALID_REQUEST");
     const allowed = new Set(["prompt", "system", "modelIds", "taskLabel", "onDelta", "streamRetries", "requestId", "maxTokens"]);
     if (Object.keys(input).some((key) => !allowed.has(key))) throw new GatewayClientError("INVALID_REQUEST");
-    if (typeof input.prompt !== "string" || !input.prompt.trim() || input.prompt.length > 200_000) throw new GatewayClientError("INVALID_REQUEST");
+    if (typeof input.prompt !== "string" || !input.prompt.trim() || input.prompt.length > 1_000_000) throw new GatewayClientError("INVALID_REQUEST");
+    if (input.system !== undefined && (typeof input.system !== "string" || input.system.length > 200_000)) throw new GatewayClientError("INVALID_REQUEST");
     if (!Array.isArray(input.modelIds) || input.modelIds.length < 1 || input.modelIds.length > 8) throw new GatewayClientError("INVALID_REQUEST");
     if (input.modelIds.some((id) => typeof id !== "string" || !/^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/u.test(id))) {
       throw new GatewayClientError("INVALID_REQUEST");

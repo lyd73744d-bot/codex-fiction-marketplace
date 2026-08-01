@@ -13,11 +13,11 @@
 
 | 任务 | 角色 | 默认倾向 |
 |---|---|---|
-| 脑洞/市场 | 探索 | gemini-3.5-flash / qwen3.7-max；需要慢速发散时可选 grok-4.5 |
-| 大纲/细纲/章节构思 | Codex 总责编默认本地完成；需要第二意见才调用 | kimi-k2.6 / claude-sonnet-5 / gemini-3.1-pro-preview |
-| 正文候选 | 主写 | claude-sonnet-5 / kimi-k2.6 / seed-2.1-pro；需要旗舰时再选 claude-opus-4-6 / grok-4.5 |
-| 去AI味 | 风格 | claude-sonnet-5 / kimi-k2.6 / seed-2.1-pro |
-| 质检 | 审核+连续 | claude-sonnet-5 / kimi-k2.6 / gemini-3.1-pro-preview；硬伤再上 Claude Opus |
+| 脑洞/市场 | 探索 | minimax-m3 / qwen3.7-max / gemini-3.5-flash / glm-5.2 |
+| 大纲/细纲/章节构思 | Codex 总责编默认本地完成；需要第二意见才调用 | glm-5.2 / claude-sonnet-5 / gemini-3.1-pro-preview / kimi-k3 |
+| 正文候选 | 主写 | claude-sonnet-5 / glm-5.2 / kimi-k3 / minimax-m3；需要旗舰时再选 claude-opus-4-6 |
+| 去AI味 | 风格 | claude-sonnet-5 / glm-5.2 / kimi-k3 |
+| 质检 | 审核+连续 | claude-sonnet-5 / glm-5.2 / gemini-3.1-pro-preview；硬伤再上 Claude Opus |
 | 定稿 | 成稿 | claude-opus-4-6（作者确认前） |
 
 ## Codex 对作者的说话方式
@@ -59,7 +59,7 @@
 ## 可靠性（fusion.14）
 
 - 单次流式优先；超时不重发，只有空流响应才做一次非流式兼容。
-- 多模型 ID 时默认 fallbackChain：第一个失败就换下一个，直到写出完整 txt。
+- 默认只调用作者明确选择的第一个模型，不自动换模型；只有作者本次明确要求 `fallbackChain=true` 时，才按给定顺序依次尝试。
 - 硬门槛拦截：过程泄漏 / 审稿腔包装 / 空输出；通过后才落盘。
 - 产物：Codex候选/*.txt + *.body.txt（纯正文，可再喂模型）。
 - 优化：`fiction_optimize_with_models` 按模型顺序串行，每步完整落盘。

@@ -31,7 +31,7 @@ async function main() {
   const runs = boundedInteger(process.env.FICTION_STRESS_RUNS, 12, 2, 24);
   const concurrency = boundedInteger(process.env.FICTION_STRESS_CONCURRENCY, 3, 1, 6);
   const maxTokens = boundedInteger(process.env.FICTION_STRESS_MAX_TOKENS, 8192, 2048, 65536);
-  const requested = (process.env.FICTION_STRESS_MODELS || "gemini-3.5-flash,claude-opus-4-6")
+  const requested = (process.env.FICTION_STRESS_MODELS || "glm-5.2,gemini-3.1-pro-preview")
     .split(",").map((item) => item.trim()).filter(Boolean);
   if (!requested.length) throw new Error("FICTION_STRESS_MODELS contains no model ids");
 

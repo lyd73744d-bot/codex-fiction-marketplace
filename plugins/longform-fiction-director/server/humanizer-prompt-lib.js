@@ -14,7 +14,7 @@ const FOCUS_HINTS = {
   explain: "重点去解释腔/主题总结：删“这意味着/不难看出”，不把动作和对白再解释一遍。"
 };
 
-function readMaybe(file, max = 3500) {
+function readMaybe(file, max = 12_000) {
   try {
     const raw = fs.readFileSync(file, "utf8").replace(/\r\n?/g, "\n").trim();
     return raw.length > max ? raw.slice(0, max) + "\n…(截断)" : raw;
@@ -42,13 +42,13 @@ function loadMethodPack(focus = "full") {
   const files = map[focus] || map.full;
   const chunks = [];
   for (const rel of files) {
-    const body = readMaybe(path.join(rootDir, rel), focus === "full" ? 2800 : 1800);
+    const body = readMaybe(path.join(rootDir, rel), focus === "full" ? 8000 : 5000);
     if (body) chunks.push("# " + rel + "\n" + body);
   }
   // zizhuji protect rules excerpt
   const revise = readMaybe(
     path.join(rootDir, "server/zizhuji-compat/resources/prompts/sources/humanizer-chapter-revise.md"),
-    1600
+    5000
   );
   if (revise) {
     chunks.push("# zizhuji-humanizer-protect\n" + revise.split("\n").filter((line) => /保护|不得|必须保留|禁止/.test(line)).slice(0, 40).join("\n"));
@@ -89,10 +89,10 @@ function buildOptimizePrompt({ mode = "humanize", focus = "full", instruction = 
     instruction || "无",
     "",
     "# 项目上下文（可参考，不得扩写未给出的事实）",
-    "- 文风锚点：", String(context.voice || "（无）").slice(0, 1200),
+    "- 文风锚点：", String(context.voice || "（无）").slice(0, 12_000),
     context.facts ? ("\n# 事实库（防OOC）\n" + context.facts + "\n") : "",
-    "- 人物/核验摘录：", String(context.cards || "（无）").slice(0, 1200),
-    "- 可选章节笔记：", String(context.brief || "（无）").slice(0, 1000),
+    "- 人物/核验摘录：", String(context.cards || "（无）").slice(0, 40_000),
+    "- 可选章节笔记：", String(context.brief || "（无）").slice(0, 20_000),
     "",
     "# 待处理正文",
     String(draftText || "").trim()

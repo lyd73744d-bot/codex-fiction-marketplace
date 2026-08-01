@@ -198,6 +198,10 @@ async function main() {
   assert.strictEqual(definitions.get("fiction_generate_to_file").inputSchema.properties.authorConfirmed.type, "boolean");
   assert.strictEqual(definitions.get("fiction_generate_to_file").inputSchema.properties.background.type, "boolean");
   assert.strictEqual(definitions.get("fiction_generate_to_file").inputSchema.properties.minChars.type, "number");
+  assert.strictEqual(definitions.get("fiction_generate_to_file").inputSchema.properties.prompt.maxLength, 1000000, "draft prompt capacity is too small");
+  assert.strictEqual(definitions.get("fiction_generate_to_file").inputSchema.properties.projectContext.maxLength, 1000000, "project context capacity is too small");
+  assert.strictEqual(definitions.get("fiction_optimize_with_models").inputSchema.properties.draftText.maxLength, 1000000, "optimization input capacity is too small");
+  assert.strictEqual(definitions.get("fiction_write_artifact").inputSchema.properties.content.maxLength, 1000000, "artifact write capacity is too small");
   assert.deepStrictEqual(definitions.get("fiction_continue_artifact").inputSchema.required, ["projectDir", "sourcePath", "modelIds", "authorConfirmed"]);
   assert.strictEqual(definitions.get("fiction_continue_artifact").inputSchema.properties.background.type, "boolean");
   assert.deepStrictEqual(definitions.get("fiction_generation_status").inputSchema.required, ["jobId"]);
@@ -221,7 +225,9 @@ async function main() {
   const recommendation = await callTool("fiction_recommend_models", { task: "draft", mode: "quick" });
   assert.strictEqual(gatewayGuardCalls, guardCallsBeforeRecommendation, "recommendation must not trigger login guard");
   assert.ok(Array.isArray(recommendation.modelIds) && recommendation.modelIds.length > 0, "recommendation modelIds missing");
-  assert.deepStrictEqual(recommendation.fallbackChain, recommendation.modelIds, "recommendation chain must match modelIds");
+  assert.strictEqual(recommendation.modelIds.length, 1, "router must return exactly one selected model");
+  assert.strictEqual(recommendation.fallbackChain, false, "router must not enable automatic model fallback");
+  assert.ok(Array.isArray(recommendation.alternativeModelIds), "router must keep alternatives separate from the selected model");
   assert.ok(!JSON.stringify(recommendation).includes('"credits"'), "recommendation must not expose model credits");
   assert.ok(!String(recommendation.coachAdvice || "").includes("积分"), "recommendation advice must not mention credits");
   assert.ok(String(recommendation.coachAdvice || "").includes("等待作者当次确认"), "recommendation must require per-call confirmation");
@@ -268,11 +274,13 @@ async function main() {
     assert.ok(!lastGatewayCallInput.prompt.includes("每400至700字"), "draft request leaked a fixed pacing interval");
     assert.ok(lastGatewayCallInput.prompt.includes("完整正文不得少于 1200 个中文字符"), "minChars was checked after generation but not sent to the model");
     assert.ok(lastGatewayCallInput.prompt.includes("沿现有因果") && lastGatewayCallInput.prompt.includes("不得靠复述"), "long-form prompt permits padding");
+    assert.strictEqual(lastGatewayCallInput.maxTokens, 32000, "draft default output budget is too small");
     const generateGuardCall = gatewayGuardArguments.find((item) => item.reason === "generate_to_file");
     assert.strictEqual(generateGuardCall?.allowPopup, true, "approved generation must allow first-use login");
     assert.strictEqual(generateGuardCall?.explicitUserChoice, true, "approved generation must record explicit choice");
     assert.ok(fs.existsSync(gen.artifact.path), "artifact txt missing");
     const generatedArtifact = fs.readFileSync(gen.artifact.path, "utf8");
+    assert.ok(generatedArtifact.includes('"fallbackChain":false'), "generation silently enabled cross-model fallback");
     assert.ok(generatedArtifact.includes('"requestPolicyVersion":"natural-prose-v5"'), "artifact does not record draft policy version");
     assert.ok(generatedArtifact.includes('"removedCount":3'), "artifact does not record context sanitation");
     assert.ok(fs.existsSync(gen.artifact.plainPath), "artifact .body.txt missing");

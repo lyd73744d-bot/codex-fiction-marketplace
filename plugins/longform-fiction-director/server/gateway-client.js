@@ -6,7 +6,9 @@ const { SessionStoreError, createSessionStore, publicUser } = require("./session
 const { createFakeIpAwareFetch } = require("./fake-ip-aware-fetch");
 
 const DEFAULT_GATEWAY = "https://api.nanshanyougui.xyz";
-const DEFAULT_MAX_RESPONSE_BYTES = 16 * 1024 * 1024;
+const DEFAULT_MAX_RESPONSE_BYTES = 64 * 1024 * 1024;
+const MAX_PROMPT_CHARS = 1_000_000;
+const MAX_SYSTEM_CHARS = 200_000;
 const DEFAULT_STREAM_IDLE_TIMEOUT_MS = 15 * 60_000;
 const DEFAULT_STREAM_TOTAL_TIMEOUT_MS = 90 * 60_000;
 const SENSITIVE_KEY_PATTERN = /(?:api|key|secret|token|password|credential|cookie)/u;
@@ -156,7 +158,8 @@ function isRetryableGenerationError(error) {
 function effectiveMaxTokens(modelId, requested, fallback = 24_000) {
   const numeric = Number(requested);
   const base = Number.isSafeInteger(numeric) && numeric >= 256 ? numeric : fallback;
-  return Math.max(256, Math.min(base, 65_536));
+  const minimum = /(?:^|[-_.])glm(?:[-_.]|$)/iu.test(String(modelId || "")) ? 8_192 : 256;
+  return Math.max(minimum, Math.min(base, 65_536));
 }
 
 function shouldUseNonStreamFallback(error) {
@@ -437,9 +440,9 @@ function createGatewayClient(options = {}) {
     safeObject(input);
     const allowed = new Set(["prompt", "system", "modelIds", "taskLabel", "onDelta", "streamRetries", "requestId", "maxTokens"]);
     if (Object.keys(input).some((key) => !allowed.has(key))) throw new GatewayClientError("INVALID_REQUEST");
-    if (typeof input.prompt !== "string" || !input.prompt.trim() || input.prompt.length > 200_000) throw new GatewayClientError("INVALID_REQUEST");
+    if (typeof input.prompt !== "string" || !input.prompt.trim() || input.prompt.length > MAX_PROMPT_CHARS) throw new GatewayClientError("INVALID_REQUEST");
     if (!Array.isArray(input.modelIds) || input.modelIds.length < 1 || input.modelIds.length > 8 || input.modelIds.some((id) => typeof id !== "string" || !/^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/u.test(id))) throw new GatewayClientError("INVALID_REQUEST");
-    if (input.system !== undefined && (typeof input.system !== "string" || input.system.length > 100_000)) throw new GatewayClientError("INVALID_REQUEST");
+    if (input.system !== undefined && (typeof input.system !== "string" || input.system.length > MAX_SYSTEM_CHARS)) throw new GatewayClientError("INVALID_REQUEST");
     if (input.taskLabel !== undefined && (typeof input.taskLabel !== "string" || input.taskLabel.length > 64)) throw new GatewayClientError("INVALID_REQUEST");
     if (input.onDelta !== undefined && typeof input.onDelta !== "function") throw new GatewayClientError("INVALID_REQUEST");
     if (input.requestId !== undefined && (typeof input.requestId !== "string" || !/^[A-Za-z0-9][A-Za-z0-9._:-]{7,127}$/u.test(input.requestId))) throw new GatewayClientError("INVALID_REQUEST");
@@ -622,7 +625,7 @@ function createGatewayClient(options = {}) {
     if (!Array.isArray(input.messages) || input.messages.length > 4096) throw new GatewayClientError("INVALID_REQUEST");
     if (input.stream !== undefined && typeof input.stream !== "boolean") throw new GatewayClientError("INVALID_REQUEST");
     const body = JSON.stringify(input);
-    if (Buffer.byteLength(body, "utf8") > 4 * 1024 * 1024) throw new GatewayClientError("INVALID_REQUEST");
+    if (Buffer.byteLength(body, "utf8") > 16 * 1024 * 1024) throw new GatewayClientError("INVALID_REQUEST");
     return authenticatedRawRequest("/e/catalog/chat/completions", {
       method: "POST",
       headers: { "content-type": "application/json", "x-workflow-operation": "ainovel" },
@@ -638,6 +641,8 @@ module.exports = {
   DEFAULT_MAX_RESPONSE_BYTES,
   DEFAULT_STREAM_IDLE_TIMEOUT_MS,
   DEFAULT_STREAM_TOTAL_TIMEOUT_MS,
+  MAX_PROMPT_CHARS,
+  MAX_SYSTEM_CHARS,
   ERROR_MESSAGES,
   GatewayClientError,
   collectOpenAiStream,

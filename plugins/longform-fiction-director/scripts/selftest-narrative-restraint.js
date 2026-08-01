@@ -6,6 +6,7 @@ const path = require("node:path");
 
 const root = path.resolve(__dirname, "..");
 const read = (relative) => fs.readFileSync(path.join(root, relative), "utf8");
+const { inspectChapter } = require("../server/writing-hard-gates");
 
 const main = read("skills/longform-fiction-director/SKILL.md");
 const humanizer = read("skills/humanizer-zh/SKILL.md");
@@ -19,7 +20,7 @@ const builtinWorkflow = read("skills/longform-fiction-director/references/builti
 const chapterTemplate = read("assets/workflow/project-template/细纲/01_当前章细纲.md");
 const pluginManifest = JSON.parse(read(".codex-plugin/plugin.json"));
 const scenarios = JSON.parse(read("skills/humanizer-zh/test-prompts.json"));
-const { buildOptimizeSystem, FOCUS_HINTS } = require("../server/humanizer-prompt-lib");
+const { buildOptimizeSystem, buildOptimizePrompt, FOCUS_HINTS } = require("../server/humanizer-prompt-lib");
 const {
   buildDraftSystem,
   prepareDraftPrompt,
@@ -46,6 +47,20 @@ for (const prompt of [humanizeSystem, reviewSystem]) {
 }
 assert.ok(FOCUS_HINTS.dialogue.includes("自然留白"), "dialogue focus hint is stale");
 assert.ok(FOCUS_HINTS.narration.includes("不替读者翻译潜台词"), "narration focus hint is stale");
+
+const longContextTail = {
+  voice: "文风".repeat(5500) + "[VOICE-END]",
+  cards: "人物".repeat(19000) + "[CARDS-END]",
+  brief: "细纲".repeat(9000) + "[BRIEF-END]",
+  facts: "事实".repeat(12000) + "[FACTS-END]"
+};
+const longOptimizePrompt = buildOptimizePrompt({
+  draftText: "正文".repeat(6000) + "[DRAFT-END]",
+  context: longContextTail
+});
+for (const marker of ["[VOICE-END]", "[CARDS-END]", "[BRIEF-END]", "[FACTS-END]", "[DRAFT-END]"]) {
+  assert.ok(longOptimizePrompt.includes(marker), `long optimization context lost ${marker}`);
+}
 
 assert.ok(main.includes("非施工单") && main.includes("流程腔"), "draft handoff misses whole-chapter anti-checklist rule");
 assert.ok(humanizer.includes("整章专项：拆除细纲验收流程"), "humanizer misses whole-chapter process-voice diagnosis");
@@ -92,6 +107,18 @@ assert.ok(draftSystem.system.includes("篇幅来自事情继续发生") && draft
 assert.ok(draftSystem.system.includes("人物、关系或局势") && draftSystem.system.includes("先做A、再做B、最后发现C"), "draft runtime policy still treats chapter direction as an action checklist");
 assert.ok(!draftSystem.system.includes("300–500"), "draft runtime policy hardcodes an opening span");
 assert.ok(main.includes("不得把整份人物库、系统表、历史库") || main.includes("不得把整份人物库、系统表、历史库或 `00-08`"), "main skill still permits full-ledger prompt dumping");
+
+const boundaryGate = inspectChapter(
+  "千总陈望带六百人从涿州出发，营里还剩十一个伤兵。",
+  { requestText: "主将和营地没有确认姓名，不要补造姓名，不要擅自套用真实战役、精确日期或兵力数字；地点未确认。" }
+);
+assert.ok(boundaryGate.issues.some((item) => item.rule === "unconfirmed-name-risk"), "unconfirmed name risk was not reported");
+assert.ok(boundaryGate.issues.some((item) => item.rule === "unconfirmed-quantity-risk"), "unconfirmed quantity risk was not reported");
+assert.ok(boundaryGate.issues.some((item) => item.rule === "unconfirmed-place-risk"), "unconfirmed place risk was not reported");
+const chineseQuantityGate = inspectChapter("另有一百人守在关外。", { requestText: "兵力数字未确认。" });
+assert.ok(chineseQuantityGate.issues.some((item) => item.rule === "unconfirmed-quantity-risk"), "Chinese quantity beginning with one was not reported");
+const noFalseName = inspectChapter("总兵的印压在公文上，校尉看他一眼。", { requestText: "人物姓名未确认。" });
+assert.ok(!noFalseName.issues.some((item) => item.rule === "unconfirmed-name-risk"), "ordinary title phrase was mislabeled as a name");
 assert.ok(builtinWorkflow.includes("最小") || read("skills/longform-fiction-director/references/natural-writing-system.md").includes("不能把整份人物库"), "workflow misses minimal-context handoff");
 assert.ok(main.includes("耗时 502 不自动重发"), "main skill still replays long upstream 502 responses");
 assert.ok(main.includes("从最后一个字继续") && main.includes("本地按原文顺序合并"), "main skill misses lossless segmented long-form recovery");

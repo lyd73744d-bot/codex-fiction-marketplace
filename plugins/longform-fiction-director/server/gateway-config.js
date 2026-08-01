@@ -8,14 +8,13 @@ const path = require("node:path");
 const DEFAULT_MODEL_CREDITS = Object.freeze({
   "claude-sonnet-5": 10,
   "claude-opus-4-6": 20,
-  "gemini-3.1-pro-preview": 12,
-  "gemini-3.5-flash": 8,
-  "seed-2.1-pro": 20,
-  "seed-2.1-turbo": 10,
-  "kimi-k2.6": 20,
+  "gemini-3.1-pro-preview": 10,
+  "glm-5.2": 10,
+  "kimi-k3": 10,
+  "minimax-m3": 5,
+  "gemini-3.5-flash": 5,
   "qwen3.7-max": 5,
-  "gpt-image-2": 50,
-  "grok-4.5": 5
+  "gpt-image-2": 50
 });
 const DEFAULT_MODELS = Object.freeze(Object.keys(DEFAULT_MODEL_CREDITS));
 
