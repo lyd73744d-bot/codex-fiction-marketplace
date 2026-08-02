@@ -1,5 +1,7 @@
 "use strict";
 
+const { isDisabledModel } = require("./disabled-models");
+
 /**
  * Lead-editor model router (责编建议，不是强制调度器).
  * Absorbs zizhuji quick/deep writing modes as soft advice only.
@@ -32,12 +34,12 @@ const ROLE_HINTS = {
   },
   structure: {
     label: "结构/大纲/细纲",
-    prefer: ["glm-5.2", "claude-sonnet-5", "seed-2.1-pro", "gemini-3.1-pro-preview", "kimi-k3"],
+    prefer: ["glm-5.2", "claude-sonnet-5", "seed-2.1-pro", "gemini-3.1-pro-preview"],
     why: "要因果与节奏，中档推理足够"
   },
   draft: {
     label: "正文主写",
-    prefer: ["claude-sonnet-5", "seed-2.1-pro", "glm-5.2", "kimi-k3", "minimax-m3", "claude-opus-4-6"],
+    prefer: ["claude-sonnet-5", "seed-2.1-pro", "glm-5.2", "minimax-m3", "claude-opus-4-6"],
     why: "主写要稳、文风可控；默认中档，作者点名再用旗舰"
   },
   continuity: {
@@ -47,7 +49,7 @@ const ROLE_HINTS = {
   },
   style: {
     label: "去AI味/润色",
-    prefer: ["claude-sonnet-5", "seed-2.1-pro", "glm-5.2", "kimi-k3", "claude-opus-4-6"],
+    prefer: ["claude-sonnet-5", "seed-2.1-pro", "glm-5.2", "claude-opus-4-6"],
     why: "改味不改剧情，中档写手模型更合适"
   },
   adversary: {
@@ -70,12 +72,12 @@ const ROLE_HINTS = {
 // Fused from zizhuji workflow-model-policy: soft presets only
 const WRITING_MODE_PRESETS = {
   chapterWrite: {
-    quick: ["claude-sonnet-5", "seed-2.1-turbo", "glm-5.2", "kimi-k3", "minimax-m3"],
-    deep: ["claude-opus-4-6", "claude-sonnet-5", "seed-2.1-pro", "glm-5.2", "kimi-k3"]
+    quick: ["claude-sonnet-5", "seed-2.1-turbo", "glm-5.2", "minimax-m3"],
+    deep: ["claude-opus-4-6", "claude-sonnet-5", "seed-2.1-pro", "glm-5.2"]
   },
   chapterOptimize: {
     quick: ["claude-sonnet-5", "seed-2.1-turbo", "glm-5.2"],
-    deep: ["claude-opus-4-6", "claude-sonnet-5", "seed-2.1-pro", "glm-5.2", "kimi-k3"]
+    deep: ["claude-opus-4-6", "claude-sonnet-5", "seed-2.1-pro", "glm-5.2"]
   }
 };
 
@@ -86,9 +88,8 @@ const MODEL_CAPABILITY_PROFILES = Object.freeze({
   "claude-opus-4-6": { longForm: "verified", note: "长文质量稳定，适合深度正文与定稿" },
   "gemini-3.1-pro-preview": { longForm: "verified", note: "已验证可返回较长正文" },
   "glm-5.2": { longForm: "verified", note: "已验证长文能力，速度偏慢" },
-  "gemini-3.5-flash": { longForm: "verified", note: "已验证长文能力，返回较快" },
+  "gemini-3.5-flash": { longForm: "short-form", note: "返回较快，适合探索和短任务；不自动推荐为历史长篇细纲或正文主写" },
   "claude-sonnet-5": { longForm: "variable", note: "文风可用，但实测篇幅有时提前收束" },
-  "kimi-k3": { longForm: "variable", note: "可写正文，但实测篇幅与速度波动" },
   "minimax-m3": { longForm: "variable", note: "适合中短正文或局部改写" },
   "qwen3.7-max": { longForm: "variable", note: "适合中短正文或结构任务" },
   "seed-2.1-pro": { longForm: "unverified", note: "当前线路尚未完成长文实测" },
@@ -98,8 +99,8 @@ const MODEL_CAPABILITY_PROFILES = Object.freeze({
 });
 
 const LONG_FORM_PRESETS = Object.freeze({
-  deep: ["claude-opus-4-6", "gemini-3.1-pro-preview", "glm-5.2", "gemini-3.5-flash"],
-  quick: ["gemini-3.5-flash", "glm-5.2", "gemini-3.1-pro-preview"]
+  deep: ["claude-opus-4-6", "gemini-3.1-pro-preview", "glm-5.2"],
+  quick: ["glm-5.2", "gemini-3.1-pro-preview"]
 });
 
 function normalizeTask(task) {
@@ -153,7 +154,7 @@ function scoreModel(modelId, role, creditsMap = {}, mode = "quick", targetChars 
     if (/flash|mini|haiku|air|turbo/.test(lower)) score += 20;
   }
   if (mode === "deep") {
-    if (/opus|pro|kimi|sonnet/.test(lower)) score += 18;
+    if (/opus|pro|sonnet/.test(lower)) score += 18;
   } else {
     if (/flash|mini|haiku|turbo/.test(lower)) score += 12;
     if (/opus/.test(lower)) score -= 15;
@@ -166,6 +167,7 @@ function scoreModel(modelId, role, creditsMap = {}, mode = "quick", targetChars 
   if (Number(targetChars) >= 4000) {
     const capability = modelCapability(id).longForm;
     if (capability === "verified") score += 140;
+    if (capability === "short-form") score -= 80;
     if (capability === "variable") score -= 25;
     if (capability === "unverified") score -= 55;
   }
@@ -182,7 +184,8 @@ function pickForRole(role, availableModels, creditsMap = {}, limit = 2, mode = "
     };
   }).filter((m) => m.id
     && !MANUAL_ONLY_MODELS.has(String(m.id).toLowerCase())
-    && !NON_WRITING_MODELS.has(String(m.id).toLowerCase()));
+    && !NON_WRITING_MODELS.has(String(m.id).toLowerCase())
+    && !isDisabledModel(m.id));
 
   return list
     .map((m) => ({
@@ -219,7 +222,7 @@ function buildCoachAdvice(taskId, plans, mode, unpaidNote, targetChars = 0) {
   if (Number(targetChars) >= 4000) lines.push("本次按长文目标排序；优先使用已有长文实测依据的模型，但篇幅仍由上游实际返回决定。");
   lines.push("生成策略：一次授权只提交一次；不先测活、不自动重试、不自动改传输方式、不跨线路换模型。收到的正文或中断前片段全部落盘（.body 纯正文可续写）。");
   lines.push("结果先在「Codex候选/」给作者看，确认前不入正式正文/台账。");
-  if (mode === "quick") lines.push("快速模式：探索用 flash/qwen；正文用 sonnet/kimi/seed；终检再开 deep。");
+  if (mode === "quick") lines.push("快速模式：探索用 flash/qwen；正文用 sonnet/seed；终检再开 deep。");
   else lines.push("深度模式：主写用稳定模型，终检使用旗舰模型。");
   return lines.join("\n");
 }

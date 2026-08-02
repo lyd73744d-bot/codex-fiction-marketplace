@@ -28,9 +28,14 @@ function roughStats(text) {
   const longLines = lines.filter((l) => l.length >= 70).length;
   const aiHints = [];
   const fixes = [];
+  const genericThreat = /(?:该|现在|迟早|早晚).{0,6}(?:算账|清算)|(?:这笔|那笔|一笔一笔).{0,8}(?:账|债)|(?:接下来|现在).{0,4}轮到.{0,6}(?:我|你|他|他们)|(?:真正的|真正).{0,8}(?:较量|好戏|战斗).{0,8}(?:开始|开场)|(?:付出|偿还).{0,4}代价/;
   if (/(与此同时|就在这时|不禁|缓缓|微微一笑|目光深邃|嘴角微微上扬|空气仿佛凝固|所有人都倒吸|一场风暴即将|真正的较量才刚刚开始)/.test(body)) {
     aiHints.push("套话风险");
     fixes.push("删掉套话，改成具体动作或停顿");
+  }
+  if (genericThreat.test(body)) {
+    aiHints.push("通用狠话风险");
+    fixes.push("把敌意落到当前对象、旧事、筹码或行动；没有说话必要时直接删除");
   }
   if (/(首先|其次|总之|由此可见|这意味着|不难看出)/.test(body)) {
     aiHints.push("解释腔/议论文腔");

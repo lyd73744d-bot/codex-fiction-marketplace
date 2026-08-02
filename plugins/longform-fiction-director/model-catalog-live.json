@@ -1,8 +1,8 @@
 {
-  "version": "4.3",
-  "fullVersion": "4.3.0",
+  "version": "4.6",
+  "fullVersion": "4.6.0",
   "gateway": "https://api.nanshanyougui.xyz",
-  "updatedAt": "2026-08-01T22:31:06+08:00",
+  "updatedAt": "2026-08-02T01:02:38+08:00",
   "preferredModel": "claude-opus-4-6",
   "models": [
     { "id": "claude-sonnet-5", "credits": 10, "available": true, "status": "live", "flagship": true, "longForm": "variable" },
@@ -11,7 +11,6 @@
     { "id": "seed-2.1-turbo", "credits": 10, "available": true, "status": "live", "flagship": false, "longForm": "unverified" },
     { "id": "gemini-3.1-pro-preview", "credits": 10, "available": true, "status": "live", "flagship": true, "longForm": "verified" },
     { "id": "glm-5.2", "credits": 10, "available": true, "status": "live", "flagship": true, "longForm": "verified" },
-    { "id": "kimi-k3", "credits": 10, "available": true, "status": "live", "flagship": true, "longForm": "variable" },
     { "id": "minimax-m3", "credits": 5, "available": true, "status": "live", "flagship": false, "longForm": "variable" },
     { "id": "gemini-3.5-flash", "credits": 5, "available": true, "status": "live", "flagship": false, "longForm": "verified" },
     { "id": "qwen3.7-max", "credits": 5, "available": true, "status": "live", "flagship": true, "longForm": "variable" },

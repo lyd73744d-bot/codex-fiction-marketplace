@@ -1,5 +1,7 @@
 "use strict";
 
+const { filterDisabledModels, isDisabledModel } = require("./disabled-models");
+
 function uniqueModels(models) {
   const seen = new Set();
   const out = [];
@@ -12,7 +14,7 @@ function uniqueModels(models) {
   return out;
 }
 
-const LEGACY_PREFERRED = new Set(["kimi-k3", "minimax-m3", "qwen3.7-max"]);
+const LEGACY_PREFERRED = new Set(["minimax-m3", "qwen3.7-max"]);
 
 function createHybridGateway({ primary, secondary, label, allowedModels = [], preferredModel = "", creditsPerCall = 10, balance = -1, modelCredits = null } = {}) {
   if (!primary || typeof primary.listModels !== "function" || typeof primary.callModels !== "function") {
@@ -22,18 +24,18 @@ function createHybridGateway({ primary, secondary, label, allowedModels = [], pr
     throw new TypeError("secondary gateway is required");
   }
   const allow = Array.isArray(allowedModels)
-    ? [...new Set(allowedModels.map((item) => String(item || "").trim()).filter(Boolean))]
+    ? [...new Set(allowedModels.map((item) => String(item || "").trim()).filter((item) => item && !isDisabledModel(item)))]
     : [];
   const allowSet = new Set(allow);
   const creditMap = modelCredits && typeof modelCredits === "object" && !Array.isArray(modelCredits)
     ? modelCredits
-    : (primary && primary.modelCredits) || {"claude-sonnet-5":10,"claude-opus-4-6":20,"seed-2.1-pro":20,"seed-2.1-turbo":10,"gemini-3.1-pro-preview":10,"glm-5.2":10,"kimi-k3":10,"minimax-m3":5,"gemini-3.5-flash":5,"qwen3.7-max":5,"grok-4.5":5,"gpt-image-2":50};
+    : (primary && primary.modelCredits) || {"claude-sonnet-5":10,"claude-opus-4-6":20,"seed-2.1-pro":20,"seed-2.1-turbo":10,"gemini-3.1-pro-preview":10,"glm-5.2":10,"minimax-m3":5,"gemini-3.5-flash":5,"qwen3.7-max":5,"grok-4.5":5,"gpt-image-2":50};
 
   async function safeList(gateway) {
     try {
       const payload = await gateway.listModels();
       const models = Array.isArray(payload) ? payload : payload && payload.models;
-      return Array.isArray(models) ? models : [];
+      return filterDisabledModels(models);
     } catch {
       return [];
     }
@@ -70,6 +72,11 @@ function createHybridGateway({ primary, secondary, label, allowedModels = [], pr
   }
 
   async function callModels(input) {
+    if (Array.isArray(input?.modelIds) && input.modelIds.some(isDisabledModel)) {
+      const error = new Error("Requested model is disabled.");
+      error.code = "MODEL_DISABLED";
+      throw error;
+    }
     const preferred = await pickGateway(input && input.modelIds);
     return preferred.callModels(input);
   }
@@ -103,15 +110,7 @@ function createHybridGateway({ primary, secondary, label, allowedModels = [], pr
   }
 
   async function connectionStatus() {
-    const checks = [];
-    if (typeof primary.connectionStatus === "function") {
-      try { checks.push(await primary.connectionStatus()); } catch (e) { checks.push({ online: false }); }
-    }
-    if (typeof secondary.connectionStatus === "function") {
-      try { checks.push(await secondary.connectionStatus()); } catch (e) { checks.push({ online: false }); }
-    }
-    const online = checks.some((item) => item && item.online === true);
-    return { ok: online, online: online };
+    return { ok: true, online: null, probeDisabled: true };
   }
 
   async function login(input) {

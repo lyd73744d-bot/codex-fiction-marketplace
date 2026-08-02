@@ -14,17 +14,11 @@
    - 文风锚点与授权参考（如有）
 3. 每次生成正文或做终检前重读这份清单
 
-## 默认一步步
-整理资料清单 → Codex 问清脑洞 → 接入题材责编 → 可选外部发散/优化 → 作者定方向 → 按需写自然章节笔记 → 候选正文 → 去AI味(可选) → 质检(可选) → 确认入台账
+## 默认协作
+作者可以从脑洞、大纲、细纲、正文、改稿或续写中的任何位置进入。Codex 先判断当前任务，只补会影响这一步的最少资料；需要模型时单独询问，候选确认后才进入正式正文与台账。阶段判断统一读取 `commercial-fiction-principles.md`，不让作者重新走一套固定流程。
 
-## 连续跑
-作者授权连续流程后仍需在每次外部模型调用前询问；当次确认后才以 `authorConfirmed: true` 调用 `fiction_generate_to_file`：
-- to_draft：已有承接/可选章节笔记 → 正文
-- chapter_once：读取承接与事实 → 正文 → 去AI味 → 质检
-- polish_once：去AI味 → 质检
-- multi_chapter：循环 chapter_once
-
-不自动 settle；作者确认后 Codex 才把定稿写入 `正文/` 并更新台账。
+## 连续处理
+作者明确授权连续处理时，可以连续准备和生成候选，但每次外部模型调用仍单独询问。去 AI 味和质检按实际问题使用，不作为每章必跑步骤。作者确认后，Codex 才把采用稿写入 `正文/` 并更新发生变化的台账。
 
 ## 模型
 选择使用其他模型并永久绑定后即可调用。只有未登录时才打开登录页。
@@ -32,6 +26,7 @@
 
 ## 提示词增强（已内置）
 - 全局自然写作制度：natural-writing-system.md
+- 分阶段故事判断：commercial-fiction-principles.md
 - 可选章节笔记：chapter-control-card.md（旧文件名仅为兼容）
 - 可选平台节奏观察：hook-shuangdian-checklist.md
 - 去AI分级：deslop-grades.md

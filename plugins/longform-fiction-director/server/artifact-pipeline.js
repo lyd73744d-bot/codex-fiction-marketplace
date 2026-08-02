@@ -816,6 +816,10 @@ async function generateToArtifact({
       const previewLimit = Math.max(120, Math.min(Number(previewChars) || 800, 4000));
       return {
         ok: true,
+        accepted: !lastBelowMinChars && !lastPartial && !(lastGate && lastGate.ok === false),
+        qualityStatus: lastBelowMinChars
+          ? "below_requested_length"
+          : (lastPartial ? "partial_candidate" : (!(lastGate && lastGate.ok === false) ? "candidate_ready" : "review_required")),
         artifact: saved,
         modelId,
         transport: lastTransport,

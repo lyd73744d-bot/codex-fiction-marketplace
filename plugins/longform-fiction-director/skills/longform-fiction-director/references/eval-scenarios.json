@@ -52,7 +52,7 @@
   {
     "id": "brainstorm-expands-before-direction-lock",
     "prompt": "这个脑洞基本聊清了，你看还能不能让别的模型发散一下。",
-    "failureToPrevent": "Codex 直接锁定方向，或未经询问调用模型，或把一长串同义脑洞整包塞给新手；应推荐一个外部模型并询问，结果回来后去重、说明新增价值和代价，再让作者决定。"
+    "failureToPrevent": "Codex 直接锁定方向，或未经询问调用模型，或把一长串同义脑洞整包塞给新手；应推荐一个外部模型并询问，结果回来后去重、说明各自真正改变什么、会放弃什么，再让作者决定。"
   },
   {
     "id": "lead-editor-does-not-take-prose-a-position",
@@ -63,6 +63,11 @@
     "id": "chapter-brief-is-not-a-test-plan",
     "prompt": "旧细纲写了九个固定场景、每段字数、三次系统提示、三批塘马回报，还要求依次验证六支兵种、语言和粮草。按它写第一章。",
     "failureToPrevent": "把旧细纲原样发给模型或逐项照写；应先提取不可写错的事实，丢弃场景顺序、字数、次数和验收命令，并明确开头、披露、场景和收尾由人物因果决定。"
+  },
+  {
+    "id": "paid-course-is-learning-not-template",
+    "prompt": "按我提供的系统写作课程优化卢象升第一章细纲，但不要再做成表格或固定流程。",
+    "failureToPrevent": "把课程中的固定字数、万能开头、冲突阶梯、情绪曲线或场景卡升级成插件硬规则；应保留卢象升的时代认知、人物所求、各方回应和选择后果，用自然段讲清故事，同时允许正文自行决定入口、组合与停处。"
   },
   {
     "id": "prose-optimization-stays-external",
@@ -78,5 +83,30 @@
     "id": "new-book-genre-before-title",
     "prompt": "我刚打开插件，选择开一本新书，但我还不知道书名。",
     "failureToPrevent": "叙述查找插件、Skill、缓存或版本，或者先问临时书名和保存文件夹，或者甩出完整题材菜单；应先自然问类型，没想好时允许作者说一个想看的情节或爽点，方向清楚后由 Codex 自动给临时项目名。"
+  },
+  {
+    "id": "course-method-routes-by-current-stage",
+    "prompt": "我已经有完整脑洞，现在只想把人物关系想清楚。",
+    "failureToPrevent": "重新带作者从市场、书名、大纲一路走完整套课程；应只读取人物与关系相关判断，围绕人物所求、惯常做法、知情范围和彼此边界解决当前缺口。"
+  },
+  {
+    "id": "outline-tells-story-not-system-tour",
+    "prompt": "给卢象升骑砍系统文重做全书大纲。",
+    "failureToPrevent": "按兵种、工资、粮食、声望、工坊、商队和领地依次展示系统功能；应讲清卢象升如何在真实历史处境中选择、结盟、失去与改变局势，以及每个阶段怎样因前一阶段结果而发生。"
+  },
+  {
+    "id": "opening-belongs-to-book",
+    "prompt": "这是一部慢热历史群像，帮我看第一章开头。",
+    "failureToPrevent": "强行新增袭击、爆炸、系统提示或突发死亡；应先判断现有开头能否让读者进入具体人物与时代生活，再针对真实阅读缺口修改。"
+  },
+  {
+    "id": "emotion-does-not-become-body-reaction-template",
+    "prompt": "这段直接写他害怕，是不是必须改成动作？",
+    "failureToPrevent": "把情绪词统一替换成握拳、心跳、喉结、瞳孔和眼神；应根据人物、关系和段落重要程度决定直写或间接表现，没有合适动作时可以直说。"
+  },
+  {
+    "id": "dialogue-does-not-avoid-said",
+    "prompt": "这页用了好几个‘说’，是不是都要换成动作？",
+    "failureToPrevent": "给每句对白添加表情、手势和走位；应允许正常使用‘说、问、道’，只在动作确实改变话意、关系、动作线或节奏时加入。"
   }
 ]

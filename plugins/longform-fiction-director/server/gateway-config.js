@@ -4,6 +4,7 @@ const fs = require("node:fs");
 const fsp = require("node:fs/promises");
 const os = require("node:os");
 const path = require("node:path");
+const { isDisabledModel } = require("./disabled-models");
 
 const DEFAULT_MODEL_CREDITS = Object.freeze({
   "claude-sonnet-5": 10,
@@ -12,7 +13,6 @@ const DEFAULT_MODEL_CREDITS = Object.freeze({
   "seed-2.1-turbo": 10,
   "gemini-3.1-pro-preview": 10,
   "glm-5.2": 10,
-  "kimi-k3": 10,
   "minimax-m3": 5,
   "gemini-3.5-flash": 5,
   "qwen3.7-max": 5,
@@ -43,6 +43,7 @@ function normalizeModelCredits(value, allowedModels = []) {
     ? allowedModels
     : Object.keys(Object.assign({}, defaults, source));
   for (const id of ids) {
+    if (isDisabledModel(id)) continue;
     const raw = source[id] ?? defaults[id] ?? 2;
     const n = Number(raw);
     out[id] = Number.isFinite(n) && n > 0 ? Math.min(Math.floor(n), 9999) : (defaults[id] || 2);
@@ -54,7 +55,7 @@ function normalizeModelList(value) {
   if (!Array.isArray(value)) return [];
   return [...new Set(value
     .map((item) => String(item || "").trim())
-    .filter((item) => /^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/u.test(item)))].slice(0, 32);
+    .filter((item) => /^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/u.test(item) && !isDisabledModel(item)))].slice(0, 32);
 }
 
 function readConfigFile(configPath) {
@@ -118,7 +119,8 @@ function loadPrimaryGatewayConfig(options = {}) {
         reason: "OpenAI-compatible primary gateway needs baseUrl and apiKey."
       };
     }
-    const preferredModel = String(options.preferredModel || process.env.FICTION_DIRECTOR_PREFERRED_MODEL || file.preferredModel || "claude-opus-4-6").trim();
+    const configuredPreferred = String(options.preferredModel || process.env.FICTION_DIRECTOR_PREFERRED_MODEL || file.preferredModel || "claude-opus-4-6").trim();
+    const preferredModel = isDisabledModel(configuredPreferred) ? "claude-opus-4-6" : configuredPreferred;
     const allowedModels = normalizeModelList(
       options.allowedModels
       || (process.env.FICTION_DIRECTOR_ALLOWED_MODELS ? String(process.env.FICTION_DIRECTOR_ALLOWED_MODELS).split(/[,\s]+/) : null)
@@ -167,7 +169,10 @@ async function savePrimaryGatewayConfig(input = {}, options = {}) {
     mode,
     label: String(input.label || "平价站第一模型源").slice(0, 80),
     baseUrl: mode === "openai" ? normalizeOpenAiBaseUrl(input.baseUrl) : String(input.baseUrl || "").trim(),
-    preferredModel: String(input.preferredModel || "claude-opus-4-6").trim() || "claude-opus-4-6",
+    preferredModel: (() => {
+      const value = String(input.preferredModel || "claude-opus-4-6").trim() || "claude-opus-4-6";
+      return isDisabledModel(value) ? "claude-opus-4-6" : value;
+    })(),
     allowedModels: normalizeModelList(input.allowedModels || DEFAULT_MODELS),
     modelCredits: normalizeModelCredits(input.modelCredits, input.allowedModels || ["claude-opus-4-6", "claude-sonnet-5"]),
     creditsPerCall: Number(input.creditsPerCall ?? 10),

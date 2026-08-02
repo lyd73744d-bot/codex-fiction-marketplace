@@ -315,7 +315,7 @@ async function main() {
     assert.ok(fs.existsSync(gen.artifact.path), "artifact txt missing");
     const generatedArtifact = fs.readFileSync(gen.artifact.path, "utf8");
     assert.ok(generatedArtifact.includes('"fallbackChain":false'), "generation silently enabled cross-model fallback");
-    assert.ok(generatedArtifact.includes('"requestPolicyVersion":"natural-prose-v5"'), "artifact does not record draft policy version");
+    assert.ok(generatedArtifact.includes('"requestPolicyVersion":"natural-prose-v7"'), "artifact does not record draft policy version");
     assert.ok(generatedArtifact.includes('"removedCount":3'), "artifact does not record context sanitation");
     assert.ok(fs.existsSync(gen.artifact.plainPath), "artifact .body.txt missing");
     assert.strictEqual(gen.artifact.recordedForMemory, true, "external model output must be recorded for memory");

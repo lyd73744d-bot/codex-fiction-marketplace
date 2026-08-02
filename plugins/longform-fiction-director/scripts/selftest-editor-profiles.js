@@ -52,11 +52,10 @@ assert.ok(genres.includes("一次只启用一个主责编"), "single-primary-edi
 assert.ok(genres.includes("辅助标签不是第二位说话的责编"), "secondary-tag rule missing");
 assert.ok(skill.includes("references/genre-recipes.md"), "main skill does not load genre editors");
 assert.ok(skill.includes("references/editor-voice.md"), "main skill does not load editor voice rules");
-assert.ok(beginner.includes("自动判断主类型并接入对应题材责编"), "new-user auto-routing rule missing");
-assert.ok(beginner.includes("不让作者从完整名单里选"), "new users must not receive a genre menu");
-for (const field of ["主类型：", "题材责编：", "辅助标签：", "读者持续追更是为了："]) {
-  assert.ok(projectState.includes(field), `project state missing field: ${field}`);
-}
+assert.ok(beginner.includes("读取 `genre-recipes.md` 判断一个主责编"), "new-user auto-routing rule missing");
+assert.ok(beginner.includes("只有两种方向会导致完全不同的故事时，才让作者选"), "new users must not receive a genre menu");
+assert.ok(projectState.includes("读者持续追看主要在关心什么"), "project state misses the reader promise");
+assert.ok(projectState.includes("不需要作者填表") && !projectState.includes("主类型："), "project state still behaves like a fill-in form");
 assert.ok(voice.includes("温和对待作者，严格对待作品"), "editor stance missing");
 assert.ok(voice.includes("不提前庆祝尚未完成的结果"), "anti-hype rule missing");
 assert.ok(voice.includes("一次回复最多一句肯定"), "praise limit missing");

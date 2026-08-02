@@ -1,6 +1,7 @@
 "use strict";
 
 const crypto = require("node:crypto");
+const { isDisabledModel } = require("./disabled-models");
 const {
   DEFAULT_MAX_RESPONSE_BYTES,
   DEFAULT_STREAM_IDLE_TIMEOUT_MS,
@@ -39,14 +40,14 @@ function createOpenAiCompatibleGateway(options = {}) {
     : ["gemini-3.1-pro-preview", "gemini-3.5-flash"]);
   const preferredModel = typeof options.preferredModel === "string" ? options.preferredModel.trim() : "";
   const allowedModels = Array.isArray(options.allowedModels)
-    ? [...new Set(options.allowedModels.map((item) => String(item || "").trim()).filter(Boolean))]
+    ? [...new Set(options.allowedModels.map((item) => String(item || "").trim()).filter((item) => item && !isDisabledModel(item)))]
     : [];
   const creditsPerCall = Number.isFinite(Number(options.creditsPerCall)) ? Number(options.creditsPerCall) : 10;
   const displayBalance = Number.isFinite(Number(options.balance)) ? Number(options.balance) : -1;
   const displayCallsLeft = displayBalance < 0 ? -1 : 999;
   const modelCredits = options.modelCredits && typeof options.modelCredits === "object" && !Array.isArray(options.modelCredits)
     ? options.modelCredits
-    : {"claude-sonnet-5":10,"claude-opus-4-6":20,"seed-2.1-pro":20,"seed-2.1-turbo":10,"gemini-3.1-pro-preview":10,"glm-5.2":10,"kimi-k3":10,"minimax-m3":5,"gemini-3.5-flash":5,"qwen3.7-max":5,"grok-4.5":5,"gpt-image-2":50};
+    : {"claude-sonnet-5":10,"claude-opus-4-6":20,"seed-2.1-pro":20,"seed-2.1-turbo":10,"gemini-3.1-pro-preview":10,"glm-5.2":10,"minimax-m3":5,"gemini-3.5-flash":5,"qwen3.7-max":5,"grok-4.5":5,"gpt-image-2":50};
   const timeoutMs = Number.isSafeInteger(options.timeoutMs) && options.timeoutMs > 0 ? options.timeoutMs : 120_000;
   const streamTimeoutMs = Number.isSafeInteger(options.streamTimeoutMs) && options.streamTimeoutMs > 0 ? options.streamTimeoutMs : DEFAULT_STREAM_TOTAL_TIMEOUT_MS;
   const streamIdleTimeoutMs = Number.isSafeInteger(options.streamIdleTimeoutMs) && options.streamIdleTimeoutMs > 0 ? options.streamIdleTimeoutMs : DEFAULT_STREAM_IDLE_TIMEOUT_MS;
@@ -212,16 +213,7 @@ function createOpenAiCompatibleGateway(options = {}) {
   }
 
   async function connectionStatus() {
-    try {
-      const response = await fetcher(`${baseUrl}/health`, { method: "GET", redirect: "error", signal: AbortSignal.timeout(8_000) });
-      if (response.ok) return { ok: true, online: true };
-    } catch {}
-    try {
-      await networkRequest("/v1/models", { headers: { authorization: `Bearer ${await requireApiKey()}` } });
-      return { ok: true, online: true };
-    } catch (error) {
-      return { ok: false, online: false, error: { code: error.code || "SERVER_OFFLINE", message: error.message } };
-    }
+    return { ok: true, online: null, probeDisabled: true };
   }
 
   async function listModels() {
@@ -246,7 +238,7 @@ function createOpenAiCompatibleGateway(options = {}) {
       if (!Array.isArray(raw)) continue;
       for (const item of raw) {
         const id = item?.id || item?.name;
-        if (typeof id !== "string" || !id) continue;
+        if (typeof id !== "string" || !id || isDisabledModel(id)) continue;
         const credits = Number(modelCredits[id]);
         merged.set(id, {
           id,
@@ -258,6 +250,7 @@ function createOpenAiCompatibleGateway(options = {}) {
     }
     // Ensure configured Nexa models still appear even if catalog is partial.
     for (const id of nexaModels) {
+      if (isDisabledModel(id)) continue;
       if (merged.has(id)) continue;
       if (allowedModels.length && !allowedModels.includes(id)) continue;
       if (!nexaApiKey) continue;
@@ -270,6 +263,7 @@ function createOpenAiCompatibleGateway(options = {}) {
       });
     }
     for (const id of geminiModels) {
+      if (isDisabledModel(id)) continue;
       if (merged.has(id)) continue;
       if (allowedModels.length && !allowedModels.includes(id)) continue;
       if (!geminiApiKey) continue;
@@ -353,6 +347,7 @@ async function callModels(input = {}) {
     if (input.modelIds.some((id) => typeof id !== "string" || !/^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/u.test(id))) {
       throw new GatewayClientError("INVALID_REQUEST");
     }
+    if (input.modelIds.some(isDisabledModel)) throw new GatewayClientError("MODEL_DISABLED");
     if (input.maxTokens !== undefined && (!Number.isSafeInteger(input.maxTokens) || input.maxTokens < 256 || input.maxTokens > 65536)) throw new GatewayClientError("INVALID_REQUEST");
     if (input.requestId !== undefined && (typeof input.requestId !== "string" || !/^[A-Za-z0-9][A-Za-z0-9._:-]{7,127}$/u.test(input.requestId))) throw new GatewayClientError("INVALID_REQUEST");
 

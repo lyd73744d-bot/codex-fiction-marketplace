@@ -1,6 +1,7 @@
 "use strict";
 
 const crypto = require("node:crypto");
+const { filterDisabledModels, isDisabledModel } = require("./disabled-models");
 const os = require("node:os");
 const { SessionStoreError, createSessionStore, publicUser } = require("./session-store");
 const { createFakeIpAwareFetch } = require("./fake-ip-aware-fetch");
@@ -16,6 +17,7 @@ const ERROR_MESSAGES = Object.freeze({
   AUTH_REQUIRED: "Please log in first.",
   AUTH_FAILED: "Username or password is incorrect.",
   INVALID_REQUEST: "Request is invalid.",
+  MODEL_DISABLED: "Requested model is disabled.",
   RESPONSE_INVALID: "Gateway response is invalid.",
   EMPTY_MODEL_OUTPUT: "Model returned no usable text.",
   SERVER_OFFLINE: "Gateway is offline.",
@@ -67,6 +69,8 @@ function toGatewayNetworkError(error, fallbackCode = "SERVER_OFFLINE") {
   let mapped;
   if (isTimeoutError(error)) {
     mapped = new GatewayClientError("UPSTREAM_TIMEOUT", ERROR_MESSAGES.UPSTREAM_TIMEOUT, null, "模型响应超时；已收到的正文仍会保留。");
+  } else if (isHeaderEncodingError(error)) {
+    mapped = new GatewayClientError("INVALID_REQUEST", ERROR_MESSAGES.INVALID_REQUEST, null, "请求标签包含网络协议不支持的字符。");
   } else {
     mapped = new GatewayClientError(fallbackCode, ERROR_MESSAGES[fallbackCode] || ERROR_MESSAGES.SERVER_ERROR);
   }
@@ -79,6 +83,27 @@ function toGatewayNetworkError(error, fallbackCode = "SERVER_OFFLINE") {
 }
 
 function canonicalKey(key) { return String(key).replace(/[^a-z0-9]/gi, "").toLowerCase(); }
+function isHeaderEncodingError(error) {
+  let current = error;
+  for (let depth = 0; current && depth < 4; depth += 1, current = current.cause) {
+    const source = `${current.name || ""} ${current.message || ""}`;
+    if (/bytestring|invalid\s+header|header\s+value|greater\s+than\s+255/iu.test(source)) return true;
+  }
+  return false;
+}
+
+function workflowOperationHeader(value) {
+  const raw = String(value || "fiction").trim() || "fiction";
+  const ascii = raw.normalize("NFKC")
+    .replace(/[^\x21-\x7E]+/gu, "-")
+    .replace(/-+/gu, "-")
+    .replace(/^-|-$/gu, "");
+  if (/^[\x21-\x7E]{1,32}$/u.test(raw)) return raw;
+  const digest = crypto.createHash("sha256").update(raw, "utf8").digest("hex").slice(0, 10);
+  const prefix = ascii ? ascii.slice(0, 20) : "fiction";
+  return `${prefix}-${digest}`.slice(0, 32);
+}
+
 function sanitizePublicValue(value, depth = 0) {
   if (value === null || ["string", "number", "boolean"].includes(typeof value)) return value;
   if (!value || typeof value !== "object" || depth > 16) return null;
@@ -424,7 +449,7 @@ function createGatewayClient(options = {}) {
     return { ok: true, loggedIn: true, active: payload.active !== false, balance: user.balance, user };
   }
   async function connectionStatus() {
-    try { await networkRequest("/healthz"); return { ok: true, online: true }; } catch (error) { return { ok: false, online: false, error: { code: "SERVER_OFFLINE", message: error.message } }; }
+    return { ok: true, online: null, probeDisabled: true };
   }
   async function listModels() {
     const payload = await authenticatedRequest("/api/models");
@@ -434,7 +459,7 @@ function createGatewayClient(options = {}) {
       if (!item || typeof item.id !== "string" || !item.id) throw new GatewayClientError("RESPONSE_INVALID");
       return sanitizePublicValue(item);
     });
-    return { ok: true, models };
+    return { ok: true, models: filterDisabledModels(models) };
   }
   async function callModels(input) {
     safeObject(input);
@@ -442,6 +467,7 @@ function createGatewayClient(options = {}) {
     if (Object.keys(input).some((key) => !allowed.has(key))) throw new GatewayClientError("INVALID_REQUEST");
     if (typeof input.prompt !== "string" || !input.prompt.trim() || input.prompt.length > MAX_PROMPT_CHARS) throw new GatewayClientError("INVALID_REQUEST");
     if (!Array.isArray(input.modelIds) || input.modelIds.length < 1 || input.modelIds.length > 8 || input.modelIds.some((id) => typeof id !== "string" || !/^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/u.test(id))) throw new GatewayClientError("INVALID_REQUEST");
+    if (input.modelIds.some(isDisabledModel)) throw new GatewayClientError("MODEL_DISABLED");
     if (input.system !== undefined && (typeof input.system !== "string" || input.system.length > MAX_SYSTEM_CHARS)) throw new GatewayClientError("INVALID_REQUEST");
     if (input.taskLabel !== undefined && (typeof input.taskLabel !== "string" || input.taskLabel.length > 64)) throw new GatewayClientError("INVALID_REQUEST");
     if (input.onDelta !== undefined && typeof input.onDelta !== "function") throw new GatewayClientError("INVALID_REQUEST");
@@ -469,7 +495,7 @@ function createGatewayClient(options = {}) {
         try {
           const response = await authenticatedRawRequest("/e/catalog/chat/completions", {
             method: "POST",
-            headers: { "content-type": "application/json", "x-workflow-operation": String(input.taskLabel || "fiction").slice(0, 32), "idempotency-key": requestId },
+            headers: { "content-type": "application/json", "x-workflow-operation": workflowOperationHeader(input.taskLabel), "idempotency-key": requestId },
             body: JSON.stringify({ model, messages, temperature: 0.7, max_tokens: effectiveMaxTokens(model, input.maxTokens), stream: true }),
             timeoutMs: streamTimeoutMs,
             signal: deadline.signal
@@ -616,5 +642,6 @@ module.exports = {
   isRetryableGenerationError,
   isTimeoutError,
   safeNetworkDiagnostics,
+  workflowOperationHeader,
   toGatewayNetworkError
 };

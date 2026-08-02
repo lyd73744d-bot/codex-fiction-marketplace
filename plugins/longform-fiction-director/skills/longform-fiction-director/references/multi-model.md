@@ -14,9 +14,9 @@
 | 任务 | 角色 | 默认倾向 |
 |---|---|---|
 | 脑洞/市场 | 探索 | seed-2.1-turbo / minimax-m3 / qwen3.7-max / gemini-3.5-flash / glm-5.2 |
-| 大纲/细纲/章节构思 | Codex 总责编默认本地完成；需要第二意见才调用 | glm-5.2 / claude-sonnet-5 / seed-2.1-pro / gemini-3.1-pro-preview / kimi-k3 |
-| 正文候选 | 主写 | claude-sonnet-5 / seed-2.1-pro / glm-5.2 / kimi-k3 / minimax-m3；需要旗舰时再选 claude-opus-4-6 |
-| 去AI味 | 风格 | claude-sonnet-5 / seed-2.1-pro / glm-5.2 / kimi-k3 |
+| 大纲/细纲/章节构思 | Codex 总责编默认本地完成；需要第二意见才调用 | glm-5.2 / claude-sonnet-5 / seed-2.1-pro / gemini-3.1-pro-preview |
+| 正文候选 | 主写 | claude-sonnet-5 / seed-2.1-pro / glm-5.2 / minimax-m3；需要旗舰时再选 claude-opus-4-6 |
+| 去AI味 | 风格 | claude-sonnet-5 / seed-2.1-pro / glm-5.2 |
 | 质检 | 审核+连续 | claude-sonnet-5 / glm-5.2 / gemini-3.1-pro-preview；硬伤再上 Claude Opus |
 | 定稿 | 成稿 | claude-opus-4-6（作者确认前） |
 
@@ -46,7 +46,7 @@
 3. 每个模型只拿完成角色所需的最小上下文
 4. 原始结果独立落盘（候选 txt），Codex 再综合
 5. 不以多数票代替判断
-6. 未经作者确认不得 settle / 入正式正文
+6. 未经作者确认不得写入正式正文和事实台账
 
 
 ## 传输策略（单次流式 + 完整落盘）

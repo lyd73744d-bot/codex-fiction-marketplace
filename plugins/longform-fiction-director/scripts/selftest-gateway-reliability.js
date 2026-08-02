@@ -2,9 +2,10 @@
 
 const assert = require("node:assert");
 const fs = require("node:fs");
+const http = require("node:http");
 const os = require("node:os");
 const path = require("node:path");
-const { createGatewayClient, effectiveMaxTokens, MAX_PROMPT_CHARS, MAX_SYSTEM_CHARS } = require("../server/gateway-client");
+const { createGatewayClient, effectiveMaxTokens, MAX_PROMPT_CHARS, MAX_SYSTEM_CHARS, workflowOperationHeader } = require("../server/gateway-client");
 const {
   createFakeIpAwareFetch,
   isClashFakeIpv4,
@@ -128,6 +129,10 @@ async function main() {
   assert.strictEqual(effectiveMaxTokens("glm-5.2", 18000), 18000, "long GLM token request was capped");
   assert.strictEqual(MAX_PROMPT_CHARS, 1_000_000, "gateway prompt capacity is too small");
   assert.strictEqual(MAX_SYSTEM_CHARS, 200_000, "gateway system capacity is too small");
+  const chineseOperation = workflowOperationHeader("番茄向第一章细纲优化");
+  assert.match(chineseOperation, /^[\x21-\x7E]{1,32}$/u, "Chinese task label was copied into an HTTP header");
+  assert.notStrictEqual(chineseOperation, workflowOperationHeader("豆包长文测试"), "different Chinese task labels collapsed to one operation id");
+  assert.strictEqual(workflowOperationHeader("fiction-model-writing"), "fiction-model-writing", "safe ASCII task label was changed");
   assert.strictEqual(isClashFakeIpv4("198.18.0.223"), true, "Clash fake IPv4 range was not detected");
   assert.strictEqual(isClashFakeIpv4("198.19.255.254"), true, "upper Clash fake IPv4 range was not detected");
   assert.strictEqual(isClashFakeIpv4("203.0.113.42"), false, "public gateway address was mislabeled as fake");
@@ -151,7 +156,7 @@ async function main() {
     },
     localAddress: "192.168.1.16"
   });
-  await fakeAware("https://api.nanshanyougui.xyz/healthz");
+  await fakeAware("https://api.nanshanyougui.xyz/api/models");
   assert.strictEqual(directFetchCalls, 1, "fake-IP gateway did not use direct HTTPS");
   assert.strictEqual(baseFetchCalls, 0, "fake-IP gateway attempted the broken system route first");
 
@@ -160,8 +165,75 @@ async function main() {
     lookup: async () => [{ address: "203.0.113.42", family: 4 }],
     directFetch: async () => { throw new Error("normal DNS unexpectedly used direct route"); }
   });
-  await normalAware("https://api.nanshanyougui.xyz/healthz");
+  await normalAware("https://api.nanshanyougui.xyz/api/models");
   assert.strictEqual(baseFetchCalls, 1, "normal DNS did not keep the standard fetch path");
+
+  let capturedOperation = null;
+  const chineseLabelClient = createGatewayClient({
+    baseUrl: "http://127.0.0.1:43210",
+    allowInsecureLoopback: true,
+    sessionStore: sessionStore(),
+    fetch: async (url, init) => {
+      assert.ok(String(url).endsWith("/e/catalog/chat/completions"));
+      capturedOperation = new Headers(init.headers).get("x-workflow-operation");
+      return sseResponse("中文任务名请求已正常发送。");
+    }
+  });
+  const chineseLabelResult = await chineseLabelClient.callModels({
+    prompt: "写一小段测试文字",
+    modelIds: ["claude-opus-4-6"],
+    taskLabel: "番茄向第一章细纲优化"
+  });
+  assert.match(capturedOperation, /^[\x21-\x7E]{1,32}$/u, "generated operation header is not ASCII safe");
+  assert.match(chineseLabelResult.content, /正常发送/u, "Chinese task label request did not complete");
+
+  let nativeOperation = null;
+  const nativeServer = http.createServer((request, response) => {
+    nativeOperation = request.headers["x-workflow-operation"] || null;
+    request.resume();
+    request.on("end", () => {
+      response.writeHead(200, { "content-type": "text/event-stream" });
+      response.end([
+        `data: ${JSON.stringify({ choices: [{ delta: { content: "中文任务真实网络栈通过。" } }] })}`,
+        "",
+        `data: ${JSON.stringify({ choices: [{ delta: {}, finish_reason: "stop" }] })}`,
+        "",
+        "data: [DONE]",
+        ""
+      ].join("\n"));
+    });
+  });
+  await new Promise((resolve, reject) => {
+    nativeServer.once("error", reject);
+    nativeServer.listen(0, "127.0.0.1", resolve);
+  });
+  try {
+    const nativeClient = createGatewayClient({
+      baseUrl: `http://127.0.0.1:${nativeServer.address().port}`,
+      allowInsecureLoopback: true,
+      sessionStore: sessionStore()
+    });
+    const nativeResult = await nativeClient.callModels({
+      prompt: "测试真实网络栈",
+      modelIds: ["claude-opus-4-6"],
+      taskLabel: "番茄向第一章细纲优化"
+    });
+    assert.match(nativeOperation, /^[\x21-\x7E]{1,32}$/u, "native fetch received a non-ASCII operation header");
+    assert.match(nativeResult.content, /真实网络栈通过/u, "native fetch Chinese task label request failed");
+  } finally {
+    await new Promise((resolve) => nativeServer.close(resolve));
+  }
+
+  let healthProbeCalls = 0;
+  const noProbeClient = createGatewayClient({
+    baseUrl: "http://127.0.0.1:43210",
+    allowInsecureLoopback: true,
+    sessionStore: sessionStore(),
+    fetch: async () => { healthProbeCalls += 1; return jsonResponse({ ok: true }); }
+  });
+  const noProbeStatus = await noProbeClient.connectionStatus();
+  assert.strictEqual(noProbeStatus.probeDisabled, true, "health probe was not marked disabled");
+  assert.strictEqual(healthProbeCalls, 0, "connection status still made a health probe request");
 
   const upstream502 = clientWithModelFailure(jsonResponse({ ok: false, message: "所有上游均失败：上游请求超时" }, 502));
   await expectCode(upstream502.client.callModels({

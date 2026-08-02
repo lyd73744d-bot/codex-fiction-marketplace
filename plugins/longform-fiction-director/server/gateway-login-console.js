@@ -47,12 +47,11 @@ function orderModels(models) {
     if (id === "seed-2.1-pro") return 3;
     if (id === "seed-2.1-turbo") return 4;
     if (id === "glm-5.2") return 5;
-    if (id === "kimi-k3") return 6;
-    if (id === "gemini-3.1-pro-preview") return 7;
-    if (id === "minimax-m3") return 8;
-    if (id === "gemini-3.5-flash") return 9;
-    if (id === "qwen3.7-max") return 10;
-    if (id === "grok-4.5") return 11;
+    if (id === "gemini-3.1-pro-preview") return 6;
+    if (id === "minimax-m3") return 7;
+    if (id === "gemini-3.5-flash") return 8;
+    if (id === "qwen3.7-max") return 9;
+    if (id === "grok-4.5") return 10;
     if (model.isCover) return 50;
     return 100;
   };
@@ -356,16 +355,6 @@ function createGatewayLoginConsole({ gateway, host = "127.0.0.1", port = 0, keep
     || gateway?.label
     || "字字珠玑多模型网关";
 
-  async function connection() {
-    if (typeof gateway.connectionStatus !== "function") return { online: null };
-    try {
-      const status = await gateway.connectionStatus();
-      return { online: status?.online === true, connection: status };
-    } catch {
-      return { online: false };
-    }
-  }
-
   async function modelsSnapshot() {
     if (typeof gateway.listModels !== "function") return [];
     try {
@@ -382,14 +371,6 @@ function createGatewayLoginConsole({ gateway, host = "127.0.0.1", port = 0, keep
     const started = Date.now();
     const lines = [];
     let ok = true;
-    const conn = await connection();
-    if (conn.online === true) lines.push("服务连通：通过");
-    else if (conn.online === false) {
-      ok = false;
-      lines.push("服务连通：失败");
-    } else {
-      lines.push("服务连通：未检测");
-    }
 
     try {
       const account = await gateway.accountStatus();
@@ -433,14 +414,13 @@ function createGatewayLoginConsole({ gateway, host = "127.0.0.1", port = 0, keep
   }
 
   async function dashboard({ probe = false } = {}) {
-    const conn = await connection();
     let account;
     try {
       account = await gateway.accountStatus();
     } catch {
       return {
         loggedIn: false,
-        online: conn.online,
+        online: false,
         authMode: resolvedAuthMode,
         sourceLabel: resolvedSourceLabel,
         message: "模型服务暂时不可用，请稍后重试。",
@@ -453,7 +433,7 @@ function createGatewayLoginConsole({ gateway, host = "127.0.0.1", port = 0, keep
     if (!loggedIn) {
       return {
         loggedIn: false,
-        online: conn.online,
+        online: null,
         authMode: resolvedAuthMode,
         sourceLabel: resolvedSourceLabel,
         message: "请使用字字珠玑账号密码登录。",
@@ -473,7 +453,7 @@ function createGatewayLoginConsole({ gateway, host = "127.0.0.1", port = 0, keep
     const credits = formatCredits(user, balance, ordered);
     const result = {
       loggedIn: true,
-      online: conn.online,
+      online: true,
       authMode: resolvedAuthMode,
       sourceLabel: resolvedSourceLabel,
       username,

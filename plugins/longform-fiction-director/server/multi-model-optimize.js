@@ -20,18 +20,24 @@ async function readIf(p, max = 4000) {
 
 async function collectOptimizeContext(projectDir) {
   const aux = path.join(projectDir, "辅助文档");
-  const voice = await readIf(path.join(aux, "08_文风锚点.md"), 12_000);
-  const brief = await readIf(path.join(projectDir, "细纲", "01_当前章细纲.md"), 20_000);
-  const facts = await readIf(path.join(aux, "12_事实库_防OOC.md"), 30_000);
+  // Revision models need the current voice and boundaries, not an entire project archive.
+  const voice = await readIf(path.join(aux, "08_文风锚点.md"), 3_000);
+  const brief = await readIf(path.join(projectDir, "细纲", "01_当前章细纲.md"), 5_000);
+  const facts = await readIf(path.join(aux, "12_事实库_防OOC.md"), 6_000);
   let cards = "";
   const charDir = path.join(aux, "人物卡");
   if (fs.existsSync(charDir)) {
-    const names = (await fsp.readdir(charDir)).filter((n) => n.endsWith(".md") && n !== "README.md").slice(0, 8);
+    const names = (await fsp.readdir(charDir)).filter((n) => n.endsWith(".md") && n !== "README.md").slice(0, 3);
     for (const name of names) {
-      cards += "\n\n## " + name + "\n" + await readIf(path.join(charDir, name), 5000);
+      cards += "\n\n## " + name + "\n" + await readIf(path.join(charDir, name), 1_800);
     }
   }
   return { voice, brief, cards, facts };
+}
+
+function minimumRewriteChars(sourceChars) {
+  const chars = Math.max(0, Number(sourceChars) || 0);
+  return chars < 1_200 ? Math.floor(chars * 0.5) : Math.floor(chars * 0.7);
 }
 
 async function optimizeWithModels({
@@ -75,12 +81,13 @@ async function optimizeWithModels({
   const runs = [];
   let current = String(draftText).trim();
   const sourceChars = inspectChapter(current).chars;
+  const rewriteMinimumChars = minimumRewriteChars(sourceChars);
 
   for (const modelId of ids) {
     const prompt = buildOptimizePrompt({
       mode,
       focus: normalizedFocus,
-      instruction: [instruction, authorFeedbackBlock(instruction)].filter(Boolean).join("\n\n"),
+      instruction: authorFeedbackBlock(instruction),
       draftText: current,
       context
     });
@@ -96,7 +103,7 @@ async function optimizeWithModels({
       taskLabel: "optimize-" + mode,
       streamRetries: 1,
       outerAttempts: 1,
-      minChars: mode === "review" ? 0 : Math.floor(sourceChars * 0.8),
+      minChars: mode === "review" ? 0 : rewriteMinimumChars,
       maxTokens,
       onProgress: typeof onProgress === "function"
         ? (progress) => onProgress({
@@ -107,7 +114,7 @@ async function optimizeWithModels({
           })
         : undefined
     });
-    if (mode !== "review" && result?.artifact?.plainPath) {
+    if (mode !== "review" && result?.accepted && result?.artifact?.plainPath) {
       current = await fsp.readFile(result.artifact.plainPath, "utf8");
     }
     const gate = inspectChapter(result?.preview || current);
@@ -118,6 +125,8 @@ async function optimizeWithModels({
       plainRelativePath: result.artifact?.plainRelativePath || null,
       preview: result.preview,
       transport: result.transport || null,
+      accepted: result.accepted === true,
+      qualityStatus: result.qualityStatus || "unknown",
       hardGate: { ok: gate.ok, chars: gate.chars, issues: gate.issues }
     });
   }
@@ -133,7 +142,8 @@ async function optimizeWithModels({
       (i + 1) + ". " + r.modelId +
       " => " + (r.artifact?.relativePath || "") +
       (r.plainRelativePath ? " | plain: " + r.plainRelativePath : "") +
-      (r.transport ? " | transport: " + r.transport : "")
+      (r.transport ? " | transport: " + r.transport : "") +
+      " | " + (r.accepted ? "candidate_ready" : "review_required")
     ),
     "",
     "每次完整生成后都写入 Codex候选 txt；.body 纯正文可再喂模型。",
@@ -165,4 +175,4 @@ async function optimizeWithModels({
   };
 }
 
-module.exports = { optimizeWithModels, collectOptimizeContext };
+module.exports = { optimizeWithModels, collectOptimizeContext, minimumRewriteChars };

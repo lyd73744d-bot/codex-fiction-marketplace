@@ -54,9 +54,10 @@ function factBoundaryIssues(body, requestText) {
   const request = String(requestText || "");
   if (!request.trim()) return [];
   const issues = [];
+  const historyScope = /(?:历史小说|历史题材|明末|大明|清军|崇祯|万历|天启|顺治|康熙)/u.test(request);
   const nameBoundary = /(?:没有确认|未确认|尚未确认|未知|待定|不明确).{0,12}(?:姓名|名字|专名|人物身份)|(?:姓名|名字|专名|人物身份).{0,8}(?:没有确认|未确认|尚未确认|未知|待定|不明确)|(?:不要|不得|禁止).{0,16}(?:补造|编造|新增|自行补全).{0,10}(?:姓名|名字|专名|人物身份)/u.test(request);
-  const quantityBoundary = /(?:不要|不得|禁止|没有确认|未确认|未知).{0,36}(?:精确)?(?:数量|数字|兵力|存量|日期)|(?:数量|数字|兵力|存量|日期).{0,8}(?:没有确认|未确认|未知|待定)/u.test(request);
-  const placeBoundary = /(?:没有确认|未确认|尚未确认|未知|待定|不明确).{0,12}(?:地点|地名|地形|营地)|(?:地点|地名|地形|营地).{0,8}(?:没有确认|未确认|尚未确认|未知|待定|不明确)|(?:不要|不得|禁止).{0,28}(?:真实战役|地点|地名|地形)/u.test(request);
+  const quantityBoundary = historyScope || /(?:不要|不得|禁止|没有确认|未确认|未知).{0,36}(?:精确)?(?:数量|数字|兵力|存量|日期)|(?:数量|数字|兵力|存量|日期).{0,8}(?:没有确认|未确认|未知|待定)/u.test(request);
+  const placeBoundary = historyScope || /(?:没有确认|未确认|尚未确认|未知|待定|不明确).{0,12}(?:地点|地名|地形|营地)|(?:地点|地名|地形|营地).{0,8}(?:没有确认|未确认|尚未确认|未知|待定|不明确)|(?:不要|不得|禁止).{0,28}(?:真实战役|地点|地名|地形)/u.test(request);
 
   if (nameBoundary) {
     const rankedNames = uniqueMatches(body, /(?:千总|把总|百户|总旗|小旗|校尉|守备|参将|总兵)(?:名叫|叫)?\s*([一-龥]{2,3})(?=[从向把将带正走说问答回去来，。：；“”「」])/gu, 1)
@@ -79,10 +80,46 @@ function factBoundaryIssues(body, requestText) {
   }
 
   if (placeBoundary) {
-    const places = uniqueMatches(body, /(?:从|往|到|去|回|驻|移驻|来自)\s*([一-龥]{1,5}(?:州|府|县|驿|关|镇|卫|堡|寨))/gu, 1)
+    const placePattern = historyScope
+      ? /([一-龥]{1,5}(?:州|府|县|驿|关|镇|卫|堡|寨|庄))/gu
+      : /(?:从|往|到|去|回|驻|移驻|来自|在|于)\s*([一-龥]{1,5}(?:州|府|县|驿|关|镇|卫|堡|寨|庄))/gu;
+    const places = uniqueMatches(body, placePattern, 1)
       .filter((item) => !request.includes(item));
     if (places.length) {
       issues.push(hardIssue("unconfirmed-place-risk", places.slice(0, 6).join("、"), "未确认的地名或路线不得落成确定事实；保留相对方位或先核验", "medium"));
+    }
+  }
+  return issues;
+}
+
+function declaredConstraintIssues(body, requestText) {
+  const request = String(requestText || "");
+  const text = String(body || "");
+  const issues = [];
+
+  // A supplied reign-year is a concrete fact, not an invitation to retell it from memory.
+  const requestedEra = request.match(/(崇祯|万历|天启|顺治|康熙)([〇零一二三四五六七八九十百\d]+)年/u);
+  if (requestedEra) {
+    const bodyEras = [...text.matchAll(/(崇祯|万历|天启|顺治|康熙)([〇零一二三四五六七八九十百\d]+)年/gu)];
+    const conflict = bodyEras.find((match) => match[1] === requestedEra[1] && match[2] !== requestedEra[2]);
+    if (conflict) {
+      issues.push(hardIssue("declared-era-conflict", conflict[0], "沿用作者已给定的年号与年份；不凭模型记忆改写历史时间", "high"));
+    }
+  }
+
+  const knownOnlyMap = /(?:军图|地图).{0,36}(?:只|仅).{0,16}(?:已知|所见所闻)|(?:只|仅).{0,20}(?:记录|显示).{0,16}(?:已知|所见所闻)/u.test(request);
+  if (knownOnlyMap) {
+    const forbiddenPower = text.match(/(?:军图|地图).{0,36}(?:全知|全能|意念|控制|完美|随时看见|直接指挥)|(?:全知|全能|意念|控制|完美|随时看见|直接指挥).{0,36}(?:军图|地图)/u);
+    if (forbiddenPower) {
+      issues.push(hardIssue("known-only-map-expanded", forbiddenPower[0], "军图只保留作者给定的已知信息边界；把超出部分改为人物的推测、误读或未明之处", "medium"));
+    }
+  }
+
+  const soleVision = request.match(/只有\s*([一-龥]{2,4})\s*的?(?:视野|眼前).{0,24}(?:军图|地图)/u);
+  if (soleVision) {
+    const physicalMap = text.match(/(?:案上|桌上|几上|手里).{0,16}(?:多了|摆着|摊着|放着|递来).{0,20}(?:军图|地图|图)|(?:亲兵|旁人|众人|他人).{0,40}(?:看见|看了|见过|动过).{0,16}(?:军图|地图|图)/u);
+    if (physicalMap) {
+      issues.push(hardIssue("sole-viewpoint-objectified", physicalMap[0], "作者限定为单人视野中的信息时，不得把它写成可被旁人传递、触碰或看见的实物", "high"));
     }
   }
   return issues;
@@ -121,6 +158,7 @@ function inspectChapter(value, options = {}) {
     issues.push(hardIssue("chapter-too-long", "当前 " + chars + " 字", "保留完整因果并重写压缩到不超过 " + maxChars + " 字"));
   }
   issues.push(...factBoundaryIssues(body, options.requestText));
+  issues.push(...declaredConstraintIssues(body, options.requestText));
 
   return {
     ok: issues.length === 0,
@@ -150,4 +188,5 @@ module.exports = {
   countPublishChars,
   processLeakEvidence,
   factBoundaryIssues
+  , declaredConstraintIssues
 };

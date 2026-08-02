@@ -34,11 +34,11 @@ async function main() {
   const skill = fs.readFileSync(path.join(pluginRoot, "skills", "longform-fiction-director", "SKILL.md"), "utf8");
   const modelIds = catalog.models.map((item) => item.id);
 
-  assert.strictEqual(modelIds.length, 12, "shipped catalog must match the 12 retained live models");
+  assert.strictEqual(modelIds.length, 11, "shipped catalog must match the 11 retained live models");
   assert.strictEqual(catalog.preferredModel, "claude-opus-4-6");
   assert.ok(modelIds.includes("glm-5.2"), "verified GLM route is missing from the shipped catalog");
   assert.ok(modelIds.includes("minimax-m3"), "verified MiniMax route is missing from the shipped catalog");
-  assert.ok(modelIds.includes("kimi-k3"), "verified Kimi K3 route is missing from the shipped catalog");
+  assert.ok(!modelIds.includes("kimi-k3"), "disabled Kimi K3 must not be shipped in the catalog");
   assert.ok(modelIds.includes("gemini-3.5-flash"), "verified Gemini Flash route is missing from the shipped catalog");
   assert.ok(modelIds.includes("seed-2.1-pro") && modelIds.includes("seed-2.1-turbo"), "verified LDW Seed routes are missing from the shipped catalog");
   assert.ok(modelIds.includes("grok-4.5"), "verified Grok backup route is missing from the shipped catalog");
@@ -109,7 +109,7 @@ async function main() {
   const quickLong = decode(await tools.call("fiction_recommend_models", {
     task: "draft", mode: "quick", targetChars: 5000, maxPerRole: 1
   }));
-  assert.strictEqual(quickLong.primaryModelId, "gemini-3.5-flash", "quick long-form routing ignored verified fast model");
+  assert.strictEqual(quickLong.primaryModelId, "glm-5.2", "quick long-form routing selected a short-form model over the safer long-form option");
   assert.ok(!JSON.stringify(quickLong).includes("gpt-image-2"), "image model leaked into writing recommendations");
 
   const manualGrok = decode(await tools.call("fiction_recommend_models", {

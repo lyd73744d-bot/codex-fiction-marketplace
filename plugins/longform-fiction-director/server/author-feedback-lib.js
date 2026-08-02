@@ -32,26 +32,12 @@ function listOrNone(items) {
 
 function authorFeedbackBlock(value) {
   const feedback = normalizeAuthorFeedback(value);
+  if (!feedback.raw) return "";
   return [
-    "# 作者反馈（最高优先级）",
-    feedback.raw || "暂无额外意见，严格按本章事实和细纲执行。",
+    "# 作者本次要求",
+    feedback.raw,
     "",
-    "## 希望延续",
-    listOrNone(feedback.preserveIntent),
-    "",
-    "## 希望改变",
-    listOrNone(feedback.requestedChange),
-    "",
-    "## 希望避免",
-    listOrNone(feedback.avoid),
-    "",
-    "## 希望达到的效果",
-    listOrNone(feedback.desiredEffect),
-    "",
-    "## 明确要求逐字保留",
-    listOrNone(feedback.exactText),
-    "",
-    "作者反馈是创作意图，不是正文素材。除逐字保留外，不要把反馈原句直接写进正文。"
+    "这只是本次取向，不是正文素材；除明确要求逐字保留的原句外，不要把它改写进正文。"
   ].join("\n");
 }
 

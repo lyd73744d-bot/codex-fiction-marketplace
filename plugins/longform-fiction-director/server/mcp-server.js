@@ -51,7 +51,7 @@ function safeMcpError(cause) {
     INSUFFICIENT_BALANCE: "Insufficient balance.",
     GATEWAY_REQUIRED: "Model gateway is unavailable.",
     GATEWAY_UNAVAILABLE: "Model gateway is unavailable.",
-    SERVER_OFFLINE: "本机连接网关失败。请重启插件任务后重试；诊断码已保留。",
+    SERVER_OFFLINE: "本机暂时无法连接网关。无需重启服务器；请稍后重试，诊断码已保留。",
     UPSTREAM_TIMEOUT: "模型生成超时，本次没有完成。请稍后重试或换一个模型。",
     RATE_LIMITED: "模型线路暂时限流；本次没有自动重试，请稍后由作者决定是否重新提交。",
     EMPTY_MODEL_OUTPUT: "模型返回为空，请换模型或重试。",
