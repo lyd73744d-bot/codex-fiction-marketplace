@@ -36,8 +36,8 @@ async function main() {
 
   assert.strictEqual(modelIds.length, 11, "shipped catalog must match the 11 retained live models");
   assert.strictEqual(catalog.preferredModel, "claude-opus-4-6");
-  assert.ok(modelIds.includes("glm-5.2"), "verified GLM route is missing from the shipped catalog");
-  assert.ok(modelIds.includes("minimax-m3"), "verified MiniMax route is missing from the shipped catalog");
+  assert.ok(modelIds.includes("glm-5.2"), "GLM route is missing from the shipped catalog");
+  assert.ok(modelIds.includes("minimax-m3"), "MiniMax route is missing from the shipped catalog");
   assert.ok(!modelIds.includes("kimi-k3"), "disabled Kimi K3 must not be shipped in the catalog");
   assert.ok(modelIds.includes("gemini-3.5-flash"), "verified Gemini Flash route is missing from the shipped catalog");
   assert.ok(modelIds.includes("seed-2.1-pro") && modelIds.includes("seed-2.1-turbo"), "verified LDW Seed routes are missing from the shipped catalog");
@@ -109,7 +109,13 @@ async function main() {
   const quickLong = decode(await tools.call("fiction_recommend_models", {
     task: "draft", mode: "quick", targetChars: 5000, maxPerRole: 1
   }));
-  assert.strictEqual(quickLong.primaryModelId, "glm-5.2", "quick long-form routing selected a short-form model over the safer long-form option");
+  assert.strictEqual(quickLong.primaryModelId, "claude-opus-4-6", "long-form routing did not select the verified long-form model");
+  assert.ok(!quickLong.alternativeModelIds.includes("glm-5.2") && !quickLong.alternativeModelIds.includes("minimax-m3"), "unverified long-form models were automatically recommended");
+  const defaultLong = decode(await tools.call("fiction_recommend_models", {
+    task: "draft", mode: "quick", targetChars: 5000
+  }));
+  assert.deepStrictEqual(defaultLong.modelIds, ["claude-opus-4-6"], "default long-form routing exposed an unverified alternative");
+  assert.deepStrictEqual(defaultLong.alternativeModelIds, [], "default long-form routing retained an unverified fallback");
   assert.ok(!JSON.stringify(quickLong).includes("gpt-image-2"), "image model leaked into writing recommendations");
 
   const manualGrok = decode(await tools.call("fiction_recommend_models", {

@@ -14,13 +14,23 @@
 | 任务 | 角色 | 默认倾向 |
 |---|---|---|
 | 脑洞/市场 | 探索 | seed-2.1-turbo / minimax-m3 / qwen3.7-max / gemini-3.5-flash / glm-5.2 |
-| 大纲/细纲/章节构思 | Codex 总责编默认本地完成；需要第二意见才调用 | glm-5.2 / claude-sonnet-5 / seed-2.1-pro / gemini-3.1-pro-preview |
-| 正文候选 | 主写 | claude-sonnet-5 / seed-2.1-pro / glm-5.2 / minimax-m3；需要旗舰时再选 claude-opus-4-6 |
+| 大纲/细纲/章节构思 | Codex 总责编默认本地完成；需要第二意见才调用 | glm-5.2 / claude-sonnet-5 / seed-2.1-pro；gemini-3.1-pro-preview 只作作者点名后的候选 |
+| 正文候选 | 主写 | claude-sonnet-5 / seed-2.1-pro；长篇历史正文优先 claude-opus-4-6。glm-5.2 只作作者点名后的候选并人工复核；minimax-m3 不自动用于长篇正文 |
 | 去AI味 | 风格 | claude-sonnet-5 / seed-2.1-pro / glm-5.2 |
 | 质检 | 审核+连续 | claude-sonnet-5 / glm-5.2 / gemini-3.1-pro-preview；硬伤再上 Claude Opus |
 | 定稿 | 成稿 | claude-opus-4-6（作者确认前） |
 
 `grok-4.5` 是 5 积分的慢速备用线路。仅在作者明确点名时手动调用，不进入默认推荐，也不自动替换其他失败模型。
+
+## 长文验收记录（4.7）
+
+- `claude-opus-4-6`：同题长文实测完整返回，保留为唯一自动长篇候选。
+- `claude-opus-5`：当前 live 目录未提供，直接调用被网关拒绝，不展示、不推荐。
+- `glm-5.2`：二级线路能返回长文，但实测出现人物名漂移和目标篇幅失控；历史正文只能人工验收后采用。
+- `minimax-m3`：二级线路长文超时；不纳入自动长文候选。
+- `gemini-3.1-pro-preview`：实测会补造历史事实；不纳入自动历史长文候选。
+
+上述记录只用于路由取舍，不替代作者对每一篇候选稿的判断。
 
 ## Codex 对作者的说话方式
 

@@ -39,7 +39,7 @@ const ROLE_HINTS = {
   },
   draft: {
     label: "正文主写",
-    prefer: ["claude-sonnet-5", "seed-2.1-pro", "glm-5.2", "minimax-m3", "claude-opus-4-6"],
+    prefer: ["claude-sonnet-5", "seed-2.1-pro", "claude-opus-4-6", "glm-5.2", "minimax-m3"],
     why: "主写要稳、文风可控；默认中档，作者点名再用旗舰"
   },
   continuity: {
@@ -86,11 +86,11 @@ const NON_WRITING_MODELS = new Set(["gpt-image-2"]);
 
 const MODEL_CAPABILITY_PROFILES = Object.freeze({
   "claude-opus-4-6": { longForm: "verified", note: "长文质量稳定，适合深度正文与定稿" },
-  "gemini-3.1-pro-preview": { longForm: "verified", note: "已验证可返回较长正文" },
-  "glm-5.2": { longForm: "verified", note: "已验证长文能力，速度偏慢" },
+  "gemini-3.1-pro-preview": { longForm: "manual-review", note: "实测会补造历史事实并扩张既有能力；历史长文只作作者点名后的候选，并人工复核" },
+  "glm-5.2": { longForm: "manual-review", note: "二级线路长文实测出现人物名漂移与篇幅失控；历史正文只在作者点名后作为候选，并人工复核" },
   "gemini-3.5-flash": { longForm: "short-form", note: "返回较快，适合探索和短任务；不自动推荐为历史长篇细纲或正文主写" },
   "claude-sonnet-5": { longForm: "variable", note: "文风可用，但实测篇幅有时提前收束" },
-  "minimax-m3": { longForm: "variable", note: "适合中短正文或局部改写" },
+  "minimax-m3": { longForm: "unverified", note: "二级线路长文实测超时；不自动推荐为长篇正文" },
   "qwen3.7-max": { longForm: "variable", note: "适合中短正文或结构任务" },
   "seed-2.1-pro": { longForm: "unverified", note: "当前线路尚未完成长文实测" },
   "seed-2.1-turbo": { longForm: "unverified", note: "当前线路仅完成短请求验证" },
@@ -99,8 +99,8 @@ const MODEL_CAPABILITY_PROFILES = Object.freeze({
 });
 
 const LONG_FORM_PRESETS = Object.freeze({
-  deep: ["claude-opus-4-6", "gemini-3.1-pro-preview", "glm-5.2"],
-  quick: ["glm-5.2", "gemini-3.1-pro-preview"]
+  deep: ["claude-opus-4-6"],
+  quick: ["claude-opus-4-6"]
 });
 
 function normalizeTask(task) {
@@ -169,6 +169,7 @@ function scoreModel(modelId, role, creditsMap = {}, mode = "quick", targetChars 
     if (capability === "verified") score += 140;
     if (capability === "short-form") score -= 80;
     if (capability === "variable") score -= 25;
+    if (capability === "manual-review") score -= 85;
     if (capability === "unverified") score -= 55;
   }
   return score;
@@ -185,7 +186,8 @@ function pickForRole(role, availableModels, creditsMap = {}, limit = 2, mode = "
   }).filter((m) => m.id
     && !MANUAL_ONLY_MODELS.has(String(m.id).toLowerCase())
     && !NON_WRITING_MODELS.has(String(m.id).toLowerCase())
-    && !isDisabledModel(m.id));
+    && !isDisabledModel(m.id)
+    && (Number(targetChars) < 4000 || modelCapability(m.id).longForm === "verified"));
 
   return list
     .map((m) => ({
