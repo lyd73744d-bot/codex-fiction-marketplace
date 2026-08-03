@@ -126,7 +126,7 @@ assert.ok(FOCUS_HINTS.full.includes("逐项执行提示词"), "full focus hint m
 assert.ok(FOCUS_HINTS.narration.includes("细纲验收流程腔"), "narration focus hint misses brief-driven structure");
 
 const draftSystem = buildDraftSystem({ kind: "draft", system: "保留既定历史事实。" });
-assert.strictEqual(POLICY_VERSION, "natural-prose-v7", "draft policy version is stale");
+assert.strictEqual(POLICY_VERSION, "natural-prose-v8", "draft policy version is stale");
 assert.ok(draftSystem.system.includes("事实是硬边界，写法是自由区"), "draft runtime policy misses fact/creative split");
 assert.ok(draftSystem.system.includes("不是正文施工顺序"), "draft runtime policy still treats planning order as prose order");
 assert.ok(draftSystem.system.includes("不能按提示词栏目逐项亮相"), "draft runtime policy misses checklist-prose protection");
@@ -140,6 +140,7 @@ assert.ok(draftSystem.system.includes("不得凭模型记忆补全") && draftSys
 assert.ok(draftSystem.system.includes("不把过渡动作") && draftSystem.system.includes("拖成整章"), "draft runtime policy permits bridge-scene inflation");
 assert.ok(draftSystem.system.includes("篇幅来自事情继续发生") && draftSystem.system.includes("虚构精确细节凑长文"), "draft runtime policy permits long-form padding");
 assert.ok(draftSystem.system.includes("人物、关系或局势") && draftSystem.system.includes("先做A、再做B、最后发现C"), "draft runtime policy still treats chapter direction as an action checklist");
+assert.ok(draftSystem.system.includes("不是……而是……") && draftSystem.system.includes("破折号“——”") && draftSystem.system.includes("层层加码"), "draft runtime policy misses first-draft mechanical-expression restraint");
 assert.ok(draftSystem.system.includes("人物各自想得到、保住、逃开或弄明白") && draftSystem.system.includes("不为追求刺激强行增加事故"), "draft runtime policy misses character-led causality");
 assert.ok(draftSystem.system.includes("固定情绪曲线") && draftSystem.system.includes("固定章尾形式"), "draft runtime policy still permits mechanical pacing");
 assert.ok(!draftSystem.system.includes("300–500"), "draft runtime policy hardcodes an opening span");
@@ -180,6 +181,12 @@ const longDraftRecommendation = recommendModels({
 assert.ok(!longDraftRecommendation.modelIds.includes("gemini-3.5-flash"), "short-form Flash is still recommended for long prose");
 const noFalseName = inspectChapter("总兵的印压在公文上，校尉看他一眼。", { requestText: "人物姓名未确认。" });
 assert.ok(!noFalseName.issues.some((item) => item.rule === "unconfirmed-name-risk"), "ordinary title phrase was mislabeled as a name");
+const contrastPhraseGate = inspectChapter("他留下，不是为了功名，而是为了帐外那些伤兵。", {});
+assert.ok(contrastPhraseGate.issues.some((item) => item.rule === "mechanical-contrast-phrase"), "first-draft gate misses mechanical contrast phrasing");
+const emDashGate = inspectChapter("他抬起头——帐外的鼓声已经近了。", {});
+assert.ok(emDashGate.issues.some((item) => item.rule === "em-dash-prose"), "first-draft gate misses em dash");
+const rejectedPhraseGate = inspectChapter("他终于知道，这笔账该收了。对方还在不断施压。", {});
+assert.ok(rejectedPhraseGate.issues.some((item) => item.rule === "rejected-stock-phrase"), "first-draft gate misses author-rejected stock phrases");
 assert.ok(builtinWorkflow.includes("最小") || read("skills/longform-fiction-director/references/natural-writing-system.md").includes("不能把整份人物库"), "workflow misses minimal-context handoff");
 assert.ok(main.includes("耗时 502 不自动重发"), "main skill still replays long upstream 502 responses");
 assert.ok(main.includes("从最后一个字继续") && main.includes("本地按原文顺序合并"), "main skill misses lossless segmented long-form recovery");

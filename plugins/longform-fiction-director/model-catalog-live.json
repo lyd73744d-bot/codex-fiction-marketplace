@@ -1,29 +1,26 @@
 {
-  "version": "4.7",
-  "fullVersion": "4.7.0",
+  "version": "4.8",
+  "fullVersion": "4.8.0",
   "gateway": "https://api.nanshanyougui.xyz",
-  "updatedAt": "2026-08-02T12:55:00+08:00",
-  "preferredModel": "claude-opus-4-6",
+  "updatedAt": "2026-08-03T18:10:00+08:00",
+  "preferredModel": "claude-sonnet-5",
   "models": [
-    { "id": "claude-sonnet-5", "credits": 10, "available": true, "status": "live", "flagship": true, "longForm": "variable" },
-    { "id": "claude-opus-4-6", "credits": 20, "available": true, "status": "live", "flagship": true, "longForm": "verified" },
-    { "id": "seed-2.1-pro", "credits": 20, "available": true, "status": "live", "flagship": true, "longForm": "unverified" },
-    { "id": "seed-2.1-turbo", "credits": 10, "available": true, "status": "live", "flagship": false, "longForm": "unverified" },
-    { "id": "gemini-3.1-pro-preview", "credits": 10, "available": true, "status": "live", "flagship": true, "longForm": "manual-review" },
-    { "id": "glm-5.2", "credits": 10, "available": true, "status": "live", "flagship": true, "longForm": "manual-review" },
-    { "id": "minimax-m3", "credits": 5, "available": true, "status": "live", "flagship": false, "longForm": "unverified" },
-    { "id": "gemini-3.5-flash", "credits": 5, "available": true, "status": "live", "flagship": false, "longForm": "verified" },
-    { "id": "qwen3.7-max", "credits": 5, "available": true, "status": "live", "flagship": true, "longForm": "variable" },
-    { "id": "grok-4.5", "credits": 5, "available": true, "status": "live", "flagship": false, "backupOnly": true, "longForm": "manual-only" },
-    { "id": "gpt-image-2", "credits": 50, "available": true, "status": "live", "flagship": false, "isCover": true, "longForm": "not-applicable" }
+    { "id": "claude-opus-4-6", "credits": 20, "available": true, "status": "live", "longForm": "verified" },
+    { "id": "claude-sonnet-5", "credits": 10, "available": true, "status": "live", "longForm": "variable" },
+    { "id": "kimi-k3", "credits": 30, "available": true, "status": "live", "longForm": "variable" },
+    { "id": "gemini-3.1-pro-preview", "credits": 10, "available": true, "status": "live", "longForm": "manual-review" },
+    { "id": "gemini-3.5-flash", "credits": 5, "available": true, "status": "live", "longForm": "short-form" },
+    { "id": "doubao-seed-2-1-turbo", "credits": 10, "available": true, "status": "zzzj-ark", "longForm": "short-form" },
+    { "id": "glm-5.2", "credits": 10, "available": true, "status": "zzzj-ark", "longForm": "manual-review" },
+    { "id": "minimax-m3", "credits": 5, "available": true, "status": "zzzj-ark", "longForm": "manual-review" },
+    { "id": "deepseek-v4-flash", "credits": 5, "available": true, "status": "zzzj-ark", "longForm": "short-form" },
+    { "id": "deepseek-v4-pro", "credits": 10, "available": true, "status": "zzzj-ark", "longForm": "manual-review" },
+    { "id": "kimi-k2.6", "credits": 10, "available": true, "status": "zzzj-ark", "longForm": "manual-review" }
   ],
   "notes": {
-    "primary_route": "https://api.nanshanyougui.xyz",
-    "gateway_role": "ZiZiZhuJi account gateway with login, credit shop, redemption, and live model catalog.",
-    "request_concurrency": "unlimited",
-    "catalog_source": "server displayModels",
-    "seed_route": "LDW exact-model routes; no cross-model fallback",
-    "grok_route": "Exact-model slow backup route; manual selection only",
-    "longform_policy": "Claude Opus 4.6 is the only current verified automatic long-form choice. GLM 5.2 requires manual review for historical prose; MiniMax M3 is not auto-selected for long prose after a timeout."
+    "catalog_source": "ZiZiZhuJi unified live gateway",
+    "routing": "Only the explicitly selected model is called. No automatic retry, fallback, or provider switch.",
+    "subscription": "Buyers log in to the ZiZiZhuJi gateway. No upstream provider key is shipped in this plugin.",
+    "disabled": ["seed-2.1-pro", "seed-2.1-turbo", "gpt-image-2", "qwen3.7-max", "grok-4.5", "ark-code-latest", "doubao-seed-2-0-lite", "kimi-k2.7-code", "minimax-m2.7"]
   }
 }

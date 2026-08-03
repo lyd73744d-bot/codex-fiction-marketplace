@@ -22,10 +22,10 @@ async function main() {
   });
 
   const catalog = await gateway.listModels();
-  assert.deepStrictEqual(catalog.models.map((item) => item.id).sort(), ["claude-opus-4-6", "seed-2.1-pro"]);
-  assert.ok(!catalog.allowedModels.includes("kimi-k3"));
+  assert.deepStrictEqual(catalog.models.map((item) => item.id).sort(), ["claude-opus-4-6", "kimi-k3"]);
+  assert.ok(!catalog.allowedModels.includes("seed-2.1-pro"));
   await assert.rejects(
-    () => gateway.callModels({ prompt: "test", modelIds: ["kimi-k3"] }),
+    () => gateway.callModels({ prompt: "test", modelIds: ["seed-2.1-pro"] }),
     (error) => error && error.code === "MODEL_DISABLED"
   );
   assert.strictEqual(calls, 0, "disabled model must not reach an upstream gateway");
@@ -34,16 +34,17 @@ async function main() {
     task: "draft",
     availableModels: [{ id: "kimi-k3" }, { id: "seed-2.1-pro" }]
   });
-  assert.ok(!JSON.stringify(recommendation).includes("kimi-k3"), "router recommended a disabled model");
+  assert.ok(!JSON.stringify(recommendation).includes("seed-2.1-pro"), "router recommended a disabled model");
+  assert.ok(JSON.stringify(recommendation).includes("kimi-k3"), "retained Kimi K3 was filtered out");
 
   const config = loadPrimaryGatewayConfig({
     mode: "openai",
     baseUrl: "https://example.invalid",
     apiKey: "test-key-123",
-    preferredModel: "kimi-k3",
-    allowedModels: ["kimi-k3", "claude-opus-4-6"]
+    preferredModel: "seed-2.1-pro",
+    allowedModels: ["seed-2.1-pro", "claude-opus-4-6"]
   });
-  assert.strictEqual(config.preferredModel, "claude-opus-4-6");
+  assert.strictEqual(config.preferredModel, "claude-sonnet-5");
   assert.deepStrictEqual(config.allowedModels, ["claude-opus-4-6"]);
   console.log("disabled model regression tests passed");
 }

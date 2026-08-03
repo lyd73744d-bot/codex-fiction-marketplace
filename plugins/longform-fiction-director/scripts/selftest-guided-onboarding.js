@@ -35,15 +35,13 @@ async function main() {
   const modelIds = catalog.models.map((item) => item.id);
 
   assert.strictEqual(modelIds.length, 11, "shipped catalog must match the 11 retained live models");
-  assert.strictEqual(catalog.preferredModel, "claude-opus-4-6");
-  assert.ok(modelIds.includes("glm-5.2"), "GLM route is missing from the shipped catalog");
-  assert.ok(modelIds.includes("minimax-m3"), "MiniMax route is missing from the shipped catalog");
-  assert.ok(!modelIds.includes("kimi-k3"), "disabled Kimi K3 must not be shipped in the catalog");
-  assert.ok(modelIds.includes("gemini-3.5-flash"), "verified Gemini Flash route is missing from the shipped catalog");
-  assert.ok(modelIds.includes("seed-2.1-pro") && modelIds.includes("seed-2.1-turbo"), "verified LDW Seed routes are missing from the shipped catalog");
-  assert.ok(modelIds.includes("grok-4.5"), "verified Grok backup route is missing from the shipped catalog");
-  assert.strictEqual(catalog.models.find((item) => item.id === "grok-4.5")?.credits, 5, "Grok backup route must cost 5 credits");
-  assert.ok(!modelIds.includes("deepseek-v4-pro"));
+  assert.strictEqual(catalog.preferredModel, "claude-sonnet-5");
+  for (const id of ["claude-opus-4-6", "claude-sonnet-5", "kimi-k3", "gemini-3.1-pro-preview", "gemini-3.5-flash", "doubao-seed-2-1-turbo", "glm-5.2", "minimax-m3", "deepseek-v4-flash", "deepseek-v4-pro", "kimi-k2.6"]) {
+    assert.ok(modelIds.includes(id), `retained route is missing: ${id}`);
+  }
+  for (const id of ["seed-2.1-pro", "seed-2.1-turbo", "gpt-image-2", "qwen3.7-max", "grok-4.5", "ark-code-latest", "doubao-seed-2-0-lite", "kimi-k2.7-code", "minimax-m2.7"]) {
+    assert.ok(!modelIds.includes(id), `removed route leaked into catalog: ${id}`);
+  }
   assert.ok(!modelIds.includes("claude-opus-5") && !modelIds.includes("claude-opus-4-8"));
   assert.ok(manifest.interface.defaultPrompt.some((line) => line.includes("直接问我是开新书还是接着写旧书")));
   assert.ok(manifest.interface.defaultPrompt.some((line) => line.includes("每次调用其他模型前都问我是否使用")));
@@ -118,13 +116,13 @@ async function main() {
   assert.deepStrictEqual(defaultLong.alternativeModelIds, [], "default long-form routing retained an unverified fallback");
   assert.ok(!JSON.stringify(quickLong).includes("gpt-image-2"), "image model leaked into writing recommendations");
 
-  const manualGrok = decode(await tools.call("fiction_recommend_models", {
+  const manualKimi = decode(await tools.call("fiction_recommend_models", {
     task: "draft",
     mode: "quick",
     maxPerRole: 1,
-    authorPrefer: ["grok-4.5"]
+    authorPrefer: ["kimi-k2.6"]
   }));
-  assert.strictEqual(manualGrok.primaryModelId, "grok-4.5", "explicit Grok selection was not preserved");
+  assert.strictEqual(manualKimi.primaryModelId, "kimi-k2.6", "explicit retained model selection was not preserved");
 
   const projectDir = path.join(tempRoot, "guided-novel");
   const localTools = createLocalCoreTools();

@@ -14,7 +14,7 @@ function uniqueModels(models) {
   return out;
 }
 
-const LEGACY_PREFERRED = new Set(["minimax-m3", "qwen3.7-max"]);
+const LEGACY_PREFERRED = new Set(["minimax-m3", "kimi-k3"]);
 
 function createHybridGateway({ primary, secondary, label, allowedModels = [], preferredModel = "", creditsPerCall = 10, balance = -1, modelCredits = null } = {}) {
   if (!primary || typeof primary.listModels !== "function" || typeof primary.callModels !== "function") {
@@ -29,7 +29,7 @@ function createHybridGateway({ primary, secondary, label, allowedModels = [], pr
   const allowSet = new Set(allow);
   const creditMap = modelCredits && typeof modelCredits === "object" && !Array.isArray(modelCredits)
     ? modelCredits
-    : (primary && primary.modelCredits) || {"claude-sonnet-5":10,"claude-opus-4-6":20,"seed-2.1-pro":20,"seed-2.1-turbo":10,"gemini-3.1-pro-preview":10,"glm-5.2":10,"minimax-m3":5,"gemini-3.5-flash":5,"qwen3.7-max":5,"grok-4.5":5,"gpt-image-2":50};
+    : (primary && primary.modelCredits) || {"claude-sonnet-5":10,"claude-opus-4-6":20,"kimi-k3":30,"gemini-3.1-pro-preview":10,"gemini-3.5-flash":5,"doubao-seed-2-1-turbo":10,"glm-5.2":10,"minimax-m3":5,"deepseek-v4-flash":5,"deepseek-v4-pro":10,"kimi-k2.6":10};
 
   async function safeList(gateway) {
     try {

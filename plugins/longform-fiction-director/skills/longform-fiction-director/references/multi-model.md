@@ -14,13 +14,13 @@
 | 任务 | 角色 | 默认倾向 |
 |---|---|---|
 | 脑洞/市场 | 探索 | seed-2.1-turbo / minimax-m3 / qwen3.7-max / gemini-3.5-flash / glm-5.2 |
-| 大纲/细纲/章节构思 | Codex 总责编默认本地完成；需要第二意见才调用 | glm-5.2 / claude-sonnet-5 / seed-2.1-pro；gemini-3.1-pro-preview 只作作者点名后的候选 |
-| 正文候选 | 主写 | claude-sonnet-5 / seed-2.1-pro；长篇历史正文优先 claude-opus-4-6。glm-5.2 只作作者点名后的候选并人工复核；minimax-m3 不自动用于长篇正文 |
-| 去AI味 | 风格 | claude-sonnet-5 / seed-2.1-pro / glm-5.2 |
+| 大纲/细纲/章节构思 | Codex 总责编默认本地完成；需要第二意见才调用 | glm-5.2 / claude-sonnet-5 / kimi-k2.6；gemini-3.1-pro-preview 只作作者点名后的候选 |
+| 正文候选 | 主写 | claude-sonnet-5 / kimi-k3；长篇历史正文优先 claude-opus-4-6。glm-5.2 只作作者点名后的候选并人工复核；minimax-m3 不自动用于长篇正文 |
+| 去AI味 | 风格 | claude-sonnet-5 / glm-5.2 / deepseek-v4-pro |
 | 质检 | 审核+连续 | claude-sonnet-5 / glm-5.2 / gemini-3.1-pro-preview；硬伤再上 Claude Opus |
 | 定稿 | 成稿 | claude-opus-4-6（作者确认前） |
 
-`grok-4.5` 是 5 积分的慢速备用线路。仅在作者明确点名时手动调用，不进入默认推荐，也不自动替换其他失败模型。
+模型推荐只从当前目录中选择。作者点名的保留模型可以手动调用，但不会替代其他模型、也不会因失败自动换线。
 
 ## 长文验收记录（4.7）
 

@@ -28,43 +28,43 @@ const TASK_ROLES = {
 const ROLE_HINTS = {
   explore: {
     label: "探索/脑洞",
-    prefer: ["seed-2.1-turbo", "minimax-m3", "qwen3.7-max", "gemini-3.5-flash", "glm-5.2"],
+    prefer: ["doubao-seed-2-1-turbo", "deepseek-v4-flash", "gemini-3.5-flash"],
     avoidHeavy: true,
     why: "要快、要多方向，不值得上最贵模型"
   },
   structure: {
     label: "结构/大纲/细纲",
-    prefer: ["glm-5.2", "claude-sonnet-5", "seed-2.1-pro", "gemini-3.1-pro-preview"],
+    prefer: ["claude-sonnet-5", "glm-5.2", "deepseek-v4-pro", "kimi-k2.6", "gemini-3.1-pro-preview"],
     why: "要因果与节奏，中档推理足够"
   },
   draft: {
     label: "正文主写",
-    prefer: ["claude-sonnet-5", "seed-2.1-pro", "claude-opus-4-6", "glm-5.2", "minimax-m3"],
+    prefer: ["claude-sonnet-5", "claude-opus-4-6", "glm-5.2", "deepseek-v4-pro"],
     why: "主写要稳、文风可控；默认中档，作者点名再用旗舰"
   },
   continuity: {
     label: "连续性/台账",
-    prefer: ["glm-5.2", "claude-sonnet-5", "gemini-3.1-pro-preview"],
+    prefer: ["claude-opus-4-6", "claude-sonnet-5", "glm-5.2", "deepseek-v4-pro"],
     why: "核对人物/时间线/伏笔，重准确不重花活"
   },
   style: {
     label: "去AI味/润色",
-    prefer: ["claude-sonnet-5", "seed-2.1-pro", "glm-5.2", "claude-opus-4-6"],
+    prefer: ["claude-sonnet-5", "claude-opus-4-6", "glm-5.2"],
     why: "改味不改剧情，中档写手模型更合适"
   },
   adversary: {
     label: "反方/找硬伤",
-    prefer: ["claude-opus-4-6", "glm-5.2", "gemini-3.1-pro-preview", "qwen3.7-max"],
+    prefer: ["claude-opus-4-6", "glm-5.2", "deepseek-v4-pro", "kimi-k2.6"],
     why: "专门挑弃读点与逻辑崩，可短上下文上旗舰"
   },
   review: {
     label: "质检审核",
-    prefer: ["claude-sonnet-5", "glm-5.2", "gemini-3.1-pro-preview"],
+    prefer: ["claude-opus-4-6", "claude-sonnet-5", "glm-5.2", "deepseek-v4-pro"],
     why: "结构化审稿；证据不足再换旗舰复审"
   },
   finalize: {
     label: "定稿成稿",
-    prefer: ["claude-opus-4-6", "claude-sonnet-5", "glm-5.2", "gemini-3.1-pro-preview"],
+    prefer: ["claude-opus-4-6", "claude-sonnet-5", "glm-5.2", "deepseek-v4-pro"],
     why: "作者确认前最后一轮，才考虑高积分模型"
   }
 };
@@ -72,30 +72,30 @@ const ROLE_HINTS = {
 // Fused from zizhuji workflow-model-policy: soft presets only
 const WRITING_MODE_PRESETS = {
   chapterWrite: {
-    quick: ["claude-sonnet-5", "seed-2.1-turbo", "glm-5.2", "minimax-m3"],
-    deep: ["claude-opus-4-6", "claude-sonnet-5", "seed-2.1-pro", "glm-5.2"]
+    quick: ["claude-sonnet-5", "doubao-seed-2-1-turbo"],
+    deep: ["claude-opus-4-6", "glm-5.2", "deepseek-v4-pro"]
   },
   chapterOptimize: {
-    quick: ["claude-sonnet-5", "seed-2.1-turbo", "glm-5.2"],
-    deep: ["claude-opus-4-6", "claude-sonnet-5", "seed-2.1-pro", "glm-5.2"]
+    quick: ["claude-sonnet-5", "doubao-seed-2-1-turbo"],
+    deep: ["claude-opus-4-6", "glm-5.2", "deepseek-v4-pro"]
   }
 };
 
-const MANUAL_ONLY_MODELS = new Set(["grok-4.5"]);
-const NON_WRITING_MODELS = new Set(["gpt-image-2"]);
+const MANUAL_ONLY_MODELS = new Set();
+const NON_WRITING_MODELS = new Set();
 
 const MODEL_CAPABILITY_PROFILES = Object.freeze({
   "claude-opus-4-6": { longForm: "verified", note: "长文质量稳定，适合深度正文与定稿" },
-  "gemini-3.1-pro-preview": { longForm: "manual-review", note: "实测会补造历史事实并扩张既有能力；历史长文只作作者点名后的候选，并人工复核" },
-  "glm-5.2": { longForm: "manual-review", note: "二级线路长文实测出现人物名漂移与篇幅失控；历史正文只在作者点名后作为候选，并人工复核" },
-  "gemini-3.5-flash": { longForm: "short-form", note: "返回较快，适合探索和短任务；不自动推荐为历史长篇细纲或正文主写" },
-  "claude-sonnet-5": { longForm: "variable", note: "文风可用，但实测篇幅有时提前收束" },
-  "minimax-m3": { longForm: "unverified", note: "二级线路长文实测超时；不自动推荐为长篇正文" },
-  "qwen3.7-max": { longForm: "variable", note: "适合中短正文或结构任务" },
-  "seed-2.1-pro": { longForm: "unverified", note: "当前线路尚未完成长文实测" },
-  "seed-2.1-turbo": { longForm: "unverified", note: "当前线路仅完成短请求验证" },
-  "grok-4.5": { longForm: "manual-only", note: "慢速备用，只在作者点名时使用" },
-  "gpt-image-2": { longForm: "not-applicable", note: "封面图片模型，不参与文字推荐" }
+  "claude-sonnet-5": { longForm: "variable", note: "当前可用，适合主写与润色" },
+  "kimi-k3": { longForm: "variable", note: "当前可用，采用前仍需审读" },
+  "gemini-3.1-pro-preview": { longForm: "manual-review", note: "历史长文只作作者点名后的候选，并人工复核" },
+  "gemini-3.5-flash": { longForm: "short-form", note: "适合探索和短任务，不自动推荐为长篇正文主写" },
+  "doubao-seed-2-1-turbo": { longForm: "short-form", note: "返回完整但历史正文容易过早展示设定，适合短任务和探索" },
+  "glm-5.2": { longForm: "manual-review", note: "本地实测场面与收束较好，历史正文仍需人工复核事实边界" },
+  "minimax-m3": { longForm: "manual-review", note: "长文耗时较长且容易游戏化解释，作者点名后作为候选" },
+  "deepseek-v4-flash": { longForm: "short-form", note: "返回快，适合快速短任务，不自动推荐为长篇正文" },
+  "deepseek-v4-pro": { longForm: "manual-review", note: "句子较干净但长文会提前收束，适合复杂复核或作者点名的候选" },
+  "kimi-k2.6": { longForm: "manual-review", note: "长文氛围容易过重，适合复核或作者点名的候选" }
 });
 
 const LONG_FORM_PRESETS = Object.freeze({
@@ -224,7 +224,7 @@ function buildCoachAdvice(taskId, plans, mode, unpaidNote, targetChars = 0) {
   if (Number(targetChars) >= 4000) lines.push("本次按长文目标排序；优先使用已有长文实测依据的模型，但篇幅仍由上游实际返回决定。");
   lines.push("生成策略：一次授权只提交一次；不先测活、不自动重试、不自动改传输方式、不跨线路换模型。收到的正文或中断前片段全部落盘（.body 纯正文可续写）。");
   lines.push("结果先在「Codex候选/」给作者看，确认前不入正式正文/台账。");
-  if (mode === "quick") lines.push("快速模式：探索用 flash/qwen；正文用 sonnet/seed；终检再开 deep。");
+  if (mode === "quick") lines.push("快速模式：探索用 flash 或 turbo；正文用 sonnet；终检再开 deep。");
   else lines.push("深度模式：主写用稳定模型，终检使用旗舰模型。");
   return lines.join("\n");
 }

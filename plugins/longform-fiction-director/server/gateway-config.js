@@ -9,15 +9,15 @@ const { isDisabledModel } = require("./disabled-models");
 const DEFAULT_MODEL_CREDITS = Object.freeze({
   "claude-sonnet-5": 10,
   "claude-opus-4-6": 20,
-  "seed-2.1-pro": 20,
-  "seed-2.1-turbo": 10,
+  "kimi-k3": 30,
   "gemini-3.1-pro-preview": 10,
+  "gemini-3.5-flash": 5,
+  "doubao-seed-2-1-turbo": 10,
   "glm-5.2": 10,
   "minimax-m3": 5,
-  "gemini-3.5-flash": 5,
-  "qwen3.7-max": 5,
-  "grok-4.5": 5,
-  "gpt-image-2": 50
+  "deepseek-v4-flash": 5,
+  "deepseek-v4-pro": 10,
+  "kimi-k2.6": 10
 });
 const DEFAULT_MODELS = Object.freeze(Object.keys(DEFAULT_MODEL_CREDITS));
 
@@ -119,13 +119,13 @@ function loadPrimaryGatewayConfig(options = {}) {
         reason: "OpenAI-compatible primary gateway needs baseUrl and apiKey."
       };
     }
-    const configuredPreferred = String(options.preferredModel || process.env.FICTION_DIRECTOR_PREFERRED_MODEL || file.preferredModel || "claude-opus-4-6").trim();
-    const preferredModel = isDisabledModel(configuredPreferred) ? "claude-opus-4-6" : configuredPreferred;
+    const configuredPreferred = String(options.preferredModel || process.env.FICTION_DIRECTOR_PREFERRED_MODEL || file.preferredModel || "claude-sonnet-5").trim();
+    const preferredModel = isDisabledModel(configuredPreferred) ? "claude-sonnet-5" : configuredPreferred;
     const allowedModels = normalizeModelList(
       options.allowedModels
       || (process.env.FICTION_DIRECTOR_ALLOWED_MODELS ? String(process.env.FICTION_DIRECTOR_ALLOWED_MODELS).split(/[,\s]+/) : null)
       || file.allowedModels
-      || [preferredModel || "claude-opus-4-6", "claude-sonnet-5"]
+      || [preferredModel || "claude-sonnet-5", "claude-opus-4-6"]
     );
     const allowed = allowedModels.length ? allowedModels : [...DEFAULT_MODELS];
     const modelCredits = normalizeModelCredits(options.modelCredits || file.modelCredits, allowed);
@@ -143,7 +143,7 @@ function loadPrimaryGatewayConfig(options = {}) {
       nexaBaseUrl: (() => { try { return normalizeOpenAiBaseUrl(nexaBaseUrlRaw); } catch { return "https://api.nexagw.org"; } })(),
       geminiApiKey: String(geminiApiKey || "").trim(),
       geminiBaseUrl: (() => { try { return normalizeOpenAiBaseUrl(geminiBaseUrlRaw); } catch { return "https://byteclaude.io"; } })(),
-      preferredModel: preferredModel || "claude-opus-4-6",
+      preferredModel: preferredModel || "claude-sonnet-5",
       allowedModels: allowed,
       modelCredits,
       creditsPerCall: Number.isFinite(creditsPerCall) ? creditsPerCall : 10,
@@ -170,8 +170,8 @@ async function savePrimaryGatewayConfig(input = {}, options = {}) {
     label: String(input.label || "平价站第一模型源").slice(0, 80),
     baseUrl: mode === "openai" ? normalizeOpenAiBaseUrl(input.baseUrl) : String(input.baseUrl || "").trim(),
     preferredModel: (() => {
-      const value = String(input.preferredModel || "claude-opus-4-6").trim() || "claude-opus-4-6";
-      return isDisabledModel(value) ? "claude-opus-4-6" : value;
+      const value = String(input.preferredModel || "claude-sonnet-5").trim() || "claude-sonnet-5";
+      return isDisabledModel(value) ? "claude-sonnet-5" : value;
     })(),
     allowedModels: normalizeModelList(input.allowedModels || DEFAULT_MODELS),
     modelCredits: normalizeModelCredits(input.modelCredits, input.allowedModels || ["claude-opus-4-6", "claude-sonnet-5"]),

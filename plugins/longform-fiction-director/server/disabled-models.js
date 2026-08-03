@@ -2,7 +2,17 @@
 
 // Models deliberately removed from this plugin stay unavailable even when an
 // older account gateway still returns them in its live catalog.
-const DISABLED_MODEL_IDS = new Set(["kimi-k3"]);
+const DISABLED_MODEL_IDS = new Set([
+  "seed-2.1-pro",
+  "seed-2.1-turbo",
+  "gpt-image-2",
+  "qwen3.7-max",
+  "grok-4.5",
+  "ark-code-latest",
+  "doubao-seed-2-0-lite",
+  "kimi-k2.7-code",
+  "minimax-m2.7"
+]);
 
 function normalizeModelId(value) {
   return String(value || "").trim().toLowerCase();

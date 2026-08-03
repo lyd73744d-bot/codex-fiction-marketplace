@@ -170,12 +170,15 @@ function createGatewayMcpTools({ gateway, gatewayGuard, openLoginPage, generatio
         for (const m of models) {
           if (m && m.id != null) creditsMap[m.id] = m.credits ?? m.credit ?? m.cost ?? null;
         }
+        const authorPrefer = Array.isArray(input.authorPrefer)
+          ? input.authorPrefer
+          : (gateway.preferredModel ? [gateway.preferredModel] : []);
         return toolResult(recommendModels({
           task: String(input.task || "draft"),
           mode,
           availableModels: models,
           creditsMap,
-          authorPrefer: input.authorPrefer,
+          authorPrefer,
           maxPerRole: Number(input.maxPerRole || 2),
           targetChars: Number(input.targetChars || 0),
           unpaid: unpaid || models.length === 0

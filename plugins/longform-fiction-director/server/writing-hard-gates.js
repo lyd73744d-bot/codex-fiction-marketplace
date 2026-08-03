@@ -22,6 +22,22 @@ const VISIBLE_PROCESS_PATTERNS = [
   /<\/?think>/i
 ];
 
+const FIRST_DRAFT_REJECTED_PHRASES = [
+  "算账",
+  "这笔账",
+  "该收了",
+  "该算账",
+  "压力",
+  "施压",
+  "层层加码",
+  "声音密得像有人在拿沙袋往木板上倒",
+  "声音密得像有人拿沙袋往木板上倒",
+  "目光如炬",
+  "声音如钟",
+  "雪花纷扬如鹅毛",
+  "远山如黛"
+];
+
 function processLeakEvidence(raw) {
   const text = String(raw || "");
   for (const pattern of VISIBLE_PROCESS_PATTERNS) {
@@ -125,6 +141,38 @@ function declaredConstraintIssues(body, requestText) {
   return issues;
 }
 
+function firstDraftExpressionIssues(body) {
+  const text = String(body || "");
+  const issues = [];
+  const contrast = uniqueMatches(text, /(?:不是|并非|并不是)(?:[^。！？!?\n]{0,48})而是/gu);
+  if (contrast.length) {
+    issues.push(hardIssue(
+      "mechanical-contrast-phrase",
+      contrast.slice(0, 4).join("、"),
+      "删去“不是……而是……”式解释，让动作、对话或前后文自行形成对照",
+      "medium"
+    ));
+  }
+  if (text.includes("——")) {
+    issues.push(hardIssue(
+      "em-dash-prose",
+      "——",
+      "改为正常句号、逗号或直接断句，不用破折号制造转折和强调",
+      "medium"
+    ));
+  }
+  const rejected = FIRST_DRAFT_REJECTED_PHRASES.filter((phrase) => text.includes(phrase));
+  if (rejected.length) {
+    issues.push(hardIssue(
+      "rejected-stock-phrase",
+      rejected.slice(0, 6).join("、"),
+      "删去作者已明确拒绝的套话或空泛施压词，改由现场事实、人物行动和具体后果承担语气",
+      "medium"
+    ));
+  }
+  return issues;
+}
+
 /**
  * Local hard gates before treating model output as usable chapter/candidate.
  * Soft templates are avoided: only block clear process leaks / empty / wrapper junk.
@@ -159,6 +207,7 @@ function inspectChapter(value, options = {}) {
   }
   issues.push(...factBoundaryIssues(body, options.requestText));
   issues.push(...declaredConstraintIssues(body, options.requestText));
+  issues.push(...firstDraftExpressionIssues(body));
 
   return {
     ok: issues.length === 0,
@@ -171,9 +220,10 @@ function inspectChapter(value, options = {}) {
 
 function isAcceptableCandidate(value, options = {}) {
   const gate = inspectChapter(value, options);
-  // For candidate generation, only hard-fail empty + process leak + non-chapter wrapper.
+  // A first draft may be imperfect, but direct-adoption status must reject the
+  // mechanical constructions explicitly prohibited by the writing policy.
   const blockers = gate.issues.filter((i) =>
-    ["empty-output", "visible-process-leak", "non-chapter-output", "output-wrapper"].includes(i.rule)
+    ["empty-output", "visible-process-leak", "non-chapter-output", "output-wrapper", "mechanical-contrast-phrase", "em-dash-prose", "rejected-stock-phrase"].includes(i.rule)
   );
   return {
     ok: blockers.length === 0,
@@ -188,5 +238,7 @@ module.exports = {
   countPublishChars,
   processLeakEvidence,
   factBoundaryIssues
-  , declaredConstraintIssues
+  , declaredConstraintIssues,
+  firstDraftExpressionIssues,
+  FIRST_DRAFT_REJECTED_PHRASES
 };
