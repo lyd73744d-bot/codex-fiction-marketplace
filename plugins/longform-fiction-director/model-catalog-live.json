@@ -2,9 +2,11 @@
   "version": "4.8",
   "fullVersion": "4.8.0",
   "gateway": "https://api.nanshanyougui.xyz",
-  "updatedAt": "2026-08-03T18:10:00+08:00",
+  "updatedAt": "2026-08-05T21:20:00+08:00",
   "preferredModel": "claude-sonnet-5",
   "models": [
+    { "id": "claude-opus-5", "credits": 25, "available": true, "status": "live", "longForm": "verified" },
+    { "id": "claude-opus-4-8", "credits": 20, "available": true, "status": "live", "longForm": "verified" },
     { "id": "claude-opus-4-6", "credits": 20, "available": true, "status": "live", "longForm": "verified" },
     { "id": "claude-sonnet-5", "credits": 10, "available": true, "status": "live", "longForm": "variable" },
     { "id": "kimi-k3", "credits": 30, "available": true, "status": "live", "longForm": "variable" },

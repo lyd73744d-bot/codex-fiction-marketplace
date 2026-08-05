@@ -44,7 +44,7 @@ const ROLE_HINTS = {
   },
   continuity: {
     label: "连续性/台账",
-    prefer: ["claude-opus-4-6", "claude-sonnet-5", "glm-5.2", "deepseek-v4-pro"],
+    prefer: ["claude-opus-5", "claude-opus-4-6", "claude-sonnet-5", "glm-5.2", "deepseek-v4-pro"],
     why: "核对人物/时间线/伏笔，重准确不重花活"
   },
   style: {
@@ -54,17 +54,17 @@ const ROLE_HINTS = {
   },
   adversary: {
     label: "反方/找硬伤",
-    prefer: ["claude-opus-4-6", "glm-5.2", "deepseek-v4-pro", "kimi-k2.6"],
+    prefer: ["claude-opus-5", "claude-opus-4-6", "glm-5.2", "deepseek-v4-pro", "kimi-k2.6"],
     why: "专门挑弃读点与逻辑崩，可短上下文上旗舰"
   },
   review: {
     label: "质检审核",
-    prefer: ["claude-opus-4-6", "claude-sonnet-5", "glm-5.2", "deepseek-v4-pro"],
+    prefer: ["claude-opus-5", "claude-opus-4-6", "claude-sonnet-5", "glm-5.2", "deepseek-v4-pro"],
     why: "结构化审稿；证据不足再换旗舰复审"
   },
   finalize: {
     label: "定稿成稿",
-    prefer: ["claude-opus-4-6", "claude-sonnet-5", "glm-5.2", "deepseek-v4-pro"],
+    prefer: ["claude-opus-5", "claude-opus-4-6", "claude-sonnet-5", "glm-5.2", "deepseek-v4-pro"],
     why: "作者确认前最后一轮，才考虑高积分模型"
   }
 };
@@ -85,6 +85,8 @@ const MANUAL_ONLY_MODELS = new Set();
 const NON_WRITING_MODELS = new Set();
 
 const MODEL_CAPABILITY_PROFILES = Object.freeze({
+  "claude-opus-5": { longForm: "verified", note: "实测长文收束完整，适合深度正文与定稿" },
+  "claude-opus-4-8": { longForm: "manual-review", note: "实测单次产出最长，适合大场面章节；作者点名后作为候选" },
   "claude-opus-4-6": { longForm: "verified", note: "长文质量稳定，适合深度正文与定稿" },
   "claude-sonnet-5": { longForm: "variable", note: "当前可用，适合主写与润色" },
   "kimi-k3": { longForm: "variable", note: "当前可用，采用前仍需审读" },

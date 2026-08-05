@@ -12,6 +12,12 @@ const onboarding = require("../server/onboarding-state");
 const { createGatewayGuard } = require("../server/gateway-guard");
 const { createGatewayMcpTools } = require("../server/gateway-mcp-tools");
 const { createLocalCoreTools } = require("../server/local-core-tools");
+const { MODEL_CAPABILITY_PROFILES } = require("../server/model-router");
+
+function capabilityOf(modelId) {
+  const profile = MODEL_CAPABILITY_PROFILES[String(modelId || "").toLowerCase()];
+  return profile ? profile.longForm : "unverified";
+}
 
 function decode(reply) {
   return JSON.parse(reply.content[0].text);
@@ -34,15 +40,15 @@ async function main() {
   const skill = fs.readFileSync(path.join(pluginRoot, "skills", "longform-fiction-director", "SKILL.md"), "utf8");
   const modelIds = catalog.models.map((item) => item.id);
 
-  assert.strictEqual(modelIds.length, 11, "shipped catalog must match the 11 retained live models");
+  assert.strictEqual(modelIds.length, 13, "shipped catalog must match the 13 retained live models");
   assert.strictEqual(catalog.preferredModel, "claude-sonnet-5");
-  for (const id of ["claude-opus-4-6", "claude-sonnet-5", "kimi-k3", "gemini-3.1-pro-preview", "gemini-3.5-flash", "doubao-seed-2-1-turbo", "glm-5.2", "minimax-m3", "deepseek-v4-flash", "deepseek-v4-pro", "kimi-k2.6"]) {
+  for (const id of ["claude-opus-5", "claude-opus-4-8", "claude-opus-4-6", "claude-sonnet-5", "kimi-k3", "gemini-3.1-pro-preview", "gemini-3.5-flash", "doubao-seed-2-1-turbo", "glm-5.2", "minimax-m3", "deepseek-v4-flash", "deepseek-v4-pro", "kimi-k2.6"]) {
     assert.ok(modelIds.includes(id), `retained route is missing: ${id}`);
   }
   for (const id of ["seed-2.1-pro", "seed-2.1-turbo", "gpt-image-2", "qwen3.7-max", "grok-4.5", "ark-code-latest", "doubao-seed-2-0-lite", "kimi-k2.7-code", "minimax-m2.7"]) {
     assert.ok(!modelIds.includes(id), `removed route leaked into catalog: ${id}`);
   }
-  assert.ok(!modelIds.includes("claude-opus-5") && !modelIds.includes("claude-opus-4-8"));
+  assert.ok(!modelIds.includes("claude-opus-4-7"), "unverified opus route leaked into catalog");
   assert.ok(manifest.interface.defaultPrompt.some((line) => line.includes("直接问我是开新书还是接着写旧书")));
   assert.ok(manifest.interface.defaultPrompt.some((line) => line.includes("每次调用其他模型前都问我是否使用")));
   assert.ok(skill.includes("你是准备开一本新书，还是接着写已有小说？"));
@@ -112,8 +118,10 @@ async function main() {
   const defaultLong = decode(await tools.call("fiction_recommend_models", {
     task: "draft", mode: "quick", targetChars: 5000
   }));
-  assert.deepStrictEqual(defaultLong.modelIds, ["claude-opus-4-6"], "default long-form routing exposed an unverified alternative");
-  assert.deepStrictEqual(defaultLong.alternativeModelIds, [], "default long-form routing retained an unverified fallback");
+  assert.deepStrictEqual(defaultLong.modelIds, [defaultLong.primaryModelId], "long-form call must submit exactly one model");
+  for (const id of defaultLong.alternativeModelIds) {
+    assert.strictEqual(capabilityOf(id), "verified", "unverified long-form alternative was recommended: " + id);
+  }
   assert.ok(!JSON.stringify(quickLong).includes("gpt-image-2"), "image model leaked into writing recommendations");
 
   const manualKimi = decode(await tools.call("fiction_recommend_models", {
