@@ -109,7 +109,7 @@ Codex 是总责编、导演和工程执行者。负责听懂作者、判断故�
 1. 未绑定时调用 `fiction_ensure_gateway({ bindModels: true })`。
 2. 未登录才调用 `fiction_open_gateway_login`；普通写作、研究和模型推荐不得弹登录页。
 3. 正文用 `fiction_generate_to_file`，重写与优化用 `fiction_optimize_with_models`，并传 `authorConfirmed: true` 表示本次调用已经获得同意。
-4. 结果先进入 `Codex候选/` 并更新模型写作记录，绝不直接覆盖正式正文。
+4. 写正式章节时传 `target: "chapter"` 和 `chapterNo`，直接落盘到 `正文/第XXX章_标题.txt`；重写同一章会覆盖同一个文件，不再堆时间戳副本。只在作者想并行比多个版本时才用 `target: "candidate"`。两种方式都会更新模型写作记录。
 
 作者不同意外部模型时，不自动由 Codex 接管整章。只问是继续把这一章想清楚，还是由 Codex 写一版临时候选。只有作者明确选择本地候选时，才调用 `fiction_write_local_candidate`。
 

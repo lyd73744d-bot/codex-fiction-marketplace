@@ -21,6 +21,17 @@ function candidateDir(projectDir) {
   return path.join(projectDir, "Codex候选");
 }
 
+function chapterDir(projectDir) {
+  return path.join(projectDir, "正文");
+}
+
+function chapterFileBase(chapterNo, title) {
+  const no = String(chapterNo || "").trim();
+  const padded = /^\d+$/.test(no) ? no.padStart(3, "0") : safeSegment(no, "000");
+  const name = String(title || "").trim();
+  return name ? "第" + padded + "章_" + safeSegment(name, "正文") : "第" + padded + "章";
+}
+
 function reviewDir(projectDir) {
   return path.join(projectDir, "审稿记录");
 }
@@ -532,14 +543,19 @@ function hasAbruptProseEnding(value = "") {
   return !/[。！？!?….…—]$/u.test(unwrapped);
 }
 
-async function writeArtifact({ projectDir, kind = "draft", title = "", chapterNo = "", modelId = "", content, ext = "txt", meta = {} } = {}) {
+async function writeArtifact({ projectDir, kind = "draft", title = "", chapterNo = "", modelId = "", content, ext = "txt", meta = {}, target: outputTarget = "candidate" } = {}) {
   if (!projectDir) throw new Error("projectDir required");
   if (typeof content !== "string" || !content.trim()) throw new Error("content required");
-  const dir = await ensureDir(candidateDir(projectDir));
-  const parts = [stamp(), safeSegment(kind, "draft")];
-  if (chapterNo) parts.push("ch" + safeSegment(chapterNo, "x"));
-  if (title) parts.push(safeSegment(title, "untitled"));
-  if (modelId) parts.push(safeSegment(modelId, "model"));
+  const toChapter = String(outputTarget || "candidate") === "chapter";
+  if (toChapter && !String(chapterNo || "").trim()) throw new Error("chapterNo required when target=chapter");
+  const dir = await ensureDir(toChapter ? chapterDir(projectDir) : candidateDir(projectDir));
+  // 正文按章用固定文件名，重写同一章直接覆盖；候选仍按时间戳累积。
+  const parts = toChapter ? [chapterFileBase(chapterNo, title)] : [stamp(), safeSegment(kind, "draft")];
+  if (!toChapter) {
+    if (chapterNo) parts.push("ch" + safeSegment(chapterNo, "x"));
+    if (title) parts.push(safeSegment(title, "untitled"));
+    if (modelId) parts.push(safeSegment(modelId, "model"));
+  }
   const fileExt = String(ext || "txt").replace(/^\./, "") || "txt";
   const filePath = path.join(dir, parts.join("_") + "." + fileExt);
   const createdAt = new Date().toISOString();
@@ -553,15 +569,18 @@ async function writeArtifact({ projectDir, kind = "draft", title = "", chapterNo
     "modelId: " + (modelId || ""),
     "createdAt: " + createdAt,
     "readableByModel: plainPath 是纯正文，可直接再喂给模型",
-    "note: 候选稿/模型输出，作者确认前不得当作正式正文。",
+    toChapter
+      ? "note: 正式正文，重写同一章会直接覆盖本文件。"
+      : "note: 候选稿/模型输出，作者确认前不得当作正式正文。",
     Object.keys(artifactMeta).length ? "meta: " + JSON.stringify(artifactMeta) : "",
     "---",
     ""
   ].filter(Boolean).join("\n") + "\n\n";
   const body = content.replace(/\r\n?/g, "\n").trim() + "\n";
-  await writeTextAtomic(filePath, header + body);
-  const plainPath = path.join(dir, parts.join("_") + ".body." + fileExt);
-  await writeTextAtomic(plainPath, body);
+  // 正文只存纯正文；候选保留 artifact 头和可直读的 .body 副本。
+  await writeTextAtomic(filePath, toChapter ? body : header + body);
+  const plainPath = toChapter ? filePath : path.join(dir, parts.join("_") + ".body." + fileExt);
+  if (!toChapter) await writeTextAtomic(plainPath, body);
   const chars = body.replace(/\s+/g, "").length;
   let memoryRecord = null;
   let memoryRecordError = null;
@@ -650,6 +669,7 @@ async function generateToArtifact({
   gateway,
   projectDir,
   kind = "draft",
+  outputTarget = "candidate",
   title = "",
   chapterNo = "",
   modelIds = [],
@@ -780,6 +800,7 @@ async function generateToArtifact({
         modelId,
         content,
         ext: "txt",
+        target: outputTarget,
         meta: {
           transport: lastTransport,
           finishReason: lastFinishReason,
