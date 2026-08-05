@@ -81,12 +81,6 @@ function createHybridGateway({ primary, secondary, label, allowedModels = [], pr
     return preferred.callModels(input);
   }
 
-  async function generateImage(input) {
-    if (primary && typeof primary.generateImage === "function") return primary.generateImage(input);
-    if (secondary && typeof secondary.generateImage === "function") return secondary.generateImage(input);
-    throw new Error("generateImage is unavailable");
-  }
-
   async function accountStatus() {
     let primaryStatus = null;
     let secondaryStatus = null;
@@ -140,7 +134,6 @@ function createHybridGateway({ primary, secondary, label, allowedModels = [], pr
     balance: balance,
     accountStatus: accountStatus,
     callModels: callModels,
-    generateImage: generateImage,
     connectionStatus: connectionStatus,
     listModels: listModels,
     login: login,

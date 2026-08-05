@@ -22,7 +22,7 @@ function publicModel(model) {
   if (!model || typeof model !== "object") return null;
   const id = typeof model.id === "string" ? model.id : "";
   if (!id) return null;
-  const isImage = /^gpt-image-/i.test(id) || /image|dall-e/i.test(id);
+  const isImage = /image|dall-e/i.test(id);
   const creditsRaw = Number(model.credits ?? model.creditCost ?? model.creditsPerCall);
   const credits = Number.isFinite(creditsRaw) && creditsRaw > 0 ? Math.floor(creditsRaw) : null;
   // 有积分即可调用：不再分强弱隐藏

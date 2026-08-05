@@ -27,7 +27,6 @@ function createOpenAiCompatibleGateway(options = {}) {
   const sessionStore = options.sessionStore || createSessionStore(options.sessionOptions);
   const label = options.label || "OpenAI-compatible";
   const defaultApiKey = typeof options.apiKey === "string" ? options.apiKey.trim() : "";
-  const gptApiKey = typeof options.gptApiKey === "string" ? options.gptApiKey.trim() : "";
   const nexaApiKey = typeof options.nexaApiKey === "string" ? options.nexaApiKey.trim() : "";
   const nexaBaseUrl = String(options.nexaBaseUrl || "https://api.nexagw.org").replace(/\/+$/u, "");
   const nexaModels = new Set(Array.isArray(options.nexaModels) && options.nexaModels.length
@@ -76,7 +75,6 @@ function createOpenAiCompatibleGateway(options = {}) {
     const id = String(modelId || "");
     if (isGeminiModel(id)) return "gemini";
     if (isNexaModel(id)) return "nexa";
-    if (/^gpt-/i.test(id) || /gpt-image/i.test(id)) return "gpt";
     return "claude";
   }
 
@@ -90,7 +88,6 @@ function createOpenAiCompatibleGateway(options = {}) {
     const id = String(modelId || "").toLowerCase();
     if (isGeminiModel(modelId)) return geminiApiKey || defaultApiKey;
     if (isNexaModel(modelId)) return nexaApiKey || defaultApiKey;
-    if (/^gpt-/i.test(id) || /gpt-image/i.test(id)) return gptApiKey || defaultApiKey;
     return defaultApiKey;
   }
 
@@ -219,7 +216,6 @@ function createOpenAiCompatibleGateway(options = {}) {
   async function listModels() {
     const pools = [];
     if (defaultApiKey) pools.push({ key: defaultApiKey, origin: baseUrl, pool: "claude" });
-    if (gptApiKey) pools.push({ key: gptApiKey, origin: baseUrl, pool: "gpt" });
     if (nexaApiKey) pools.push({ key: nexaApiKey, origin: nexaBaseUrl || baseUrl, pool: "nexa" });
     if (geminiApiKey) pools.push({ key: geminiApiKey, origin: geminiBaseUrl || baseUrl, pool: "gemini" });
     if (!pools.length) throw new GatewayClientError("AUTH_REQUIRED");
@@ -244,7 +240,7 @@ function createOpenAiCompatibleGateway(options = {}) {
           id,
           label: item?.owned_by || item?.label || id,
           credits: Number.isFinite(credits) && credits > 0 ? credits : (creditsPerCall || 2),
-          pool: isGeminiModel(id) ? "gemini" : (isNexaModel(id) ? "nexa" : (/^gpt-/i.test(id) || /gpt-image/i.test(id) ? "gpt" : pool.pool))
+          pool: isGeminiModel(id) ? "gemini" : (isNexaModel(id) ? "nexa" : pool.pool)
         });
       }
     }
@@ -284,57 +280,6 @@ function createOpenAiCompatibleGateway(options = {}) {
       models.sort((left, right) => Number(right.id === preferredModel) - Number(left.id === preferredModel));
     }
     return { ok: true, models, preferredModel: preferredModel || null, allowedModels, modelCredits };
-  }
-
-  async function generateImage(input = {}) {
-    if (!input || typeof input !== "object" || Array.isArray(input)) throw new GatewayClientError("INVALID_REQUEST");
-    const model = String(input.model || "gpt-image-2").trim() || "gpt-image-2";
-    const prompt = String(input.prompt || "").trim();
-    if (!prompt || prompt.length > 4000) throw new GatewayClientError("INVALID_REQUEST");
-    const size = String(input.size || "1024x1024");
-    if (!/^(1024x1024|1536x1024|1024x1536|auto)$/u.test(size)) throw new GatewayClientError("INVALID_REQUEST");
-    const key = await requireApiKey(model);
-    let response;
-    try {
-      response = await fetcher(`${baseUrl}/v1/images/generations`, {
-        method: "POST",
-        headers: {
-          authorization: `Bearer ${key}`,
-          "content-type": "application/json"
-        },
-        body: JSON.stringify({
-          model,
-          prompt,
-          size,
-          n: 1
-        }),
-        redirect: "error",
-        signal: AbortSignal.timeout(streamTimeoutMs)
-      });
-    } catch (error) {
-      throw toGatewayNetworkError(error, "SERVER_OFFLINE");
-    }
-    let text = "";
-    try { text = await response.text(); } catch (error) { throw toGatewayNetworkError(error, "RESPONSE_INVALID"); }
-    let payload = {};
-    try { payload = text ? JSON.parse(text) : {}; } catch { throw new GatewayClientError("RESPONSE_INVALID"); }
-    if (!response.ok) {
-      if (response.status === 401 || response.status === 403) throw new GatewayClientError("AUTH_FAILED");
-      if (response.status === 402) throw new GatewayClientError("INSUFFICIENT_BALANCE");
-      throw new GatewayClientError("SERVER_ERROR", undefined, response.status);
-    }
-    const first = Array.isArray(payload.data) ? payload.data[0] : null;
-    if (!first || (typeof first.b64_json !== "string" && typeof first.url !== "string")) {
-      throw new GatewayClientError("RESPONSE_INVALID");
-    }
-    return {
-      ok: true,
-      model,
-      credits: Number(modelCredits[model]) || 50,
-      b64: typeof first.b64_json === "string" ? first.b64_json : null,
-      url: typeof first.url === "string" ? first.url : null,
-      created: payload.created || null
-    };
   }
 
 async function callModels(input = {}) {
@@ -470,7 +415,6 @@ async function callModels(input = {}) {
     modelCredits,
     creditsPerCall,
     balance: displayBalance,
-    gptApiKey: gptApiKey || null,
     nexaApiKey: nexaApiKey || null,
     nexaBaseUrl: nexaBaseUrl || null,
     geminiApiKey: geminiApiKey || null,
@@ -479,7 +423,6 @@ async function callModels(input = {}) {
     callModels,
     connectionStatus,
     listModels,
-    generateImage,
     login,
     logout
   });
