@@ -24,6 +24,9 @@ function emptyState() {
     lastSessionDropAt: null,
     lastPopupAt: null,
     lastPopupReason: null,
+    lastBalanceWarningAt: null,
+    lastBalanceWarningBalance: null,
+    lastBalanceWarningModel: null,
     firstActivationGatewayOpenedAt: null,
     pendingFirstLogin: false,
     modelGatewayBound: false,
@@ -117,6 +120,16 @@ async function markPopup(reason, statePath = defaultStatePath()) {
     ...state,
     lastPopupAt: new Date().toISOString(),
     lastPopupReason: String(reason || "unknown")
+  }, statePath);
+}
+
+async function markBalanceWarning({ balance, modelId } = {}, statePath = defaultStatePath()) {
+  const state = await readState(statePath);
+  return writeState({
+    ...state,
+    lastBalanceWarningAt: new Date().toISOString(),
+    lastBalanceWarningBalance: Number.isFinite(Number(balance)) ? Number(balance) : null,
+    lastBalanceWarningModel: modelId ? String(modelId) : null
   }, statePath);
 }
 
@@ -236,6 +249,7 @@ module.exports = {
   markPackageInstalled,
   markLoginOk,
   markPopup,
+  markBalanceWarning,
   markFirstActivationGatewayOpened,
   markSessionDrop,
   markModelGatewayBinding,

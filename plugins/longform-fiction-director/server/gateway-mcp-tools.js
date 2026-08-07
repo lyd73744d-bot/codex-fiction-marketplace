@@ -61,7 +61,55 @@ function defaultTarget(input = {}) {
 function createGatewayMcpTools({ gateway, gatewayGuard, openLoginPage, generationJobs } = {}) {
   if (!gateway) throw new TypeError("gateway is required");
   const jobs = generationJobs || createGenerationJobManager();
-  const billedGateway = createBillingGateway(gateway);
+  let balancePopupInflight = null;
+  async function openLowBalanceWarning(snapshot) {
+    if (!snapshot?.balanceWarning || snapshot.mode !== "metered") return null;
+    if (balancePopupInflight) return balancePopupInflight;
+    balancePopupInflight = (async () => {
+      const state = await onboarding.readState();
+      const last = state.lastBalanceWarningAt ? Date.parse(state.lastBalanceWarningAt) : 0;
+      if (last && Number.isFinite(last) && Date.now() - last < 10 * 60 * 1000) {
+        return {
+          popupOpened: false,
+          suppressed: true,
+          reason: "low_balance_cooldown",
+          message: snapshot.balanceWarningMessage || "余额偏低，请留意本次调用预计消耗。"
+        };
+      }
+
+      let opened = null;
+      if (gatewayGuard && typeof gatewayGuard.openBindingPage === "function") {
+        opened = await gatewayGuard.openBindingPage({ reason: "low_balance", openBrowser: true });
+      } else if (typeof openLoginPage === "function") {
+        const page = await openLoginPage();
+        const loginUrl = page?.url || null;
+        const browserOpened = loginUrl && typeof gatewayGuard?.openExternal === "function"
+          ? !!(await gatewayGuard.openExternal(loginUrl))
+          : false;
+        opened = { page, loginUrl, browserOpened };
+      }
+      if (!opened) return null;
+
+      await onboarding.markBalanceWarning({
+        balance: snapshot.balanceBefore,
+        modelId: snapshot.modelIds?.[0]
+      });
+      return {
+        popupOpened: true,
+        browserOpened: !!opened.browserOpened,
+        reason: "low_balance",
+        loginUrl: opened.loginUrl || null,
+        shopUrl: opened.shopUrl || null,
+        message: snapshot.balanceWarningMessage || "余额偏低，请先确认余额和费率。"
+      };
+    })();
+    try {
+      return await balancePopupInflight;
+    } finally {
+      balancePopupInflight = null;
+    }
+  }
+  const billedGateway = createBillingGateway(gateway, { onBalanceWarning: openLowBalanceWarning });
   async function requireGateway(reason = "tool_call", {
     allowPopup = false,
     explicitUserChoice = false

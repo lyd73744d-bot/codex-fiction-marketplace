@@ -57,6 +57,18 @@ function createGatewayGuard({ gateway, openLoginPage, paymentPortalUrl, openExte
     }
   }
 
+  async function openBindingPage({ reason = "manual", openBrowser = true } = {}) {
+    const state = await onboarding.readState();
+    const shopUrl = state.shopUrl || paymentPortalUrl || "https://catfk.com/shop/ZVZNANU8";
+    const page = await openLoginPage();
+    const loginUrl = page?.url || null;
+    if (loginUrl) {
+      try { await saveLoginUrl({ loginUrl, shopUrl, reason }); } catch {}
+    }
+    const browserOpened = openBrowser && loginUrl ? !!(await openExternalImpl(loginUrl)) : false;
+    return { page, loginUrl, browserOpened, shopUrl };
+  }
+
   async function ensureAccess({
     force = false,
     reason = "tool_call",
@@ -235,7 +247,7 @@ function createGatewayGuard({ gateway, openLoginPage, paymentPortalUrl, openExte
     }
   }
 
-  return Object.freeze({ ensureAccess, accountSnapshot, openExternal });
+  return Object.freeze({ ensureAccess, accountSnapshot, openBindingPage, openExternal });
 }
 
 module.exports = { createGatewayGuard, openExternal };

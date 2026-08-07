@@ -11,6 +11,31 @@ function uniqueModelIds(value) {
     : [];
 }
 
+const DEFAULT_LOW_BALANCE_FLOOR = 100;
+const DEFAULT_LOW_BALANCE_MULTIPLIER = 2;
+
+function lowBalanceWarning(accountBilling, estimatedCredits, {
+  floor = DEFAULT_LOW_BALANCE_FLOOR,
+  multiplier = DEFAULT_LOW_BALANCE_MULTIPLIER
+} = {}) {
+  if (accountBilling?.mode !== "metered" || accountBilling.balance == null) return null;
+  const cost = numberOrNull(estimatedCredits);
+  if (cost == null || cost <= 0) return null;
+  const minimum = Math.max(0, numberOrNull(floor) ?? DEFAULT_LOW_BALANCE_FLOOR);
+  const factor = Math.max(1, numberOrNull(multiplier) ?? DEFAULT_LOW_BALANCE_MULTIPLIER);
+  const threshold = Math.max(minimum, Math.ceil(cost * factor));
+  if (accountBilling.balance > threshold) return null;
+  return {
+    level: accountBilling.balance < cost ? "critical" : "low",
+    balanceBefore: accountBilling.balance,
+    estimatedCredits: cost,
+    threshold,
+    message: accountBilling.balance < cost
+      ? `余额不足：本次预计消耗 ${cost} 积分，当前余额 ${accountBilling.balance} 积分。`
+      : `余额偏低：本次预计消耗 ${cost} 积分，当前余额 ${accountBilling.balance} 积分。建议先充值。`
+  };
+}
+
 function accountMode(account) {
   const user = account?.user || account || {};
   const rawBalance = numberOrNull(account?.balance ?? user.balance);
@@ -127,6 +152,14 @@ async function readBillingSnapshot(gateway, modelIds, { includeModels = true } =
     accountType: accountBilling.accountType
   };
 
+  const warning = lowBalanceWarning(accountBilling, estimatedCredits);
+  if (warning) {
+    snapshot.balanceWarning = true;
+    snapshot.balanceLevel = warning.level;
+    snapshot.balanceThreshold = warning.threshold;
+    snapshot.balanceWarningMessage = warning.message;
+  }
+
   if (accountBilling.mode === "metered" && accountBilling.balance == null) {
     throw billingError("BILLING_UNAVAILABLE", "无法确认当前有限积分余额，已停止模型调用。", {
       ...snapshot,
@@ -177,6 +210,11 @@ function finalizeBilling(before, afterAccount, { succeeded = true } = {}) {
     usedAfter: after?.used ?? null,
     callsLeftBefore: before?.callsLeftBefore ?? null,
     callsLeftAfter: after?.callsLeft ?? null,
+    balanceWarning: before?.balanceWarning === true,
+    balanceLevel: before?.balanceLevel || null,
+    balanceThreshold: before?.balanceThreshold ?? null,
+    balanceWarningMessage: before?.balanceWarningMessage || null,
+    balancePopup: before?.balancePopup || null,
     succeeded: succeeded === true,
     chargeStatus: "unverified",
     message: "调用后余额暂未核对。"
@@ -219,7 +257,7 @@ function finalizeBilling(before, afterAccount, { succeeded = true } = {}) {
   return result;
 }
 
-function createBillingGateway(gateway) {
+function createBillingGateway(gateway, { onBalanceWarning } = {}) {
   if (!gateway || typeof gateway.callModels !== "function") throw new TypeError("gateway.callModels is required");
   let tail = Promise.resolve();
   const runExclusive = (operation) => {
@@ -230,7 +268,24 @@ function createBillingGateway(gateway) {
 
   const billed = Object.assign({}, gateway);
   billed.callModels = (input = {}) => runExclusive(async () => {
-    const before = await readBillingSnapshot(gateway, input.modelIds);
+    async function notifyBalanceWarning(snapshot) {
+      if (snapshot?.balanceWarning !== true || typeof onBalanceWarning !== "function") return;
+      try {
+        const popup = await onBalanceWarning(snapshot);
+        if (popup && typeof popup === "object") snapshot.balancePopup = popup;
+      } catch {
+        // A warning popup must never turn a valid, sufficiently funded call into a failed call.
+      }
+    }
+
+    let before;
+    try {
+      before = await readBillingSnapshot(gateway, input.modelIds);
+    } catch (error) {
+      await notifyBalanceWarning(error?.billing);
+      throw error;
+    }
+    await notifyBalanceWarning(before);
     let result;
     try {
       result = await gateway.callModels(input);
@@ -254,7 +309,10 @@ module.exports = {
   accountMode,
   createBillingGateway,
   finalizeBilling,
+  lowBalanceWarning,
   modelCost,
   readBillingSnapshot,
-  uniqueModelIds
+  uniqueModelIds,
+  DEFAULT_LOW_BALANCE_FLOOR,
+  DEFAULT_LOW_BALANCE_MULTIPLIER
 };
