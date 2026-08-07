@@ -68,10 +68,12 @@ async function appendModelWritingRecord({
   createdAt,
   filePath,
   plainPath,
-  chars
+  chars,
+  target = "candidate"
 }) {
   await ensureDir(reviewDir(projectDir));
   const logPath = modelWritingRecordPath(projectDir);
+  const isChapter = target === "chapter";
   const entry = [
     "",
     "## " + createdAt + " · " + recordValue(kind, "model_output"),
@@ -79,10 +81,12 @@ async function appendModelWritingRecord({
     "- 模型：`" + recordValue(modelId, "external-model") + "`",
     "- 标题：" + recordValue(title),
     "- 章节：" + recordValue(chapterNo),
-    "- 候选文件：`" + projectRelative(projectDir, filePath) + "`",
+    "- 文件：`" + projectRelative(projectDir, filePath) + "`",
     "- 纯文本：`" + projectRelative(projectDir, plainPath) + "`",
     "- 非空字符：" + Number(chars || 0),
-    "- 状态：候选，尚未由作者确认；不得作为正文事实或正式台账依据。",
+    isChapter
+      ? "- 状态：已写入正文；同章重新生成会覆盖同一路径。"
+      : "- 状态：临时稿；不参与普通正文流程，也不得作为事实台账依据。",
     "",
     "---",
     ""
@@ -90,8 +94,8 @@ async function appendModelWritingRecord({
   const header = [
     "# 模型写作记录",
     "",
-    "> 本文件是外部模型输出的过程索引。继续写作时先看索引，再按需读取对应 `.body.txt`。",
-    "> 未经作者确认的候选只用于恢复写作过程，不得当作人物、设定、时间线或正文事实。",
+    "> 本文件只做外部模型输出的过程索引，不是故事事实台账。",
+    "> 默认正文直接写入 `正文/`；同章重写覆盖同一路径。只有作者明确要求保留多个版本时，才另存临时稿。",
     ""
   ].join("\n");
 
@@ -367,13 +371,14 @@ async function createStreamCheckpoint({
   title,
   chapterNo,
   modelId,
+  target = "candidate",
   everyChars = 240,
   everyMs = 2000,
   onDelta,
   onProgress
 } = {}) {
-  const dir = await ensureDir(candidateDir(projectDir));
   const review = await ensureDir(reviewDir(projectDir));
+  const dir = target === "chapter" ? review : await ensureDir(candidateDir(projectDir));
   const parts = [stamp(), safeSegment(kind, "draft")];
   if (chapterNo) parts.push("ch" + safeSegment(chapterNo, "x"));
   if (title) parts.push(safeSegment(title, "untitled"));
@@ -502,12 +507,14 @@ function extractModelPayload(result, fallbackModelId = "") {
   let modelId = fallbackModelId || "";
   let transport = "unknown";
   let finishReason = null;
+  let billing = null;
   if (typeof result === "string") {
     content = result;
     transport = "string";
   } else if (result && typeof result === "object") {
     transport = String(result.transport || result.mode || "gateway");
     finishReason = result.finishReason ?? result.finish_reason ?? null;
+    billing = result.billing && typeof result.billing === "object" ? result.billing : null;
     if (typeof result.content === "string") content = result.content;
     else if (typeof result.text === "string") content = result.text;
     if (Array.isArray(result.outputs) && result.outputs.length) {
@@ -533,7 +540,7 @@ function extractModelPayload(result, fallbackModelId = "") {
     reasoningBlocksRemoved += 1;
     return "";
   }).replace(/\n{3,}/g, "\n\n").trim();
-  return { content, modelId, transport, finishReason, reasoningBlocksRemoved };
+  return { content, modelId, transport, finishReason, reasoningBlocksRemoved, billing };
 }
 
 function hasAbruptProseEnding(value = "") {
@@ -543,13 +550,20 @@ function hasAbruptProseEnding(value = "") {
   return !/[。！？!?….…—]$/u.test(unwrapped);
 }
 
-async function writeArtifact({ projectDir, kind = "draft", title = "", chapterNo = "", modelId = "", content, ext = "txt", meta = {}, target: outputTarget = "candidate" } = {}) {
+function normalizeOutputTarget(outputTarget, chapterNo) {
+  const raw = String(outputTarget || "").trim().toLowerCase();
+  if (raw === "chapter" || raw === "candidate") return raw;
+  return String(chapterNo || "").trim() ? "chapter" : "candidate";
+}
+
+async function writeArtifact({ projectDir, kind = "draft", title = "", chapterNo = "", modelId = "", content, ext = "txt", meta = {}, target: outputTarget = "" } = {}) {
   if (!projectDir) throw new Error("projectDir required");
   if (typeof content !== "string" || !content.trim()) throw new Error("content required");
-  const toChapter = String(outputTarget || "candidate") === "chapter";
+  const targetMode = normalizeOutputTarget(outputTarget, chapterNo);
+  const toChapter = targetMode === "chapter";
   if (toChapter && !String(chapterNo || "").trim()) throw new Error("chapterNo required when target=chapter");
   const dir = await ensureDir(toChapter ? chapterDir(projectDir) : candidateDir(projectDir));
-  // 正文按章用固定文件名，重写同一章直接覆盖；候选仍按时间戳累积。
+  // 正文按章用固定文件名，重写同一章直接覆盖；临时稿仅在显式要求多个版本时按时间戳累积。
   const parts = toChapter ? [chapterFileBase(chapterNo, title)] : [stamp(), safeSegment(kind, "draft")];
   if (!toChapter) {
     if (chapterNo) parts.push("ch" + safeSegment(chapterNo, "x"));
@@ -570,14 +584,14 @@ async function writeArtifact({ projectDir, kind = "draft", title = "", chapterNo
     "createdAt: " + createdAt,
     "readableByModel: plainPath 是纯正文，可直接再喂给模型",
     toChapter
-      ? "note: 正式正文，重写同一章会直接覆盖本文件。"
-      : "note: 候选稿/模型输出，作者确认前不得当作正式正文。",
+      ? "note: 正文文件，重写同一章会直接覆盖本文件。"
+      : "note: 临时稿/模型输出，不参与普通正文流程。",
     Object.keys(artifactMeta).length ? "meta: " + JSON.stringify(artifactMeta) : "",
     "---",
     ""
   ].filter(Boolean).join("\n") + "\n\n";
   const body = content.replace(/\r\n?/g, "\n").trim() + "\n";
-  // 正文只存纯正文；候选保留 artifact 头和可直读的 .body 副本。
+  // 正文只存纯正文；临时稿保留 artifact 头和可直读的 .body 副本。
   await writeTextAtomic(filePath, toChapter ? body : header + body);
   const plainPath = toChapter ? filePath : path.join(dir, parts.join("_") + ".body." + fileExt);
   if (!toChapter) await writeTextAtomic(plainPath, body);
@@ -595,7 +609,8 @@ async function writeArtifact({ projectDir, kind = "draft", title = "", chapterNo
         createdAt,
         filePath,
         plainPath,
-        chars
+        chars,
+        target: targetMode
       });
     } catch (error) {
       memoryRecordError = String(error?.message || error || "model_record_failed");
@@ -610,6 +625,8 @@ async function writeArtifact({ projectDir, kind = "draft", title = "", chapterNo
     bytes: Buffer.byteLength(body, "utf8"),
     chars,
     modelReadable: true,
+    target: targetMode,
+    overwrittenByDesign: toChapter,
     recordedForMemory: Boolean(memoryRecord),
     memoryRecord,
     memoryRecordError
@@ -663,13 +680,14 @@ async function listArtifacts(projectDir, { limit = 30 } = {}) {
 
 /**
  * Stream-first generation with one upstream submission per explicit author authorization.
- * Always persists complete text to Codex候选/*.txt (+ .body.txt plain for model reread).
+ * With a chapter number, persists complete text directly to 正文/第XXX章*.txt and overwrites
+ * that same chapter on regeneration. Explicit target="candidate" keeps the older review-folder flow.
  */
 async function generateToArtifact({
   gateway,
   projectDir,
   kind = "draft",
-  outputTarget = "candidate",
+  outputTarget = "",
   title = "",
   chapterNo = "",
   modelIds = [],
@@ -703,6 +721,7 @@ async function generateToArtifact({
   let lastPartial = false;
   let lastAbruptEnding = false;
   let lastBelowMinChars = false;
+  let lastBilling = null;
   let reasoningBlocksRemoved = 0;
   let fallbackAttempts = [];
   let activeCheckpoint = null;
@@ -710,6 +729,7 @@ async function generateToArtifact({
   const attempts = 1;
   const retries = 1;
   const useFallback = fallbackChain === true && ids.length > 1;
+  const targetMode = normalizeOutputTarget(outputTarget, chapterNo);
 
   async function callOne(modelId) {
     const checkpoint = await createStreamCheckpoint({
@@ -718,6 +738,7 @@ async function generateToArtifact({
       title,
       chapterNo,
       modelId,
+      target: targetMode,
       everyChars: Math.max(80, Number(checkpointEveryChars) || 240),
       everyMs: Math.max(500, Number(checkpointEveryMs) || 2000),
       onDelta,
@@ -743,9 +764,16 @@ async function generateToArtifact({
         await checkpoint.fail(error);
         throw error;
       }
-      extracted = extractModelPayload({ content: partial, modelId, transport: "partial_error", finishReason: error?.finishReason || null }, modelId);
+      extracted = extractModelPayload({
+        content: partial,
+        modelId,
+        transport: "partial_error",
+        finishReason: error?.finishReason || null,
+        billing: error?.billing || null
+      }, modelId);
       lastPartial = true;
     }
+    lastBilling = extracted.billing || lastBilling;
     await checkpoint.sync(extracted.content, "response_received", {
       transport: extracted.transport,
       finishReason: extracted.finishReason || null
@@ -820,7 +848,10 @@ async function generateToArtifact({
             : null,
           reasoningBlocksRemoved,
           fallbackAttempts: fallbackAttempts.slice(-12),
-          note: "模型返回即保存为候选 txt；中途断线也保留已收到正文；.body 纯正文可再喂模型，质量检查仅提示不拦截落盘"
+          billing: lastBilling,
+          note: targetMode === "chapter"
+            ? "模型返回即写入正文文件；重写同一章覆盖同一路径；质量检查仅提示，不额外堆版本。"
+            : "模型返回即保存为临时稿；中途断线也保留已收到正文；.body 纯正文可再喂模型，质量检查仅提示不拦截落盘"
         }
       });
 
@@ -840,7 +871,7 @@ async function generateToArtifact({
         accepted: !lastBelowMinChars && !lastPartial && !(lastGate && lastGate.ok === false),
         qualityStatus: lastBelowMinChars
           ? "below_requested_length"
-          : (lastPartial ? "partial_candidate" : (!(lastGate && lastGate.ok === false) ? "candidate_ready" : "review_required")),
+          : (lastPartial ? "partial_saved" : (!(lastGate && lastGate.ok === false) ? (targetMode === "chapter" ? "chapter_ready" : "candidate_ready") : "review_required")),
         artifact: saved,
         modelId,
         transport: lastTransport,
@@ -853,17 +884,20 @@ async function generateToArtifact({
         belowMinChars: lastBelowMinChars,
         hardGate: lastGate,
         fallbackAttempts,
+        billing: lastBilling,
         contextSanitization,
         reasoningBlocksRemoved,
         progressPath: lastProgressPath,
         preview: content.slice(0, previewLimit),
-        coach: "模型输出已落盘。可读 " + saved.relativePath + " 与纯正文 " + saved.plainRelativePath +
-          (saved.memoryRecord ? "；写作记录已更新 " + saved.memoryRecord.relativePath + "。" : "；写作记录未更新，请保留当前候选路径。") +
+        coach: (targetMode === "chapter"
+          ? "正文已写入 " + saved.plainRelativePath + "。同一章重新生成会覆盖这个文件"
+          : "临时稿已落盘。可读 " + saved.relativePath + " 与纯正文 " + saved.plainRelativePath) +
+          (saved.memoryRecord ? "；写作记录已更新 " + saved.memoryRecord.relativePath + "。" : "；写作记录未更新，请保留当前路径。") +
           (lastPartial || /^partial_/u.test(lastTransport)
             ? "当前只算已保存的正文段落，不算完整章；需要续写时从 .body.txt 最后一个字接下去。"
             : (lastBelowMinChars
-              ? "正文已完整返回，但低于本次最低篇幅；仍是候选，若要扩成目标长度需作者明确授权同一模型续接。"
-              : "作者确认前不入正式正文/台账。"))
+              ? (targetMode === "chapter" ? "；但低于本次最低篇幅，如需扩写请再次确认同一模型续接或重新生成覆盖。" : "正文已返回但低于本次最低篇幅；这是显式临时稿，若要扩成目标长度需作者明确授权同一模型续接。")
+              : (targetMode === "chapter" ? "；如不满意可重新生成覆盖。" : "临时稿不会自动进入正文或事实台账。")))
       };
     } catch (error) {
       lastError = error;
@@ -922,10 +956,15 @@ async function continueArtifactToFile({
   const relative = path.relative(projectRoot, sourceAbs);
   const candidateRoot = path.resolve(candidateDir(projectRoot));
   const candidateRelative = path.relative(candidateRoot, sourceAbs);
+  const chapterRoot = path.resolve(chapterDir(projectRoot));
+  const chapterRelative = path.relative(chapterRoot, sourceAbs);
   const outsideProject = !relative || relative === ".." || relative.startsWith(".." + path.sep) || path.isAbsolute(relative);
   const outsideCandidates = !candidateRelative || candidateRelative === ".." || candidateRelative.startsWith(".." + path.sep) || path.isAbsolute(candidateRelative);
-  if (outsideProject || outsideCandidates || !/\.body\.txt$/iu.test(sourceAbs)) {
-    throw new Error("sourcePath must be a candidate .body.txt inside projectDir");
+  const outsideChapter = !chapterRelative || chapterRelative === ".." || chapterRelative.startsWith(".." + path.sep) || path.isAbsolute(chapterRelative);
+  const sourceIsTemporary = !outsideCandidates && /\.body\.txt$/iu.test(sourceAbs);
+  const sourceIsChapter = !outsideChapter && /\.(?:txt|md)$/iu.test(sourceAbs) && !/\.in-progress\./iu.test(sourceAbs);
+  if (outsideProject || (!sourceIsTemporary && !sourceIsChapter)) {
+    throw new Error("sourcePath must be a temporary .body.txt or 正文 txt/md inside projectDir");
   }
   const source = await readArtifact(sourceAbs);
   const prompt = [
@@ -950,6 +989,7 @@ async function continueArtifactToFile({
     fallbackChain,
     minChars: Math.max(0, Number(minAdditionalChars) || 0),
     maxTokens,
+    outputTarget: "candidate",
     onProgress
   });
   const continuationBody = await readArtifact(continuation.artifact.plainPath);
@@ -957,7 +997,7 @@ async function continueArtifactToFile({
   const combined = await writeArtifact({
     projectDir,
     kind: "chapter_draft",
-    title: title ? title + "_续接合并" : "续接合并",
+    title: sourceIsChapter ? title : (title ? title + "_续接合并" : "续接合并"),
     chapterNo,
     modelId: continuation.modelId,
     content: combinedText,
@@ -968,8 +1008,11 @@ async function continueArtifactToFile({
       continuationPartial: Boolean(continuation.partial),
       continuationAbruptEnding: Boolean(continuation.abruptEnding),
       combinedAbruptEnding: hasAbruptProseEnding(combinedText),
-      note: "原稿与新增续写段机械去重合并；作者确认前不进入正式正文或事实台账"
-    }
+      note: sourceIsChapter
+        ? "原正文与新增续写段机械去重合并；合并后写回同章正文，事实台账仍需作者采用后更新"
+        : "原稿与新增续写段机械去重合并；临时合并稿不会自动进入正文或事实台账"
+    },
+    target: sourceIsChapter ? "chapter" : "candidate"
   });
   return {
     ok: true,
@@ -978,7 +1021,9 @@ async function continueArtifactToFile({
     combined,
     chars: combinedText.replace(/\s+/g, "").length,
     complete: !continuation.partial && !continuation.abruptEnding && !hasAbruptProseEnding(combinedText),
-    coach: "续写段与合并稿均已保存。先读合并稿；作者确认前不进入正式正文或事实台账。"
+    coach: sourceIsChapter
+      ? "续写段已保存，合并稿已写回正文。先读当前正文；采用后再更新事实台账。"
+      : "续写段与合并稿均已保存为临时稿。先读合并稿；需要采用时再明确写入正文并更新台账。"
   };
 }
 

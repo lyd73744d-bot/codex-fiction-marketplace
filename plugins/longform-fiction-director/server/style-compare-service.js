@@ -111,7 +111,7 @@ async function compareStyle({ projectDir, draftText = "", draftPath = "", title 
   if (!ctx.sampleNotes.trim()) missing.push("缺少样书手法笔记");
   const report = [
     "# 文风对比报告", "",
-    "## 候选概况",
+    "## 当前正文概况",
     "- 标题：" + (title || "未命名"),
     "- 字数：" + stats.chars,
     "- 行数：" + stats.lines,
@@ -143,7 +143,7 @@ async function compareStyle({ projectDir, draftText = "", draftPath = "", title 
     "- 深度整章检查：humanizer-zh",
     "- 外部模型改写：fiction_optimize_with_models（每次先询问作者）",
     "",
-    "## 候选摘录", clip(draft, 2500), ""
+    "## 当前正文摘录", clip(draft, 2500), ""
   ].join("\n");
   const saved = await writeArtifact({
     projectDir,

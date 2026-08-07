@@ -625,7 +625,7 @@ async function main() {
         sourcePath: path.join(projectDir, "审稿记录", "not-a-candidate.txt"),
         modelIds: ["claude-opus-5"]
       }),
-      /candidate \.body\.txt/u,
+      /temporary \.body\.txt or 正文 txt\/md/u,
       "continuation accepted an arbitrary project file"
     );
 

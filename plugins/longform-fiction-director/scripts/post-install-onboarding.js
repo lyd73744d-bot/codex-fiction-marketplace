@@ -10,9 +10,9 @@ async function main() {
   const state = await onboarding.markPackageInstalled();
   console.log("[onboarding] installation recorded");
   console.log("[onboarding] state =", onboarding.defaultStatePath());
-  console.log("[onboarding] 网关为可选增强：安装和普通写作不会打开登录页。");
-  console.log("[onboarding] Codex 可直接完成引导、研究、工程、必要的章节构思和验收；正文默认交给作者当次同意的写作模型。");
-  console.log("[onboarding] 每次调用其他模型前都询问；当次选择使用才调用，首次使用永久保存网关绑定。");
+  console.log("[onboarding] 首次初始化会打开绑定页；完成登录或注册后才能调用外部写作模型。");
+  console.log("[onboarding] 本地引导、研究、工程、必要的章节构思和验收仍可继续；正文默认交给作者当次同意的写作模型。");
+  console.log("[onboarding] 每次调用前展示模型费率和余额，调用后核对余额变化；绑定不等于自动授权。");
   console.log("[onboarding] gateway pending =", !!state.pendingFirstLogin);
 }
 

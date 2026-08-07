@@ -8,6 +8,8 @@ const { smokeLiveGateway } = require("./live-gateway-smoke");
 const { buildDraftSystem, prepareDraftPrompt } = require("./draft-prompt-lib");
 const { createGenerationJobManager } = require("./generation-job-manager");
 const onboarding = require("./onboarding-state");
+const { createBillingGateway, readBillingSnapshot } = require("./billing-guard");
+const { filterDisabledModels } = require("./disabled-models");
 
 const MAX_OUTPUT_DEPTH = 32;
 const MAX_OUTPUT_NODES = 10_000;
@@ -50,10 +52,16 @@ function required(value, name) {
 function safetyAnnotations(readOnlyHint) {
   return { readOnlyHint, openWorldHint: false, destructiveHint: false };
 }
+function defaultTarget(input = {}) {
+  const explicit = String(input.target || "").trim();
+  if (explicit) return explicit;
+  return String(input.chapterNo || "").trim() ? "chapter" : "candidate";
+}
 
 function createGatewayMcpTools({ gateway, gatewayGuard, openLoginPage, generationJobs } = {}) {
   if (!gateway) throw new TypeError("gateway is required");
   const jobs = generationJobs || createGenerationJobManager();
+  const billedGateway = createBillingGateway(gateway);
   async function requireGateway(reason = "tool_call", {
     allowPopup = false,
     explicitUserChoice = false
@@ -70,20 +78,20 @@ function createGatewayMcpTools({ gateway, gatewayGuard, openLoginPage, generatio
     throw error;
   }
   const definitions = [
-    { name: "fiction_ensure_gateway", description: "Read gateway status and persist account binding. bindModels=true remembers the gateway binding, but every model call still requires the user's current confirmation. This check does not open a popup unless force=true.", annotations: safetyAnnotations(false), inputSchema: { type: "object", additionalProperties: false, properties: { force: { type: "boolean" }, bindModels: { type: "boolean" }, unbindModels: { type: "boolean" } } } },
-    { name: "fiction_open_gateway_login", description: "Open the optional gateway login page only after the user explicitly chooses gateway models. Credentials stay in the local page, not MCP.", annotations: safetyAnnotations(false), inputSchema: { type: "object", additionalProperties: false, properties: {} } },
+    { name: "fiction_ensure_gateway", description: "Check gateway status and persist account binding. The first plugin activation opens the binding page in the default browser, even if a local session already exists; later checks stay quiet. After binding, users can say 'use DeepSeek' or name another listed model directly. bindModels=true remembers the binding, but every model call still requires current author confirmation.", annotations: safetyAnnotations(false), inputSchema: { type: "object", additionalProperties: false, properties: { force: { type: "boolean" }, bindModels: { type: "boolean" }, unbindModels: { type: "boolean" } } } },
+    { name: "fiction_open_gateway_login", description: "Open the local gateway binding page. Credentials stay in the local page, not MCP. The page supports login, registration, balance, model rates and recharge-code redemption.", annotations: safetyAnnotations(false), inputSchema: { type: "object", additionalProperties: false, properties: {} } },
     { name: "fiction_account_status", description: "Read gateway login/account status without spamming login popup.", annotations: safetyAnnotations(true), inputSchema: { type: "object", additionalProperties: false, properties: {} } },
-    { name: "fiction_list_models", description: "List models available to the logged-in account and its public balance status.", annotations: safetyAnnotations(true), inputSchema: { type: "object", additionalProperties: false, properties: {} } },
-    { name: "fiction_recommend_models", description: "Lead-editor router: recommend one external model for a writing task and list manual alternatives. Supports mode=quick|deep and targetChars for long-form-aware ordering. Pass returned modelIds to generate_to_file.modelIds; models are never switched automatically.", annotations: safetyAnnotations(true), inputSchema: { type: "object", additionalProperties: false, properties: { task: { type: "string", maxLength: 64 }, mode: { type: "string", maxLength: 16 }, targetChars: { type: "number", minimum: 0, maximum: 200000 }, maxPerRole: { type: "number" }, authorPrefer: { type: "array", items: { type: "string" }, maxItems: 8 } } } },
+    { name: "fiction_list_models", description: "List models available to the logged-in account and its public balance status. Users may directly say 'use DeepSeek V4 Pro' or name any returned model; the plugin will show the live rate before the call.", annotations: safetyAnnotations(true), inputSchema: { type: "object", additionalProperties: false, properties: {} } },
+    { name: "fiction_recommend_models", description: "Lead-editor router: recommend one external model, show its live credit rate and current balance, and list manual alternatives. The user can override the recommendation by saying 'use DeepSeek V4 Flash/Pro' or naming another returned model. The selected call must be confirmed again; models are never switched automatically.", annotations: safetyAnnotations(true), inputSchema: { type: "object", additionalProperties: false, properties: { task: { type: "string", maxLength: 64 }, mode: { type: "string", maxLength: 16 }, targetChars: { type: "number", minimum: 0, maximum: 200000 }, maxPerRole: { type: "number" }, authorPrefer: { type: "array", items: { type: "string" }, maxItems: 8 } } } },
     { name: "fiction_list_model_tasks", description: "List task types supported by the lead-editor model router.", annotations: safetyAnnotations(true), inputSchema: { type: "object", additionalProperties: false, properties: {} } },
-    { name: "fiction_generate_to_file", description: "Call the model only after the author confirms this specific call. authorConfirmed=true is required every time. Put old-project notes in projectContext so legacy chapter, word-count, frequency and checklist directives are removed before generation. Set background=true for long prose and poll fiction_generation_status afterward.", annotations: safetyAnnotations(false), inputSchema: { type: "object", additionalProperties: false, required: ["projectDir", "prompt", "modelIds", "authorConfirmed"], properties: { target: { type: "string", enum: ["candidate", "chapter"] }, projectDir: { type: "string", maxLength: 512 }, prompt: { type: "string", maxLength: 1000000 }, projectContext: { type: "string", maxLength: 1000000 }, system: { type: "string", maxLength: 200000 }, modelIds: { type: "array", items: { type: "string" }, minItems: 1, maxItems: 8 }, authorConfirmed: { type: "boolean" }, background: { type: "boolean" }, kind: { type: "string", maxLength: 64 }, title: { type: "string", maxLength: 120 }, chapterNo: { type: "string", maxLength: 32 }, taskLabel: { type: "string", maxLength: 64 }, previewChars: { type: "number" }, fallbackChain: { type: "boolean" }, minChars: { type: "number" }, applyHardGates: { type: "boolean" }, maxTokens: { type: "number", minimum: 256, maximum: 65536 } } } },
-    { name: "fiction_continue_artifact", description: "Continue a saved incomplete candidate only after the author confirms this additional model call. The new segment and a mechanically merged candidate are both saved. Set background=true and poll fiction_generation_status for long continuations.", annotations: safetyAnnotations(false), inputSchema: { type: "object", additionalProperties: false, required: ["projectDir", "sourcePath", "modelIds", "authorConfirmed"], properties: { projectDir: { type: "string", maxLength: 512 }, sourcePath: { type: "string", maxLength: 1024 }, modelIds: { type: "array", items: { type: "string" }, minItems: 1, maxItems: 8 }, authorConfirmed: { type: "boolean" }, background: { type: "boolean" }, system: { type: "string", maxLength: 200000 }, direction: { type: "string", maxLength: 100000 }, title: { type: "string", maxLength: 120 }, chapterNo: { type: "string", maxLength: 32 }, minAdditionalChars: { type: "number" }, maxTokens: { type: "number", minimum: 256, maximum: 65536 }, fallbackChain: { type: "boolean" } } } },
+    { name: "fiction_generate_to_file", description: "Call the model only after the author confirms this specific call. authorConfirmed=true is required every time. With chapterNo, the default target is chapter: write directly to 正文/第XXX章_标题.txt and overwrite that same chapter on regeneration. Use target=candidate only as a hidden compatibility mode when the author explicitly wants parallel temporary drafts.", annotations: safetyAnnotations(false), inputSchema: { type: "object", additionalProperties: false, required: ["projectDir", "prompt", "modelIds", "authorConfirmed"], properties: { target: { type: "string", enum: ["candidate", "chapter"] }, projectDir: { type: "string", maxLength: 512 }, prompt: { type: "string", maxLength: 1000000 }, projectContext: { type: "string", maxLength: 1000000 }, system: { type: "string", maxLength: 200000 }, modelIds: { type: "array", items: { type: "string" }, minItems: 1, maxItems: 8 }, authorConfirmed: { type: "boolean" }, background: { type: "boolean" }, kind: { type: "string", maxLength: 64 }, title: { type: "string", maxLength: 120 }, chapterNo: { type: "string", maxLength: 32 }, taskLabel: { type: "string", maxLength: 64 }, previewChars: { type: "number" }, fallbackChain: { type: "boolean" }, minChars: { type: "number" }, applyHardGates: { type: "boolean" }, maxTokens: { type: "number", minimum: 256, maximum: 65536 } } } },
+    { name: "fiction_continue_artifact", description: "Continue a saved incomplete generated text only after the author confirms this additional model call. This compatibility tool is for explicit continuation recovery; ordinary chapter regeneration should use fiction_generate_to_file with chapterNo so the same 正文 file is overwritten.", annotations: safetyAnnotations(false), inputSchema: { type: "object", additionalProperties: false, required: ["projectDir", "sourcePath", "modelIds", "authorConfirmed"], properties: { projectDir: { type: "string", maxLength: 512 }, sourcePath: { type: "string", maxLength: 1024 }, modelIds: { type: "array", items: { type: "string" }, minItems: 1, maxItems: 8 }, authorConfirmed: { type: "boolean" }, background: { type: "boolean" }, system: { type: "string", maxLength: 200000 }, direction: { type: "string", maxLength: 100000 }, title: { type: "string", maxLength: 120 }, chapterNo: { type: "string", maxLength: 32 }, minAdditionalChars: { type: "number" }, maxTokens: { type: "number", minimum: 256, maximum: 65536 }, fallbackChain: { type: "boolean" } } } },
     { name: "fiction_generation_status", description: "Read a background generation/optimization job. While it runs, do only local continuity, fact, foreshadowing, and review preparation; do not start another paid call or edit canon.", annotations: safetyAnnotations(true), inputSchema: { type: "object", additionalProperties: false, required: ["jobId"], properties: { jobId: { type: "string", maxLength: 96 } } } },
-    { name: "fiction_write_artifact", description: "Write candidate text to project Codex候选 as txt. When modelId identifies an external model, also append the Markdown writing-history entry.", annotations: safetyAnnotations(false), inputSchema: { type: "object", additionalProperties: false, required: ["projectDir", "content"], properties: { target: { type: "string", enum: ["candidate", "chapter"] }, projectDir: { type: "string", maxLength: 512 }, content: { type: "string", maxLength: 1000000 }, kind: { type: "string", maxLength: 64 }, title: { type: "string", maxLength: 120 }, chapterNo: { type: "string", maxLength: 32 }, modelId: { type: "string", maxLength: 128 }, ext: { type: "string", maxLength: 8 } } } },
-    { name: "fiction_write_local_candidate", description: "Save author/Codex-written prose to Codex候选 txt without gateway (for unpaid/local path). Model optimize still needs login.", annotations: safetyAnnotations(false), inputSchema: { type: "object", additionalProperties: false, required: ["projectDir", "content"], properties: { target: { type: "string", enum: ["candidate", "chapter"] }, projectDir: { type: "string", maxLength: 512 }, content: { type: "string", maxLength: 1000000 }, title: { type: "string", maxLength: 120 }, chapterNo: { type: "string", maxLength: 32 }, kind: { type: "string", maxLength: 40 } } } },
-    { name: "fiction_read_artifact", description: "Read a candidate artifact txt/md written by the plugin.", annotations: safetyAnnotations(true), inputSchema: { type: "object", additionalProperties: false, required: ["path"], properties: { path: { type: "string", maxLength: 1024 }, maxChars: { type: "number" } } } },
-    { name: "fiction_list_artifacts", description: "List candidate artifacts under project Codex候选.", annotations: safetyAnnotations(true), inputSchema: { type: "object", additionalProperties: false, required: ["projectDir"], properties: { projectDir: { type: "string", maxLength: 512 }, limit: { type: "number" } } } },
-    { name: "fiction_optimize_with_models", description: "Optimize only after the author confirms this specific call. authorConfirmed=true is required every time. Set background=true for long revisions; poll fiction_generation_status afterward.", annotations: safetyAnnotations(false), inputSchema: { type: "object", additionalProperties: false, required: ["projectDir", "draftText", "authorConfirmed"], properties: { projectDir: { type: "string", maxLength: 512 }, draftText: { type: "string", maxLength: 1000000 }, authorConfirmed: { type: "boolean" }, background: { type: "boolean" }, title: { type: "string", maxLength: 120 }, chapterNo: { type: "string", maxLength: 32 }, modelIds: { type: "array", items: { type: "string" }, maxItems: 8 }, mode: { type: "string", maxLength: 32 }, focus: { type: "string", maxLength: 32 }, instruction: { type: "string", maxLength: 20000 }, autoRecommend: { type: "boolean" }, maxTokens: { type: "number", minimum: 256, maximum: 65536 } } } },
+    { name: "fiction_write_artifact", description: "Write prose to a project file. With chapterNo, default target is 正文 and overwrites the same chapter; target=candidate is only a compatibility path for explicit temporary drafts. When modelId identifies an external model, append the Markdown writing-history entry.", annotations: safetyAnnotations(false), inputSchema: { type: "object", additionalProperties: false, required: ["projectDir", "content"], properties: { target: { type: "string", enum: ["candidate", "chapter"] }, projectDir: { type: "string", maxLength: 512 }, content: { type: "string", maxLength: 1000000 }, kind: { type: "string", maxLength: 64 }, title: { type: "string", maxLength: 120 }, chapterNo: { type: "string", maxLength: 32 }, modelId: { type: "string", maxLength: 128 }, ext: { type: "string", maxLength: 8 } } } },
+    { name: "fiction_write_local_candidate", description: "Save author/Codex-written prose without gateway. With chapterNo, default target is 正文 and overwrites the same chapter; target=candidate is only for explicit temporary drafts.", annotations: safetyAnnotations(false), inputSchema: { type: "object", additionalProperties: false, required: ["projectDir", "content"], properties: { target: { type: "string", enum: ["candidate", "chapter"] }, projectDir: { type: "string", maxLength: 512 }, content: { type: "string", maxLength: 1000000 }, title: { type: "string", maxLength: 120 }, chapterNo: { type: "string", maxLength: 32 }, kind: { type: "string", maxLength: 40 } } } },
+    { name: "fiction_read_artifact", description: "Read a generated txt/md file written by the plugin, including 正文 files or explicit temporary artifacts.", annotations: safetyAnnotations(true), inputSchema: { type: "object", additionalProperties: false, required: ["path"], properties: { path: { type: "string", maxLength: 1024 }, maxChars: { type: "number" } } } },
+    { name: "fiction_list_artifacts", description: "List explicit temporary draft artifacts. The normal writing flow reads 正文/ directly and does not need this.", annotations: safetyAnnotations(true), inputSchema: { type: "object", additionalProperties: false, required: ["projectDir"], properties: { projectDir: { type: "string", maxLength: 512 }, limit: { type: "number" } } } },
+    { name: "fiction_optimize_with_models", description: "Optimize only after the author confirms this specific call. With chapterNo, default target is chapter: save the revised text directly over the same 正文 chapter. Auto recommendation uses one main model unless the author explicitly provides several modelIds.", annotations: safetyAnnotations(false), inputSchema: { type: "object", additionalProperties: false, required: ["projectDir", "draftText", "authorConfirmed"], properties: { target: { type: "string", enum: ["candidate", "chapter"] }, projectDir: { type: "string", maxLength: 512 }, draftText: { type: "string", maxLength: 1000000 }, authorConfirmed: { type: "boolean" }, background: { type: "boolean" }, title: { type: "string", maxLength: 120 }, chapterNo: { type: "string", maxLength: 32 }, modelIds: { type: "array", items: { type: "string" }, maxItems: 8 }, mode: { type: "string", maxLength: 32 }, focus: { type: "string", maxLength: 32 }, instruction: { type: "string", maxLength: 20000 }, autoRecommend: { type: "boolean" }, maxTokens: { type: "number", minimum: 256, maximum: 65536 } } } },
     { name: "fiction_compare_style", description: "Compare draft against voice anchors and sample-book notes; write report artifact.", annotations: safetyAnnotations(false), inputSchema: { type: "object", additionalProperties: false, required: ["projectDir"], properties: { projectDir: { type: "string", maxLength: 512 }, draftText: { type: "string", maxLength: 1000000 }, draftPath: { type: "string", maxLength: 1024 }, title: { type: "string", maxLength: 120 } } } },
     { name: "fiction_smoke_live_gateway", description: "Run exactly one paid live generation smoke after the author confirms this specific call. It does not optimize; optimization requires a separate confirmation and fiction_optimize_with_models call.", annotations: safetyAnnotations(false), inputSchema: { type: "object", additionalProperties: false, required: ["authorConfirmed"], properties: { authorConfirmed: { type: "boolean" }, projectDir: { type: "string", maxLength: 512 }, title: { type: "string", maxLength: 80 }, modelIds: { type: "array", items: { type: "string" }, minItems: 1, maxItems: 1 } } } }
   ];
@@ -95,7 +103,6 @@ function createGatewayMcpTools({ gateway, gatewayGuard, openLoginPage, generatio
           error.code = "INVALID_ARGUMENT";
           throw error;
         }
-        if (input.bindModels === true) await onboarding.markModelGatewayBinding(true);
         if (input.unbindModels === true) await onboarding.markModelGatewayBinding(false);
         if (!gatewayGuard || typeof gatewayGuard.ensureAccess !== "function") {
           const state = await onboarding.readState();
@@ -107,6 +114,7 @@ function createGatewayMcpTools({ gateway, gatewayGuard, openLoginPage, generatio
           allowPopup: input.force === true,
           explicitUserChoice: input.force === true
         });
+        if (input.bindModels === true && access.loggedIn === true) await onboarding.markModelGatewayBinding(true);
         const state = await onboarding.readState();
         return toolResult({ ...access, modelGatewayBound: !!state.modelGatewayBound });
       }
@@ -152,7 +160,15 @@ function createGatewayMcpTools({ gateway, gatewayGuard, openLoginPage, generatio
           const error = new Error("Model gateway is unavailable."); error.code = "GATEWAY_REQUIRED"; throw error;
         }
         const [account, catalog] = await Promise.all([gateway.accountStatus(), gateway.listModels()]);
-        return toolResult({ account, models: Array.isArray(catalog) ? catalog : catalog?.models || [] });
+        const listedModels = filterDisabledModels(Array.isArray(catalog) ? catalog : catalog?.models || []);
+        return toolResult({
+          account,
+          models: listedModels,
+          directUse: {
+            message: "可以直接说‘用 DeepSeek V4 Flash’或‘用 DeepSeek V4 Pro’，插件会先展示实时费率和余额，再等待本次确认。",
+            modelIds: listedModels.filter((model) => /^deepseek-/iu.test(String(model?.id || ""))).map((model) => model.id)
+          }
+        });
       }
       case "fiction_list_model_tasks": return toolResult({ tasks: listTaskCatalog(), leadEditorRouter: true });
       case "fiction_recommend_models": {
@@ -161,7 +177,7 @@ function createGatewayMcpTools({ gateway, gatewayGuard, openLoginPage, generatio
         let unpaid = false;
         try {
           const listed = await gateway.listModels();
-          models = Array.isArray(listed?.models) ? listed.models : [];
+          models = filterDisabledModels(Array.isArray(listed?.models) ? listed.models : []);
         } catch {
           unpaid = true;
           models = [];
@@ -173,7 +189,7 @@ function createGatewayMcpTools({ gateway, gatewayGuard, openLoginPage, generatio
         const authorPrefer = Array.isArray(input.authorPrefer)
           ? input.authorPrefer
           : (gateway.preferredModel ? [gateway.preferredModel] : []);
-        return toolResult(recommendModels({
+        const recommendation = recommendModels({
           task: String(input.task || "draft"),
           mode,
           availableModels: models,
@@ -182,7 +198,34 @@ function createGatewayMcpTools({ gateway, gatewayGuard, openLoginPage, generatio
           maxPerRole: Number(input.maxPerRole || 2),
           targetChars: Number(input.targetChars || 0),
           unpaid: unpaid || models.length === 0
-        }));
+        });
+        let billing;
+        try {
+          billing = await readBillingSnapshot(gateway, [recommendation.primaryModelId]);
+        } catch (error) {
+          billing = error?.billing || {
+            status: "unavailable",
+            modelIds: [recommendation.primaryModelId],
+            message: "调用前会再次读取实时费率和余额。"
+          };
+        }
+        return toolResult({
+          ...recommendation,
+          directUse: {
+            message: "不满意推荐时，可以直接指定已列出的模型，例如‘用 DeepSeek V4 Pro 复核这一章’；仍会先显示费率并等待本次确认。",
+            modelIds: models.filter((model) => /^deepseek-/iu.test(String(model?.id || ""))).map((model) => model.id)
+          },
+          billing: {
+            ...billing,
+            model: recommendation.primaryModelId,
+            confirmationRequired: true,
+            message: billing.mode === "unlimited"
+              ? "当前账号为不限额/托管套餐；本次不会扣有限积分，费率仅作参考。确认后才调用。"
+              : billing.estimatedCredits == null
+                ? "调用前会再次读取实时费率和余额；费率或余额无法确认时会停止调用。"
+                : `本次预计消耗 ${billing.estimatedCredits} 积分；当前余额 ${billing.balanceBefore} 积分，预计调用后约 ${billing.expectedBalanceAfter} 积分；确认后才调用。`
+          }
+        });
       }
       case "fiction_generate_to_file": {
         if (input.authorConfirmed !== true) {
@@ -212,7 +255,7 @@ function createGatewayMcpTools({ gateway, gatewayGuard, openLoginPage, generatio
           minChars: input.minChars
         });
         const generationInput = {
-          gateway,
+            gateway: billedGateway,
           projectDir: required(input.projectDir, "projectDir"),
           prompt: preparedPrompt.prompt,
           system: draftSystem.system,
@@ -228,7 +271,7 @@ function createGatewayMcpTools({ gateway, gatewayGuard, openLoginPage, generatio
           maxTokens: Number(input.maxTokens || 32000),
           requestPolicyVersion: draftSystem.policyVersion,
           contextSanitization: preparedPrompt.contextSanitization,
-          outputTarget: String(input.target || "candidate")
+          outputTarget: defaultTarget(input)
         };
         if (input.background === true) {
           const job = jobs.start({
@@ -253,7 +296,7 @@ function createGatewayMcpTools({ gateway, gatewayGuard, openLoginPage, generatio
             waitingWork: [
               "读取最近已确认正文，核对人物位置、手中物件和未完成动作",
               "核对时间线、知情范围、事实库和待回收伏笔",
-              "准备流程腔与事实冲突的候选验收重点"
+              "准备流程腔与事实冲突的正文检查重点"
             ],
             waitingBoundary: "仅做本地只读准备；不额外调用模型，不修改正式正文或事实台账。"
           });
@@ -276,7 +319,7 @@ function createGatewayMcpTools({ gateway, gatewayGuard, openLoginPage, generatio
           taskLabel: "continue-saved-draft"
         });
         const continuationInput = {
-          gateway,
+          gateway: billedGateway,
           projectDir: required(input.projectDir, "projectDir"),
           sourcePath: required(input.sourcePath, "sourcePath"),
           modelIds: input.modelIds,
@@ -323,10 +366,10 @@ function createGatewayMcpTools({ gateway, gatewayGuard, openLoginPage, generatio
         chapterNo: String(input.chapterNo || ""),
         modelId: String(input.modelId || ""),
         ext: String(input.ext || "txt"),
-        target: String(input.target || "candidate")
+        target: defaultTarget(input)
       }));
       case "fiction_write_local_candidate": {
-        const localTarget = String(input.target || "candidate");
+        const localTarget = defaultTarget(input);
         const saved = await writeArtifact({
           projectDir: required(input.projectDir, "projectDir"),
           kind: String(input.kind || "local_draft"),
@@ -337,7 +380,7 @@ function createGatewayMcpTools({ gateway, gatewayGuard, openLoginPage, generatio
           ext: "txt",
           meta: { transport: "local_no_gateway", note: localTarget === "chapter"
             ? "本地/Codex 直接写入正文，未走网关多模型"
-            : "本地/Codex 写入的候选，未走网关多模型" },
+            : "本地/Codex 写入的临时稿，未走网关多模型" },
           target: localTarget
         });
         return toolResult({
@@ -345,7 +388,7 @@ function createGatewayMcpTools({ gateway, gatewayGuard, openLoginPage, generatio
           artifact: saved,
           coach: localTarget === "chapter"
             ? "已直接写入正文。重写同一章会覆盖同一个文件。"
-            : "候选已落盘。网关绑定可永久保留，但每次调用其他模型前仍会询问；当次选择使用才调用。"
+            : "临时稿已落盘。网关绑定可永久保留，但每次调用其他模型前仍会询问；当次选择使用才调用。"
         });
       }
       case "fiction_read_artifact": return toolResult(await readArtifact(required(input.path, "path"), { maxChars: Number(input.maxChars || 1000000) }));
@@ -361,7 +404,7 @@ function createGatewayMcpTools({ gateway, gatewayGuard, openLoginPage, generatio
           explicitUserChoice: true
         });
         const optimizeInput = {
-          gateway,
+          gateway: billedGateway,
           projectDir: required(input.projectDir, "projectDir"),
           draftText: required(input.draftText, "draftText"),
           title: String(input.title || ""),
@@ -371,7 +414,8 @@ function createGatewayMcpTools({ gateway, gatewayGuard, openLoginPage, generatio
           focus: String(input.focus || "full"),
           instruction: String(input.instruction || ""),
           autoRecommend: input.autoRecommend !== false,
-          maxTokens: Number(input.maxTokens || 32000)
+          maxTokens: Number(input.maxTokens || 32000),
+          target: defaultTarget(input)
         };
         if (input.background === true) {
           const job = jobs.start({
@@ -395,7 +439,7 @@ function createGatewayMcpTools({ gateway, gatewayGuard, openLoginPage, generatio
             waitingWork: [
               "核对原稿中的剧情事实、人物选择和事件顺序",
               "标记流程腔、说满、重复解释和人物声口风险",
-              "准备改后稿的保真验收重点"
+              "准备改后正文的保真验收重点"
             ],
             waitingBoundary: "仅做本地只读准备；不额外调用模型，不修改正式正文或事实台账。"
           });
@@ -414,7 +458,7 @@ function createGatewayMcpTools({ gateway, gatewayGuard, openLoginPage, generatio
           explicitUserChoice: true
         });
         return toolResult(await smokeLiveGateway({
-          gateway,
+          gateway: billedGateway,
           projectDir: String(input.projectDir || ""),
           title: String(input.title || "live-smoke"),
           modelIds: input.modelIds

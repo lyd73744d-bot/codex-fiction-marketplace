@@ -53,6 +53,7 @@ async function optimizeWithModels({
   autoRecommend = true,
   recommendMode = "quick",
   maxTokens = 32000,
+  target = "",
   onProgress
 } = {}) {
   if (!gateway || typeof gateway.callModels !== "function") throw new Error("gateway.callModels required");
@@ -72,9 +73,10 @@ async function optimizeWithModels({
       task,
       availableModels: available,
       mode: recommendMode || "quick"
-    }).modelIds.slice(0, 3);
+    }).modelIds.slice(0, 1);
   }
   if (!ids.length) throw new Error("modelIds required");
+  const outputTarget = String(target || "").trim() || (String(chapterNo || "").trim() ? "chapter" : "candidate");
 
   const context = await collectOptimizeContext(projectDir);
   const system = buildOptimizeSystem({ mode, focus: normalizedFocus });
@@ -105,6 +107,7 @@ async function optimizeWithModels({
       outerAttempts: 1,
       minChars: mode === "review" ? 0 : rewriteMinimumChars,
       maxTokens,
+      outputTarget,
       onProgress: typeof onProgress === "function"
         ? (progress) => onProgress({
             ...progress,
@@ -125,6 +128,7 @@ async function optimizeWithModels({
       plainRelativePath: result.artifact?.plainRelativePath || null,
       preview: result.preview,
       transport: result.transport || null,
+      billing: result.billing || null,
       accepted: result.accepted === true,
       qualityStatus: result.qualityStatus || "unknown",
       hardGate: { ok: gate.ok, chars: gate.chars, issues: gate.issues }
@@ -143,12 +147,13 @@ async function optimizeWithModels({
       " => " + (r.artifact?.relativePath || "") +
       (r.plainRelativePath ? " | plain: " + r.plainRelativePath : "") +
       (r.transport ? " | transport: " + r.transport : "") +
-      " | " + (r.accepted ? "candidate_ready" : "review_required")
+      " | " + (r.accepted ? (outputTarget === "chapter" ? "chapter_ready" : "candidate_ready") : "review_required")
     ),
     "",
-    "每次完整生成后都写入 Codex候选 txt；.body 纯正文可再喂模型。",
-    "作者确认前不入正式正文/台账。",
-    "责编建议：先看 plain 文件，再决定是否继续 focus=dialogue/narration/pacing 等微方法。",
+    outputTarget === "chapter"
+      ? "改后正文直接写入 正文/；同一章节重新生成会覆盖同一路径。"
+      : "本次显式使用临时稿模式，完整生成后另存临时文件；.body 纯正文可再喂模型。",
+    outputTarget === "chapter" ? "责编建议：先读正文文件；不满意就重新生成覆盖，或指定 focus 做一次定点改写。" : "临时稿不会自动进入正文或事实台账。",
     ""
   ].join("\n");
 
@@ -170,8 +175,11 @@ async function optimizeWithModels({
     runs,
     finalText: current,
     finalPlainPath: runs.length ? (runs[runs.length - 1].plainPath || null) : null,
+    billing: runs.map((run) => run.billing).filter(Boolean),
     summaryArtifact,
-    coach: "多模型优化已完成并落盘。请先读 plain 正文，确认前不要入台账。可用 fiction_list_deslop_methods 继续定点打磨。"
+    coach: outputTarget === "chapter"
+      ? "优化已直接写入正文。同一章不满意就重新生成覆盖；需要保留多个版本时再显式使用临时稿模式。"
+      : "优化临时稿已完成并落盘。请先读 plain 正文；采用时再写入正文并更新台账。可用 focus=dialogue/narration/pacing 继续定点打磨。"
   };
 }
 

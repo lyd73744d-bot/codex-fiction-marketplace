@@ -34,7 +34,18 @@ function safeMcpDiagnostics(cause) {
         transport: String(cause.request.transport || "").slice(0, 32)
       }
     : null;
-  return { code: cause?.code || cause?.name || "TOOL_FAILED", status: Number.isInteger(cause?.status) ? cause.status : null, requestId: cause?.requestId || null, transport: cause?.transport || null, request, network, attempts, recoverable: attempts.length > 0 };
+  const billing = cause?.billing && typeof cause.billing === "object"
+    ? {
+        mode: cause.billing.mode || null,
+        modelIds: Array.isArray(cause.billing.modelIds) ? cause.billing.modelIds.slice(0, 8) : [],
+        estimatedCredits: Number.isFinite(Number(cause.billing.estimatedCredits)) ? Number(cause.billing.estimatedCredits) : null,
+        balanceBefore: Number.isFinite(Number(cause.billing.balanceBefore)) ? Number(cause.billing.balanceBefore) : null,
+        balanceAfter: Number.isFinite(Number(cause.billing.balanceAfter)) ? Number(cause.billing.balanceAfter) : null,
+        chargeStatus: cause.billing.chargeStatus || null,
+        message: cause.billing.message || null
+      }
+    : null;
+  return { code: cause?.code || cause?.name || "TOOL_FAILED", status: Number.isInteger(cause?.status) ? cause.status : null, requestId: cause?.requestId || null, transport: cause?.transport || null, request, network, attempts, billing, recoverable: attempts.length > 0 };
 }
 function safeMcpError(cause) {
   if (cause?.code === "AUTH_REQUIRED" && cause?.access?.popupOpened) {
@@ -44,20 +55,21 @@ function safeMcpError(cause) {
     return "登录页刚刚已经打开，请完成登录后重试本次模型调用；不会重复弹窗。";
   }
   const messages = {
-    AUTH_REQUIRED: "请先登录网关（fiction_open_gateway_login）。不登录也可用 fiction_write_local_candidate 写本地候选。",
+    AUTH_REQUIRED: "请先登录网关（fiction_open_gateway_login）。不登录也可以继续本地构思、台账和章节准备。",
     AUTH_FAILED: "账号或密码不正确。",
     INVALID_ARGUMENT: "Tool arguments are invalid.",
     TOOL_NOT_FOUND: "Tool not found.",
-    INSUFFICIENT_BALANCE: "Insufficient balance.",
+    INSUFFICIENT_BALANCE: cause?.billing?.message || "余额不足，本次模型调用已停止。请先充值或兑换积分。",
+    BILLING_UNAVAILABLE: cause?.billing?.message || "实时费率或余额无法确认，为避免隐藏扣费，本次模型调用已停止。",
     GATEWAY_REQUIRED: "Model gateway is unavailable.",
     GATEWAY_UNAVAILABLE: "Model gateway is unavailable.",
     SERVER_OFFLINE: "本机暂时无法连接网关。无需重启服务器；请稍后重试，诊断码已保留。",
     UPSTREAM_TIMEOUT: "模型生成超时，本次没有完成。请稍后重试或换一个模型。",
     RATE_LIMITED: "模型线路暂时限流；本次没有自动重试，请稍后由作者决定是否重新提交。",
     EMPTY_MODEL_OUTPUT: "模型返回为空，请换模型或重试。",
-    HARD_GATE_FAILED: "候选未通过硬门禁，请检查 blockers 后重写。"
+    HARD_GATE_FAILED: "正文未通过硬门禁，请检查 blockers 后重写。"
     , AUTHOR_CONFIRMATION_REQUIRED: "本次模型调用尚未获得作者确认。请先询问作者是否使用这个模型。",
-    JOB_NOT_FOUND: "后台任务不存在，可能来自已重启的插件进程。请先查看 Codex候选 是否已有结果。"
+    JOB_NOT_FOUND: "后台任务不存在，可能来自已重启的插件进程。请先查看 正文/ 和 审稿记录/模型写作记录.md 是否已有结果。"
     , SOURCE_UNAVAILABLE: "公开榜单当前无法读取，请稍后再试或用内置浏览器核验。"
     , SOURCE_TIMEOUT: "公开榜单读取超时，请稍后再试。"
     , SOURCE_FORMAT_CHANGED: "公开榜单页面结构已经变化，扫描器没有伪造结果；需要更新适配。"
@@ -96,7 +108,7 @@ function createRuntime(options = {}) {
   const openLoginPage = options.openLoginPage || (async () => {
     if (!loginConsole) loginConsole = createGatewayLoginConsole({ gateway, keepAlive: true, paymentPortalUrl });
     const page = await loginConsole.start();
-    return { url: page.url, message: "已按用户请求打开可选的字字珠玑网关登录页。普通写作无需注册。" };
+    return { url: page.url, message: "已打开字字珠玑绑定页。首次使用请先登录或注册；绑定后才能调用外部写作模型，页面会显示余额和每个模型的扣费。" };
   });
   const gatewayGuard = options.gatewayGuard || createGatewayGuard({ gateway, openLoginPage, paymentPortalUrl });
   const tools = options.tools || (() => {
@@ -138,8 +150,9 @@ async function handle(message, dependencies = {}) {
       if (runtime.gatewayGuard && typeof runtime.gatewayGuard.ensureAccess === "function") {
         access = await runtime.gatewayGuard.ensureAccess({
           reason: "initialize",
-          allowPopup: false,
-          explicitUserChoice: false
+          allowPopup: true,
+          explicitUserChoice: true,
+          openBrowser: true
         });
       } else if (typeof onboardingState?.markInstalled === "function") {
         await onboardingState.markInstalled();
@@ -156,6 +169,7 @@ async function handle(message, dependencies = {}) {
         productRole: "lead-editor-with-local-core-and-model-gateway",
         onboarding: onboarding ? {
           pendingFirstLogin: !!onboarding.pendingFirstLogin,
+          modelGatewayBound: !!onboarding.modelGatewayBound,
           firstLoginCompletedAt: onboarding.firstLoginCompletedAt,
           shopUrl: onboarding.shopUrl
         } : null,
@@ -163,7 +177,9 @@ async function handle(message, dependencies = {}) {
           ok: !!access.ok,
           loggedIn: !!access.loggedIn,
           popupOpened: !!access.popupOpened,
+          activationPageOpened: !!access.activationPageOpened,
           browserOpened: !!access.browserOpened,
+          browserHandoff: access.browserHandoff || null,
           reason: access.reason || null,
           loginUrl: access.loginUrl || null,
           shopUrl: access.shopUrl || null,

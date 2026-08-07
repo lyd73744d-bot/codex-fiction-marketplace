@@ -1,11 +1,11 @@
 ---
 name: deslop-all
-description: "Diagnose and fix AI-flavored Chinese fiction prose across all dimensions: dialogue, narration, emotion, pacing, hooks, info-dumps, and explain-y tone. Under longform-fiction-director, Codex diagnoses and reviews; external model rewrites after per-call consent; save candidate txt."
+description: "Diagnose and fix AI-flavored Chinese fiction prose across all dimensions: dialogue, narration, emotion, pacing, hooks, info-dumps, and explain-y tone. Under longform-fiction-director, Codex diagnoses and reviews; external model rewrites after per-call consent and saves revised chapter text directly when chapterNo is provided."
 ---
 
 # 去AI味：综合诊断与修改
 
-> 主流程分工：Codex 诊断并验收，外部写作模型默认改正文；作者明确要求 Codex 写临时候选时才本地改。综合深度改味见 `humanizer-zh`。
+> 主流程分工：Codex 诊断并验收，外部写作模型默认改正文；作者明确要求 Codex 写临时稿时才本地另存。综合深度改味见 `humanizer-zh`。
 
 ## 铁律（所有分类共用，优先于下面一切规则）
 
@@ -13,7 +13,7 @@ description: "Diagnose and fix AI-flavored Chinese fiction prose across all dime
 - **只删表现手段，保留可核对事实**：数字、物件、因果、伏笔、人物选择不得删。
 - **删套话后补回现场功能**，不补造五感、动作、比喻、天气、心理。
 - **改味不改剧情**：因果顺序、伏笔埋点、人物决定不动。
-- 候选写入 `Codex候选/*.txt`，作者确认前不覆盖正式正文。
+- 有章节号时，改稿直接覆盖同章 `正文/` 文件；只有作者明确要求多个版本时才另存临时稿。
 
 ---
 

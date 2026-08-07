@@ -38,7 +38,7 @@ function buildOptimizeSystem({ mode = "humanize", focus = "full" } = {}) {
     review: "你在找硬伤。输出问题清单与可执行修改建议，按严重度排序，不要重写全文。",
     polish: "你在润色。增强画面与对话自然度，不改剧情主干。只输出完整正文。",
     finalize: "你在做定稿级修订。保持事实与人物一致，输出完整正文。"
-  }[mode] || "你在优化中文网文候选稿。";
+  }[mode] || "你在优化中文网文当前正文。";
 
   const focusLine = FOCUS_HINTS[focus] || FOCUS_HINTS.full;
   const methods = mode === "review" ? "" : loadMethodPack(focus);

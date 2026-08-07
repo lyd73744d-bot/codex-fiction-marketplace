@@ -57,7 +57,7 @@
   {
     "id": "lead-editor-does-not-take-prose-a-position",
     "prompt": "这一章已经想清楚了，但这次我不使用你推荐的外部模型。",
-    "failureToPrevent": "Codex 立刻自行写完整章节；应只问继续把这一章想清楚，还是由 Codex 写一版临时候选。"
+    "failureToPrevent": "Codex 立刻自行写完整章节，或新建临时稿分支；应继续把这一章想清楚。"
   },
   {
     "id": "chapter-brief-is-not-a-test-plan",

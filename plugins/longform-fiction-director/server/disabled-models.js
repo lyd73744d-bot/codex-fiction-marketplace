@@ -11,7 +11,10 @@ const DISABLED_MODEL_IDS = new Set([
   "ark-code-latest",
   "doubao-seed-2-0-lite",
   "kimi-k2.7-code",
-  "minimax-m2.7"
+  "minimax-m2.7",
+  // Live audit 2026-08-06: both routes returned gateway HTTP 502.
+  "kimi-k3",
+  "gemini-3.5-flash"
 ]);
 
 function normalizeModelId(value) {

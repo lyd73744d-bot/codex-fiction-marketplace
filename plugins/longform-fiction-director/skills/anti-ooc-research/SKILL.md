@@ -43,4 +43,4 @@ description: Force planned web research docs and character cards before risky re
 
 ## 历史/真实题材硬门槛
 
-当脑洞或大纲出现历史/真实人物信号时，Codex 把联网回填 + 事实库 + 人物卡当作**硬前置**：未完成前禁止生成正文候选。
+当脑洞或大纲出现历史/真实人物信号时，Codex 把联网回填 + 事实库 + 人物卡当作**硬前置**：未完成前禁止生成正文。

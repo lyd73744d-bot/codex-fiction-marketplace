@@ -32,7 +32,7 @@ assert.ok(main.includes("开新书时，先问大概类型"), "new-book flow mus
 assert.ok(!main.includes("作者选新书后先问临时书名"), "new-book flow still asks title first");
 assert.ok(main.includes("Codex 是总责编、导演和工程执行者"), "Codex lead-editor role missing");
 assert.ok(main.includes("正文初稿、整章重写、去 AI 味和润色，默认交给"), "external prose A-position missing");
-assert.ok(division.includes("继续把这一章想清楚，还是让我先写一版临时候选？"), "decline fallback question missing");
+assert.ok(division.includes("不新增临时稿；继续把这一章想清楚"), "decline path must stay single-track");
 assert.ok(naturalSystem.includes("事实是硬边界，写法是自由区"), "global creative-boundary rule missing");
 assert.ok(naturalSystem.includes("不得把旧表格或栏目原样发给写作模型"), "legacy brief sanitization rule missing");
 assert.ok(naturalSystem.includes("流程腔"), "whole-chapter process-voice audit missing");
@@ -66,7 +66,7 @@ assert.ok(onboardingScript.includes("正文默认交给作者当次同意的写�
 assert.ok(manifest.interface.capabilities.includes("Codex lead-editor role; external models write prose"), "manifest capability missing");
 assert.ok(manifest.interface.capabilities.includes("Optional external brainstorm expansion before direction lock"), "manifest brainstorm capability missing");
 assert.ok(manifest.interface.capabilities.includes("Prebuilt on-demand Codex editorial agents"), "manifest Codex agent-team capability missing");
-assert.ok(manifest.interface.capabilities.includes("Persistent model-output txt and Markdown writing history"), "manifest model-writing history capability missing");
+assert.ok(manifest.interface.capabilities.includes("Single current chapter file plus clear Markdown writing history"), "manifest model-writing history capability missing");
 assert.ok(manifest.interface.capabilities.includes("Genre-first beginner cold start with automatic working title"), "manifest genre-first cold-start capability missing");
 assert.ok(manifest.interface.capabilities.includes("Global natural-writing policy; briefs never become prose checklists"), "manifest natural-writing policy capability missing");
 assert.ok(manifest.interface.capabilities.includes("Background long-form generation with local continuity work"), "manifest background generation capability missing");
@@ -75,6 +75,7 @@ assert.ok(manifest.interface.defaultPrompt.some((item) => item.includes("我选�
 assert.ok(manifest.interface.defaultPrompt.some((item) => item.includes("不先问书名和文件夹")), "default prompt still allows title-first cold start");
 assert.ok(manifest.interface.defaultPrompt.some((item) => item.includes("事实是硬边界，写法是自由区")), "default prompt misses the global creative-boundary rule");
 assert.ok(manifest.interface.defaultPrompt.some((item) => item.includes("长文调用使用后台生成")), "default prompt misses background generation behavior");
+assert.ok(manifest.interface.defaultPrompt.some((item) => item.includes("覆盖同一个正文文件")), "default prompt misses direct chapter overwrite behavior");
 assert.ok(!JSON.stringify(manifest).includes("控制卡"), "manifest still revives the legacy chapter-control-card workflow");
 for (const role of ["idea-architect", "research-verifier", "sample-method-analyst", "continuity-keeper", "draft-reviewer"]) {
   assert.ok(agentTeam.includes(role), `prebuilt Codex agent role missing: ${role}`);

@@ -6,7 +6,7 @@ description: Compare draft style against sample-book notes and voice anchors; gi
 # 文风对比
 
 ## 输入
-- 当前候选正文（优先 plainPath）
+- 当前正文或作者明确指定的临时稿（优先 plainPath）
 - `样书/*/00_手法学习笔记.md`
 - `样书/*/01_剧情对话文风摘句.md`（旧项目也兼容原摘句文件）
 - `辅助文档/06_风格与写作要求.md`

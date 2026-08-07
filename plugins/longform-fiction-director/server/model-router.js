@@ -28,7 +28,7 @@ const TASK_ROLES = {
 const ROLE_HINTS = {
   explore: {
     label: "探索/脑洞",
-    prefer: ["doubao-seed-2-1-turbo", "deepseek-v4-flash", "gemini-3.5-flash"],
+    prefer: ["doubao-seed-2-1-turbo", "deepseek-v4-flash"],
     avoidHeavy: true,
     why: "要快、要多方向，不值得上最贵模型"
   },
@@ -86,18 +86,16 @@ const NON_WRITING_MODELS = new Set();
 
 const MODEL_CAPABILITY_PROFILES = Object.freeze({
   "claude-opus-5": { longForm: "verified", note: "实测长文收束完整，适合深度正文与定稿" },
-  "claude-opus-4-8": { longForm: "manual-review", note: "实测单次产出最长，适合大场面章节；作者点名后作为候选" },
+  "claude-opus-4-8": { longForm: "manual-review", note: "实测单次产出最长，适合大场面章节；作者点名后作为备选主写" },
   "claude-opus-4-6": { longForm: "verified", note: "长文质量稳定，适合深度正文与定稿" },
   "claude-sonnet-5": { longForm: "variable", note: "当前可用，适合主写与润色" },
-  "kimi-k3": { longForm: "variable", note: "当前可用，采用前仍需审读" },
-  "gemini-3.1-pro-preview": { longForm: "manual-review", note: "历史长文只作作者点名后的候选，并人工复核" },
-  "gemini-3.5-flash": { longForm: "short-form", note: "适合探索和短任务，不自动推荐为长篇正文主写" },
+  "gemini-3.1-pro-preview": { longForm: "manual-review", note: "历史长文只作作者点名后的备选，并人工复核" },
   "doubao-seed-2-1-turbo": { longForm: "short-form", note: "返回完整但历史正文容易过早展示设定，适合短任务和探索" },
   "glm-5.2": { longForm: "manual-review", note: "本地实测场面与收束较好，历史正文仍需人工复核事实边界" },
-  "minimax-m3": { longForm: "manual-review", note: "长文耗时较长且容易游戏化解释，作者点名后作为候选" },
+  "minimax-m3": { longForm: "manual-review", note: "长文耗时较长且容易游戏化解释，作者点名后作为备选" },
   "deepseek-v4-flash": { longForm: "short-form", note: "返回快，适合快速短任务，不自动推荐为长篇正文" },
-  "deepseek-v4-pro": { longForm: "manual-review", note: "句子较干净但长文会提前收束，适合复杂复核或作者点名的候选" },
-  "kimi-k2.6": { longForm: "manual-review", note: "长文氛围容易过重，适合复核或作者点名的候选" }
+  "deepseek-v4-pro": { longForm: "manual-review", note: "句子较干净但长文会提前收束，适合复杂复核或作者点名" },
+  "kimi-k2.6": { longForm: "manual-review", note: "长文氛围容易过重，适合复核或作者点名" }
 });
 
 const LONG_FORM_PRESETS = Object.freeze({
@@ -225,7 +223,7 @@ function buildCoachAdvice(taskId, plans, mode, unpaidNote, targetChars = 0) {
   }
   if (Number(targetChars) >= 4000) lines.push("本次按长文目标排序；优先使用已有长文实测依据的模型，但篇幅仍由上游实际返回决定。");
   lines.push("生成策略：一次授权只提交一次；不先测活、不自动重试、不自动改传输方式、不跨线路换模型。收到的正文或中断前片段全部落盘（.body 纯正文可续写）。");
-  lines.push("结果先在「Codex候选/」给作者看，确认前不入正式正文/台账。");
+  lines.push("结果默认直接写入「正文/」；作者不满意就重新生成覆盖，同意采用后才更新事实台账。");
   if (mode === "quick") lines.push("快速模式：探索用 flash 或 turbo；正文用 sonnet；终检再开 deep。");
   else lines.push("深度模式：主写用稳定模型，终检使用旗舰模型。");
   return lines.join("\n");
@@ -246,7 +244,7 @@ function recommendModels({
   const roles = TASK_ROLES[taskId] || ["draft"];
   const target = Math.max(0, Math.floor(Number(targetChars) || 0));
   const preferred = Array.isArray(authorPrefer)
-    ? authorPrefer.map(String).filter((id) => !NON_WRITING_MODELS.has(id.toLowerCase()))
+    ? authorPrefer.map(String).filter((id) => !NON_WRITING_MODELS.has(id.toLowerCase()) && !isDisabledModel(id))
     : [];
   const preset = target >= 4000
     ? LONG_FORM_PRESETS[modeId]
@@ -256,8 +254,10 @@ function recommendModels({
     let picks = pickForRole(role, availableModels, creditsMap, maxPerRole, modeId, target);
     // boost preset order if available
     if (preset.length) {
-      const avail = new Set((availableModels || []).map((m) => (typeof m === "string" ? m : m.id)));
-      const presetHits = preset.filter((id) => avail.has(id)).map((id) => ({
+      const avail = new Set((availableModels || [])
+        .map((m) => (typeof m === "string" ? m : m.id))
+        .filter((id) => id && !isDisabledModel(id)));
+      const presetHits = preset.filter((id) => !isDisabledModel(id) && avail.has(id)).map((id) => ({
         id,
         label: id,
         credits: creditsMap[id] || null,
@@ -270,8 +270,10 @@ function recommendModels({
       }
     }
     if (preferred.length) {
-      const avail = new Set((availableModels || []).map((m) => (typeof m === "string" ? m : m.id)));
-      const forced = preferred.filter((id) => avail.has(id)).map((id) => ({
+      const avail = new Set((availableModels || [])
+        .map((m) => (typeof m === "string" ? m : m.id))
+        .filter((id) => id && !isDisabledModel(id)));
+      const forced = preferred.filter((id) => !isDisabledModel(id) && avail.has(id)).map((id) => ({
         id,
         label: id,
         credits: creditsMap[id] || null,
@@ -292,7 +294,9 @@ function recommendModels({
   });
 
   const primary = plans[0]?.models?.[0]?.id || null;
-  const availableIds = new Set((availableModels || []).map((m) => (typeof m === "string" ? m : m.id)).filter(Boolean));
+  const availableIds = new Set((availableModels || [])
+    .map((m) => (typeof m === "string" ? m : m.id))
+    .filter((id) => id && !isDisabledModel(id)));
   const recommendedIds = [...new Set([
     ...plans.flatMap((p) => p.models.map((m) => m.id)),
     ...preset.filter((id) => availableIds.has(id))
@@ -316,7 +320,7 @@ function recommendModels({
       taskId,
       plans,
       modeId,
-      unpaid ? "当前未登录：作者当次确认使用后再完成登录；未确认则继续把这一章想清楚，或由作者明确选择临时候选。" : "",
+      unpaid ? "当前未登录：作者当次确认使用后再完成登录；未确认则继续把这一章想清楚。" : "",
       target
     ),
     transport: {
@@ -325,7 +329,7 @@ function recommendModels({
       outerAttempts: 1,
       nonStreamFallback: false,
       multiModelFallback: false,
-      note: "正式生成不先测活，不自动重试、改传输方式或换线路；已收到文本写入 Codex候选 txt（含 .body 纯正文）。"
+      note: "正式生成不先测活，不自动重试、改传输方式或换线路；带 chapterNo 时已收到文本写入正文文件并覆盖同章。"
     },
     usageTips: [
       "脑洞/探索：快模型",

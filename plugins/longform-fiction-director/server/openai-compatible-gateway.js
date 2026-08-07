@@ -36,7 +36,7 @@ function createOpenAiCompatibleGateway(options = {}) {
   const geminiBaseUrl = String(options.geminiBaseUrl || "https://byteclaude.io").replace(/\/+$/u, "");
   const geminiModels = new Set(Array.isArray(options.geminiModels) && options.geminiModels.length
     ? options.geminiModels.map((item) => String(item || "").trim()).filter(Boolean)
-    : ["gemini-3.1-pro-preview", "gemini-3.5-flash"]);
+    : ["gemini-3.1-pro-preview"]);
   const preferredModel = typeof options.preferredModel === "string" ? options.preferredModel.trim() : "";
   const allowedModels = Array.isArray(options.allowedModels)
     ? [...new Set(options.allowedModels.map((item) => String(item || "").trim()).filter((item) => item && !isDisabledModel(item)))]
@@ -46,7 +46,7 @@ function createOpenAiCompatibleGateway(options = {}) {
   const displayCallsLeft = displayBalance < 0 ? -1 : 999;
   const modelCredits = options.modelCredits && typeof options.modelCredits === "object" && !Array.isArray(options.modelCredits)
     ? options.modelCredits
-    : {"claude-sonnet-5":10,"claude-opus-4-6":20,"kimi-k3":30,"gemini-3.1-pro-preview":10,"gemini-3.5-flash":5,"doubao-seed-2-1-turbo":10,"glm-5.2":10,"minimax-m3":5,"deepseek-v4-flash":5,"deepseek-v4-pro":10,"kimi-k2.6":10};
+    : {"claude-sonnet-5":10,"claude-opus-4-6":20,"gemini-3.1-pro-preview":10,"doubao-seed-2-1-turbo":10,"glm-5.2":10,"minimax-m3":5,"deepseek-v4-flash":5,"deepseek-v4-pro":10,"kimi-k2.6":10};
   const timeoutMs = Number.isSafeInteger(options.timeoutMs) && options.timeoutMs > 0 ? options.timeoutMs : 120_000;
   const streamTimeoutMs = Number.isSafeInteger(options.streamTimeoutMs) && options.streamTimeoutMs > 0 ? options.streamTimeoutMs : DEFAULT_STREAM_TOTAL_TIMEOUT_MS;
   const streamIdleTimeoutMs = Number.isSafeInteger(options.streamIdleTimeoutMs) && options.streamIdleTimeoutMs > 0 ? options.streamIdleTimeoutMs : DEFAULT_STREAM_IDLE_TIMEOUT_MS;

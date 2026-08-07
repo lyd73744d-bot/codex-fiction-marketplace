@@ -7,7 +7,7 @@ description: Diagnose Chinese fiction that sounds mechanical, formulaic, overexp
 
 ## 分工
 
-在主流程内，Codex 负责通读、找根因、保护事实、整理修改要求和验收。整章改写、去 AI 味和润色默认交给作者本次同意的外部写作模型。作者未确认时，所有修订只进入候选目录。
+在主流程内，Codex 负责通读、找根因、保护事实、整理修改要求和验收。整章改写、去 AI 味和润色默认交给作者本次同意的外部写作模型；带章节号时直接覆盖同章正文。台账只在作者采用后更新。
 
 本技能与 `longform-fiction-director/references/commercial-fiction-principles.md` 使用同一套人物与因果判断。它不是禁词替换器，也不是二十项逐条打勾的改稿模板。
 
@@ -87,4 +87,4 @@ description: Diagnose Chinese fiction that sounds mechanical, formulaic, overexp
 
 改写前在内部记住必须保留的事实、动作状态、人物声音和伏笔。改写后完整通读，核对是否丢失信息、改变剧情、压成摘要，或者用另一套模板替换旧模板。
 
-默认交付完整候选正文，不输出内部检查过程。作者明确要求诊断或对照时，再给简短问题说明。
+默认交付已改好的完整正文，不输出内部检查过程。作者明确要求诊断或对照时，再给简短问题说明。

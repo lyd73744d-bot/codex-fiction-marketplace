@@ -26,7 +26,7 @@ async function upsertVoiceAnchor(projectDir, fields = {}) {
   const existing = fs.existsSync(file) ? await fsp.readFile(file, "utf8") : "";
   const body = [
     "# 文风锚点", "",
-    "> 写成能检查的习惯，不要空形容词。每次写完候选都对照这里。", "",
+    "> 写成能检查的习惯，不要空形容词。每次写完正文都对照这里。", "",
     "## 叙述口气", fieldValue(fields, "narration", existing, "叙述口气", "- "), "",
     "## 对话习惯", fieldValue(fields, "dialogue", existing, "对话习惯", "- "), "",
     "## 节奏", fieldValue(fields, "pacing", existing, "节奏", "- 段长：\n- 动作/心理比例："), "",

@@ -16,6 +16,7 @@
   "scripts": {
     "test": "node scripts/selftest-mcp-launcher.js && node scripts/selftest-gateway-core.js && node scripts/selftest-gateway-reliability.js && node scripts/selftest-editor-profiles.js && node scripts/selftest-editor-model-division.js && node scripts/selftest-narrative-restraint.js && node scripts/selftest-local-core.js && node scripts/selftest-guided-onboarding.js && node scripts/selftest-disabled-models.js && node scripts/selftest-download.js && node scripts/selftest-rankings.js",
     "login": "node scripts/open-login-now.js",
+    "audit:models": "node scripts/audit-live-models.js",
     "smoke": "node scripts/smoke-live-gateway.js",
     "stress": "node scripts/stress-live-gateway.js",
     "smoke:downloader": "node scripts/smoke-bundled-downloader.js"

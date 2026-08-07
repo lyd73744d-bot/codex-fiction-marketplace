@@ -125,10 +125,10 @@ function describeBuiltinWorkflow(pluginRoot = pluginRootFrom(__filename)) {
       "绑定",
       "脑洞(本地)",
       "细纲",
-      "候选正文",
-      "去AI味(可选)",
+      "正文直写",
+      "重写覆盖(按需)",
       "质检(可选)",
-      "确认入台账"
+      "采用后入台账"
     ]
   };
 }

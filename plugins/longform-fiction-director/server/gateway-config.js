@@ -9,9 +9,7 @@ const { isDisabledModel } = require("./disabled-models");
 const DEFAULT_MODEL_CREDITS = Object.freeze({
   "claude-sonnet-5": 10,
   "claude-opus-4-6": 20,
-  "kimi-k3": 30,
   "gemini-3.1-pro-preview": 10,
-  "gemini-3.5-flash": 5,
   "doubao-seed-2-1-turbo": 10,
   "glm-5.2": 10,
   "minimax-m3": 5,

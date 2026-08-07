@@ -24,12 +24,13 @@ function emptyState() {
     lastSessionDropAt: null,
     lastPopupAt: null,
     lastPopupReason: null,
+    firstActivationGatewayOpenedAt: null,
     pendingFirstLogin: false,
     modelGatewayBound: false,
     modelGatewayBoundAt: null,
     modelGatewayUnboundAt: null,
     shopUrl: DEFAULT_SHOP,
-    notes: "gateway login is optional; install never opens login; only open after explicit user choice"
+    notes: "first launch opens the binding page; external model calls require a bound account and show model credit cost"
   };
 }
 
@@ -64,7 +65,7 @@ async function writeState(next, statePath = defaultStatePath()) {
 
 /**
  * Called by installer / first boot. Installation only records state; gateway login
- * remains optional regardless of previous login history.
+ * The MCP initialize handler opens the binding page once for a fresh install.
  */
 async function markInstalled(statePath = defaultStatePath()) {
   const now = new Date().toISOString();
@@ -82,7 +83,7 @@ async function markInstalled(statePath = defaultStatePath()) {
 /**
  * Fresh package install marker from install.cmd.
  * Does NOT wipe firstLoginCompletedAt / lastLoginOkAt.
- * Gateway registration is optional, so package installation never schedules a popup.
+ * Existing login state is preserved so reinstalling does not invalidate a binding.
  */
 async function markPackageInstalled(statePath = defaultStatePath()) {
   const now = new Date().toISOString();
@@ -119,6 +120,14 @@ async function markPopup(reason, statePath = defaultStatePath()) {
   }, statePath);
 }
 
+async function markFirstActivationGatewayOpened(statePath = defaultStatePath()) {
+  const state = await readState(statePath);
+  return writeState({
+    ...state,
+    firstActivationGatewayOpenedAt: state.firstActivationGatewayOpenedAt || new Date().toISOString()
+  }, statePath);
+}
+
 async function markSessionDrop(statePath = defaultStatePath()) {
   const state = await readState(statePath);
   // do not mark drop if never completed first login
@@ -143,9 +152,8 @@ async function markModelGatewayBinding(bound, statePath = defaultStatePath()) {
 /**
  * Decide whether to open login popup.
  * Product rules (owner):
- * Gateway registration is optional. Initialization and status checks are silent.
- * A fresh-user popup is allowed only for an explicitly approved model call;
- * force=true is reserved for an explicit fiction_open_gateway_login request.
+ * A fresh install may open the binding page during initialize. Later status checks
+ * remain silent, while an explicit model call may reopen it after a session drop.
  */
 function decidePopup(state, {
   loggedIn,
@@ -173,7 +181,7 @@ function decidePopup(state, {
     return {
       open: true,
       reason: "forced",
-      message: "按请求打开登录窗（含积分小店）。"
+      message: "按请求打开账号绑定页（含积分小店）。"
     };
   }
 
@@ -181,9 +189,9 @@ function decidePopup(state, {
   if (!allowPopup || !explicitUserChoice) {
     return {
       open: false,
-      reason: neverLoggedIn ? "gateway_optional" : "session_dropped_silent",
+      reason: neverLoggedIn ? "gateway_binding_required" : "session_dropped_silent",
       message: neverLoggedIn
-        ? "字字珠玑网关是可选增强。只有作者同意外部模型调用后才打开登录页。"
+        ? "首次使用外部写作模型前必须绑定字字珠玑账号；请完成登录/注册后再继续。"
         : "网关会话已失效；普通初始化和状态检查保持静默，等作者同意下一次外部模型调用时再登录。"
     };
   }
@@ -228,6 +236,7 @@ module.exports = {
   markPackageInstalled,
   markLoginOk,
   markPopup,
+  markFirstActivationGatewayOpened,
   markSessionDrop,
   markModelGatewayBinding,
   decidePopup

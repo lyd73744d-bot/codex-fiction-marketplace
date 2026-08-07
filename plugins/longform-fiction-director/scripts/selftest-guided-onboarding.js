@@ -40,9 +40,9 @@ async function main() {
   const skill = fs.readFileSync(path.join(pluginRoot, "skills", "longform-fiction-director", "SKILL.md"), "utf8");
   const modelIds = catalog.models.map((item) => item.id);
 
-  assert.strictEqual(modelIds.length, 13, "shipped catalog must match the 13 retained live models");
+  assert.strictEqual(modelIds.length, 11, "shipped catalog must match the 11 retained live models");
   assert.strictEqual(catalog.preferredModel, "claude-sonnet-5");
-  for (const id of ["claude-opus-5", "claude-opus-4-8", "claude-opus-4-6", "claude-sonnet-5", "kimi-k3", "gemini-3.1-pro-preview", "gemini-3.5-flash", "doubao-seed-2-1-turbo", "glm-5.2", "minimax-m3", "deepseek-v4-flash", "deepseek-v4-pro", "kimi-k2.6"]) {
+  for (const id of ["claude-opus-5", "claude-opus-4-8", "claude-opus-4-6", "claude-sonnet-5", "gemini-3.1-pro-preview", "doubao-seed-2-1-turbo", "glm-5.2", "minimax-m3", "deepseek-v4-flash", "deepseek-v4-pro", "kimi-k2.6"]) {
     assert.ok(modelIds.includes(id), `retained route is missing: ${id}`);
   }
   for (const id of ["seed-2.1-pro", "seed-2.1-turbo", "gpt-image-2", "qwen3.7-max", "grok-4.5", "ark-code-latest", "doubao-seed-2-0-lite", "kimi-k2.7-code", "minimax-m2.7"]) {
@@ -51,8 +51,10 @@ async function main() {
   assert.ok(!modelIds.includes("claude-opus-4-7"), "unverified opus route leaked into catalog");
   assert.ok(manifest.interface.defaultPrompt.some((line) => line.includes("直接问我是开新书还是接着写旧书")));
   assert.ok(manifest.interface.defaultPrompt.some((line) => line.includes("每次调用其他模型前都问我是否使用")));
+  assert.ok(manifest.interface.defaultPrompt.some((line) => /DeepSeek|deepseek/iu.test(line)), "default prompt must explain direct DeepSeek use");
   assert.ok(skill.includes("你是准备开一本新书，还是接着写已有小说？"));
   assert.ok(skill.includes("是否使用这个模型？"));
+  assert.ok(/DeepSeek|deepseek/iu.test(skill), "skill must explain direct DeepSeek use");
 
   let loggedIn = false;
   let popupCalls = 0;
@@ -60,7 +62,7 @@ async function main() {
   const gateway = {
     async accountStatus() {
       return loggedIn
-        ? { ok: true, loggedIn: true, active: true, user: { username: "guided-test", active: true } }
+        ? { ok: true, loggedIn: true, active: true, balance: 1000, user: { username: "guided-test", active: true, plan: "count", balance: 1000, quota: 1000, used: 0 } }
         : { ok: true, loggedIn: false, active: false, user: null };
     },
     async listModels() {
@@ -91,6 +93,35 @@ async function main() {
   assert.strictEqual(state.pendingFirstLogin, false, "installation scheduled a login popup");
   assert.strictEqual(popupCalls, 0, "installation opened login");
 
+  const firstActivation = await guard.ensureAccess({
+    reason: "initialize",
+    allowPopup: true,
+    explicitUserChoice: true,
+    openBrowser: false
+  });
+  assert.strictEqual(firstActivation.activationPageOpened, true, "first activation did not open the gateway page");
+  assert.strictEqual(firstActivation.popupOpened, true, "first activation did not expose the binding page");
+  assert.ok((await onboarding.readState()).firstActivationGatewayOpenedAt, "first activation was not persisted");
+
+  loggedIn = true;
+  await onboarding.writeState(onboarding.emptyState());
+  popupCalls = 0;
+  const loggedInActivation = await guard.ensureAccess({
+    reason: "initialize",
+    allowPopup: true,
+    explicitUserChoice: true,
+    openBrowser: false
+  });
+  assert.strictEqual(loggedInActivation.loggedIn, true, "logged-in first activation lost the session");
+  assert.strictEqual(loggedInActivation.activationPageOpened, true, "logged-in first activation did not open the gateway page");
+  assert.strictEqual(popupCalls, 1, "logged-in first activation opened more than one page");
+
+  loggedIn = false;
+  await onboarding.writeState(onboarding.emptyState());
+  popupCalls = 0;
+  await onboarding.markPackageInstalled();
+  state = await onboarding.readState();
+
   const silentStatus = decode(await tools.call("fiction_ensure_gateway", {}));
   assert.strictEqual(silentStatus.popupOpened, false, "silent status check opened login");
   assert.strictEqual(popupCalls, 0);
@@ -99,7 +130,9 @@ async function main() {
   assert.ok(recommendation.primaryModelId, "writing guidance did not recommend a model");
   assert.ok(modelIds.includes(recommendation.primaryModelId), "guidance recommended a removed model");
   assert.ok(!JSON.stringify(recommendation).includes("grok-4.5"), "slow backup model must not be recommended automatically");
-  assert.ok(!JSON.stringify(recommendation).includes('"credits"'), "writing guidance exposed credits");
+  assert.ok(recommendation.billing, "writing guidance did not expose billing");
+  assert.strictEqual(recommendation.billing.status, "unauthenticated", "unbound guidance must identify the login requirement");
+  assert.ok(recommendation.directUse?.modelIds.includes("deepseek-v4-flash"), "guidance did not expose direct DeepSeek use");
   assert.strictEqual(popupCalls, 0, "model recommendation opened login");
   assert.strictEqual(modelCalls, 0, "model recommendation generated prose");
 
@@ -131,6 +164,13 @@ async function main() {
     authorPrefer: ["kimi-k2.6"]
   }));
   assert.strictEqual(manualKimi.primaryModelId, "kimi-k2.6", "explicit retained model selection was not preserved");
+  const manualDeepSeek = decode(await tools.call("fiction_recommend_models", {
+    task: "review",
+    mode: "quick",
+    maxPerRole: 1,
+    authorPrefer: ["deepseek-v4-pro"]
+  }));
+  assert.strictEqual(manualDeepSeek.primaryModelId, "deepseek-v4-pro", "direct DeepSeek selection was not preserved");
 
   const projectDir = path.join(tempRoot, "guided-novel");
   const localTools = createLocalCoreTools();
@@ -159,16 +199,22 @@ async function main() {
 
   loggedIn = true;
   await tools.call("fiction_ensure_gateway", { bindModels: true });
+  const boundRecommendation = decode(await tools.call("fiction_recommend_models", { task: "draft", mode: "quick" }));
+  assert.ok(Number.isFinite(boundRecommendation.billing.estimatedCredits), "bound guidance did not expose a model rate");
+  assert.strictEqual(boundRecommendation.billing.balanceBefore, 1000, "bound guidance did not expose the current balance");
   const generated = decode(await tools.call("fiction_generate_to_file", {
     projectDir,
-    prompt: "写一个历史小说候选片段。人物没有把话说全，叙述也不替他解释。",
+    prompt: "写一个历史小说正文片段。人物没有把话说全，叙述也不替他解释。",
     modelIds: [recommendation.primaryModelId],
     authorConfirmed: true,
+    chapterNo: "1",
+    title: "引导测试",
     applyHardGates: false
   }));
   assert.strictEqual(modelCalls, 1, "approved model call did not run exactly once");
-  assert.ok(fs.existsSync(generated.artifact.plainPath), "approved candidate was not saved");
-  assert.ok(generated.artifact.plainPath.includes("Codex候选"), "candidate bypassed the review folder");
+  assert.ok(fs.existsSync(generated.artifact.plainPath), "approved chapter was not saved");
+  assert.ok(generated.artifact.plainPath.includes("正文"), "approved generation did not write to 正文");
+  assert.strictEqual(generated.artifact.target, "chapter", "approved generation did not default to chapter");
   assert.ok(fs.existsSync(generated.artifact.memoryRecord.path), "model writing history was not recorded");
 
   await expectCode(tools.call("fiction_optimize_with_models", {
@@ -181,7 +227,7 @@ async function main() {
 
   state = await onboarding.readState();
   assert.strictEqual(state.modelGatewayBound, true, "gateway binding was not remembered");
-  console.log("PASS selftest-guided-onboarding: cold start, natural project, per-call consent, login timing and candidate persistence OK");
+  console.log("PASS selftest-guided-onboarding: cold start, natural project, per-call consent, login timing and direct chapter persistence OK");
 }
 
 main()

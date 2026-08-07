@@ -76,7 +76,7 @@ async function smokeLiveGateway({ gateway, projectDir = "", title = "live-smoke"
     ? path.resolve(projectDir)
     : await fsp.mkdtemp(path.join(os.tmpdir(), "lfd-live-smoke-"));
   await fsp.mkdir(path.join(root, "辅助文档"), { recursive: true });
-  await fsp.mkdir(path.join(root, "Codex候选"), { recursive: true });
+  await fsp.mkdir(path.join(root, "正文"), { recursive: true });
   await fsp.mkdir(path.join(root, "细纲"), { recursive: true });
   await fsp.writeFile(
     path.join(root, "细纲", "01_当前章细纲.md"),
@@ -88,14 +88,16 @@ async function smokeLiveGateway({ gateway, projectDir = "", title = "live-smoke"
   try {
     const draftSystem = buildDraftSystem({ kind: "draft", taskLabel: "live-smoke" });
     const preparedPrompt = prepareDraftPrompt({
-      prompt: "写一小段完整的历史小说候选。雨夜辕门，主角拿着一份被人压了三天的军报，追问守门校尉。对方只答了一半，主角从他的停顿和动作里察觉还有人在场。不要替人物把动机和结论说完。"
+      prompt: "写一小段完整的历史小说正文。雨夜辕门，主角拿着一份被人压了三天的军报，追问守门校尉。对方只答了一半，主角从他的停顿和动作里察觉还有人在场。不要替人物把动机和结论说完。",
+      chapterNo: "1",
+      title: "实网冒烟"
     });
     generated = await generateToArtifact({
       gateway,
       projectDir: root,
       kind: "live_smoke_draft",
-      title,
-      chapterNo: "0",
+      title: title || "实网冒烟",
+      chapterNo: "1",
       modelIds: draftIds,
       system: draftSystem.system,
       prompt: preparedPrompt.prompt,
@@ -130,18 +132,19 @@ async function smokeLiveGateway({ gateway, projectDir = "", title = "live-smoke"
       balance: account.balance ?? account.user?.balance ?? null
     },
     modelsAvailable: available.length,
-    draftModelIds: draftIds,
-    draft: {
-      artifact: generated.artifact,
-      transport: generated.transport,
-      attempt: generated.attempt,
+      draftModelIds: draftIds,
+      draft: {
+        artifact: generated.artifact,
+        transport: generated.transport,
+        billing: generated.billing || null,
+        attempt: generated.attempt,
       degraded: generated.degraded,
       preview: String(bodyRead.content).slice(0, 280),
       modelReadable: true
     },
     optimize: null,
     nextStep: "如需优化，重新推荐模型并询问作者后，再调用 fiction_optimize_with_models。",
-    coach: "实网冒烟通过：模型列表 → 一次已授权生成 → 候选 txt 与可读 .body。作者确认前不入正式正文。"
+    coach: "实网冒烟通过：模型列表 → 一次已授权生成 → 正文直写与写作记录。"
   };
 }
 

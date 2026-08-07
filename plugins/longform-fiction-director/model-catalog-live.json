@@ -2,16 +2,14 @@
   "version": "4.8",
   "fullVersion": "4.8.0",
   "gateway": "https://api.nanshanyougui.xyz",
-  "updatedAt": "2026-08-05T21:20:00+08:00",
+  "updatedAt": "2026-08-07T03:12:23+08:00",
   "preferredModel": "claude-sonnet-5",
   "models": [
     { "id": "claude-opus-5", "credits": 25, "available": true, "status": "live", "longForm": "verified" },
     { "id": "claude-opus-4-8", "credits": 20, "available": true, "status": "live", "longForm": "verified" },
     { "id": "claude-opus-4-6", "credits": 20, "available": true, "status": "live", "longForm": "verified" },
     { "id": "claude-sonnet-5", "credits": 10, "available": true, "status": "live", "longForm": "variable" },
-    { "id": "kimi-k3", "credits": 30, "available": true, "status": "live", "longForm": "variable" },
     { "id": "gemini-3.1-pro-preview", "credits": 10, "available": true, "status": "live", "longForm": "manual-review" },
-    { "id": "gemini-3.5-flash", "credits": 5, "available": true, "status": "live", "longForm": "short-form" },
     { "id": "doubao-seed-2-1-turbo", "credits": 10, "available": true, "status": "zzzj-ark", "longForm": "short-form" },
     { "id": "glm-5.2", "credits": 10, "available": true, "status": "zzzj-ark", "longForm": "manual-review" },
     { "id": "minimax-m3", "credits": 5, "available": true, "status": "zzzj-ark", "longForm": "manual-review" },
@@ -23,6 +21,6 @@
     "catalog_source": "ZiZiZhuJi unified live gateway",
     "routing": "Only the explicitly selected model is called. No automatic retry, fallback, or provider switch.",
     "subscription": "Buyers log in to the ZiZiZhuJi gateway. No upstream provider key is shipped in this plugin.",
-    "disabled": ["seed-2.1-pro", "seed-2.1-turbo", "gpt-image-2", "qwen3.7-max", "grok-4.5", "ark-code-latest", "doubao-seed-2-0-lite", "kimi-k2.7-code", "minimax-m2.7"]
+    "disabled": ["seed-2.1-pro", "seed-2.1-turbo", "gpt-image-2", "qwen3.7-max", "grok-4.5", "ark-code-latest", "doubao-seed-2-0-lite", "kimi-k2.7-code", "minimax-m2.7", "kimi-k3", "gemini-3.5-flash"]
   }
 }
